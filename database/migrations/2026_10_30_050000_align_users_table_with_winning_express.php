@@ -61,10 +61,10 @@ return new class extends Migration
 
             // 3. Coordonnées bancaires & stockout historiques
             if (! Schema::hasColumn('users', 'bank')) {
-                $table->string('bank', 100)->nullable()->after('ville_id');
+                $table->string('bank', 191)->nullable()->after('ville_id');
             }
             if (! Schema::hasColumn('users', 'rib')) {
-                $table->string('rib', 50)->nullable()->after('bank');
+                $table->string('rib', 255)->nullable()->after('bank');
             }
             if (! Schema::hasColumn('users', 'stockout')) {
                 $table->string('stockout')->nullable()->after('rib');

@@ -185,10 +185,13 @@ class BackfillUsersFromStockoutCommand extends Command
                 }
 
                 // Créer le compte bancaire si `rib` est renseigné
-                $rib = trim($row['rib'] ?? '');
-                if ($rib !== '') {
+                $ribRaw = trim($row['rib'] ?? '');
+                if ($ribRaw !== '') {
+                    $ribParts = explode('|', $ribRaw);
+                    $cleanRib = trim($ribParts[0]);
+
                     CompteBancaire::updateOrCreate(
-                        ['owner_id' => $id, 'rib' => $rib],
+                        ['owner_id' => $id, 'rib' => $cleanRib],
                         [
                             'owner_type' => $type === 'dlm' ? CompteBancaire::OWNER_LIVREUR : CompteBancaire::OWNER_CLIENT,
                             'titulaire_nom' => trim($row['fullname'] ?? ''),
