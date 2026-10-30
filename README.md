@@ -15,4 +15,4 @@
 # primary : #004c68
 # secondary : #ff8806
 
-## stack : 
+## stack : React 19 + Inertia.js + Tailwind CSS v4 + shadcn/ui + Laravel 13 + PHP 8.5 + MySQL 8.

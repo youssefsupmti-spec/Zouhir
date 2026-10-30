@@ -1,9 +1,67 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+
+    --color-primary: #004c68;
+    --color-primary-hover: #00384d;
+    --color-primary-light: #e6f1f5;
+    --color-primary-subtle: #0d6386;
+
+    --color-secondary: #ff8806;
+    --color-secondary-hover: #e07400;
+    --color-secondary-light: #fff4e6;
+    --color-secondary-subtle: #ffa43a;
+
+    --color-brand-dark: #05161f;
+    --color-brand-surface: #0a2533;
+    --color-brand-card: #0f3244;
+    --color-brand-border: #1a4961;
+}
+
+@layer base {
+    * {
+        border-color: #e2e8f0;
+    }
+    body {
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+}
+
+/* Glassmorphism & Custom Effects */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-panel-dark {
+    background: rgba(10, 37, 51, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glow-primary {
+    box-shadow: 0 0 35px -5px rgba(0, 76, 104, 0.35);
+}
+
+.glow-secondary {
+    box-shadow: 0 0 35px -5px rgba(255, 136, 6, 0.45);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
