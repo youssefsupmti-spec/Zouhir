@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/Components/ui/Card';
-import Button from '@/Components/ui/Button';
-import Badge from '@/Components/ui/Badge';
+import { Card, CardContent } from '@/components/ui/Card';
+import Button from '@/components/ui/AppButton';
+import Badge from '@/components/ui/Badge';
 import { Calculator, ArrowRight, CheckCircle2, ShieldCheck, Sparkles, Truck } from 'lucide-react';
 
 export default function RateCalculatorSection({ cities = [] }) {

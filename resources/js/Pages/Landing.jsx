@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
-import Navbar from '@/Components/Navbar';
-import Footer from '@/Components/Footer';
-import HeroSection from '@/Components/Landing/HeroSection';
-import ServicesSection from '@/Components/Landing/ServicesSection';
-import RateCalculatorSection from '@/Components/Landing/RateCalculatorSection';
-import WhyUsSection from '@/Components/Landing/WhyUsSection';
-import TestimonialsSection from '@/Components/Landing/TestimonialsSection';
-import CtaSection from '@/Components/Landing/CtaSection';
-import TrackingSimulatorModal from '@/Components/Landing/TrackingSimulatorModal';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import HeroSection from '@/components/Landing/HeroSection';
+import ServicesSection from '@/components/Landing/ServicesSection';
+import RateCalculatorSection from '@/components/Landing/RateCalculatorSection';
+import WhyUsSection from '@/components/Landing/WhyUsSection';
+import TestimonialsSection from '@/components/Landing/TestimonialsSection';
+import CtaSection from '@/components/Landing/CtaSection';
+import TrackingSimulatorModal from '@/components/Landing/TrackingSimulatorModal';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function Landing({ cities, statistics, testimonials }) {

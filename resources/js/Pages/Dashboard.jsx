@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Card, CardContent } from '@/Components/ui/Card';
-import Button from '@/Components/ui/Button';
-import Badge from '@/Components/ui/Badge';
-import TrackingSimulatorModal from '@/Components/Landing/TrackingSimulatorModal';
+import { Card, CardContent } from '@/components/ui/Card';
+import Button from '@/components/ui/AppButton';
+import Badge from '@/components/ui/Badge';
+import TrackingSimulatorModal from '@/components/Landing/TrackingSimulatorModal';
 import { 
     Package, 
     Truck, 

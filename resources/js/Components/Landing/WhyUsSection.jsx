@@ -1,5 +1,5 @@
 import React from 'react';
-import Badge from '@/Components/ui/Badge';
+import Badge from '@/components/ui/Badge';
 import { ShieldCheck, Zap, HeartHandshake, Eye, Map, CheckCircle2, Award } from 'lucide-react';
 
 export default function WhyUsSection({ statistics = [] }) {

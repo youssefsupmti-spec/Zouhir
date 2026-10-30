@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Modal from '@/Components/ui/Modal';
-import Button from '@/Components/ui/Button';
-import Badge from '@/Components/ui/Badge';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/AppButton';
+import Badge from '@/components/ui/Badge';
 import { Search, PackageCheck, Truck, MapPin, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 export default function TrackingSimulatorModal({ isOpen, onClose, initialCode = '' }) {

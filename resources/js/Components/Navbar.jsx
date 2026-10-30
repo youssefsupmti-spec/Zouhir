@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import Logo from '@/Components/ui/Logo';
-import Button from '@/Components/ui/Button';
+import Logo from '@/components/ui/Logo';
+import Button from '@/components/ui/AppButton';
 import { Menu, X, ArrowRight, User, PhoneCall, ShieldCheck, LogOut } from 'lucide-react';
 
 export default function Navbar({ onOpenTracking }) {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/Components/ui/Card';
-import Badge from '@/Components/ui/Badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
 import { 
     Truck, 
     Banknote, 

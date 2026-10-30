@@ -37,6 +37,26 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
+        $roles = [];
+        $permissions = [];
+        if ($user) {
+            try {
+                if (method_exists($user, 'getRoleNames')) {
+                    $roles = $user->getRoleNames()->toArray();
+                }
+            } catch (\Throwable) {
+                $roles = [$user->role instanceof \BackedEnum ? $user->role->value : (string) $user->role];
+            }
+
+            try {
+                if (method_exists($user, 'getAllPermissions')) {
+                    $permissions = $user->getAllPermissions()->pluck('name')->toArray();
+                }
+            } catch (\Throwable) {
+                $permissions = [];
+            }
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
@@ -45,9 +65,9 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
-                    'role' => is_object($user->role) ? $user->role->value : $user->role,
-                    'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames() : [],
-                    'permissions' => method_exists($user, 'getAllPermissions') ? $user->getAllPermissions()->pluck('name') : [],
+                    'role' => $user->role instanceof \BackedEnum ? $user->role->value : (string) $user->role,
+                    'roles' => $roles,
+                    'permissions' => $permissions,
                     'is_admin' => method_exists($user, 'isAdmin') ? $user->isAdmin() : false,
                     'is_client' => method_exists($user, 'isClient') ? $user->isClient() : true,
                     'store_name' => $user->store_name,

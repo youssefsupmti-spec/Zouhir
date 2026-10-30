@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import Button from '@/Components/ui/Button';
+import Button from '@/components/ui/AppButton';
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function CtaSection() {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
-import Logo from '@/Components/ui/Logo';
+import Logo from '@/components/ui/Logo';
 import { Phone, Mail, MapPin, Clock, ShieldCheck, Heart } from 'lucide-react';
 
 export default function Footer() {

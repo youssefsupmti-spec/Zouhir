@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import Logo from '@/Components/ui/Logo';
-import Button from '@/Components/ui/Button';
-import Badge from '@/Components/ui/Badge';
+import Logo from '@/components/ui/Logo';
+import Button from '@/components/ui/AppButton';
+import Badge from '@/components/ui/Badge';
 import { 
     LayoutDashboard, 
     Package, 

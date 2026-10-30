@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card } from '@/Components/ui/Card';
-import Badge from '@/Components/ui/Badge';
+import { Card } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
 import { Star, Quote, MapPin } from 'lucide-react';
 
 export default function TestimonialsSection({ testimonials = [] }) {

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import Logo from '@/Components/ui/Logo';
-import Button from '@/Components/ui/Button';
-import Input from '@/Components/ui/Input';
-import Badge from '@/Components/ui/Badge';
+import Logo from '@/components/ui/Logo';
+import Button from '@/components/ui/AppButton';
+import Input from '@/components/ui/AppInput';
+import Badge from '@/components/ui/Badge';
 import { 
     Mail, 
     Lock, 
