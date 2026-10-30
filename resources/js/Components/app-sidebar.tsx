@@ -23,7 +23,6 @@ import {
   GlobeIcon, 
   CalculatorIcon, 
   PhoneCallIcon,
-  ShieldCheckIcon,
   Building2Icon
 } from "lucide-react"
 
@@ -38,17 +37,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const teams = [
     {
       name: "OUAISS EXPRESS",
-      logo: <TruckIcon className="size-4 text-[#ff8806]" />,
+      logo: <TruckIcon className="size-4 text-white" />,
       plan: "Hub National Casablanca",
     },
     {
       name: "Agence Rabat",
-      logo: <Building2Icon className="size-4 text-emerald-400" />,
+      logo: <Building2Icon className="size-4 text-white" />,
       plan: "Hub Régional Centre",
     },
     {
       name: "Agence Tanger",
-      logo: <Building2Icon className="size-4 text-sky-400" />,
+      logo: <Building2Icon className="size-4 text-white" />,
       plan: "Hub Nord & Port",
     },
   ]
@@ -74,6 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Expéditions & Colis",
       url: "/dashboard",
       icon: <PackageIcon className="size-4" />,
+      badge: "128",
       items: [
         {
           title: "Toutes les expéditions",
@@ -93,13 +93,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Suivi National",
       url: "/dashboard",
       icon: <TruckIcon className="size-4" />,
+      badge: "14",
       items: [
         {
-          title: "Recherche en direct",
+          title: "Recherche par Code",
           url: "/dashboard",
         },
         {
-          title: "En cours de livraison",
+          title: "Colis en cours de livraison",
           url: "/dashboard",
         },
         {
@@ -112,9 +113,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Finances & CRBT",
       url: "/dashboard",
       icon: <WalletIcon className="size-4" />,
+      badge: "MAD",
       items: [
         {
-          title: "Relevés de paiement (MAD)",
+          title: "Relevés de paiement (CRBT)",
           url: "/dashboard",
         },
         {
@@ -124,16 +126,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ],
     },
     {
-      title: "Paramètres Compte",
+      title: "Paramètres Boutique",
       url: "/dashboard",
       icon: <Settings2Icon className="size-4" />,
       items: [
         {
-          title: "Boutique & Adresses",
+          title: "Profil & Adresses",
           url: "/dashboard",
         },
         {
-          title: "Tarifs & Conventions",
+          title: "Grille tarifaire négociée",
           url: "/dashboard",
         },
       ],
@@ -159,15 +161,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   ]
 
   return (
-    <Sidebar collapsible="icon" className="bg-[#05161f] text-white border-r border-slate-800" {...props}>
-      <SidebarHeader className="border-b border-slate-800/80 p-3">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
+      <SidebarHeader className="border-b border-sidebar-border p-3">
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent className="px-2 py-3">
         <NavMain items={navMain} />
         <NavProjects projects={quickLinks} />
       </SidebarContent>
-      <SidebarFooter className="border-t border-slate-800/80 p-3">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />

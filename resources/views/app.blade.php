@@ -18,12 +18,27 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+    <!-- Theme detection script (prevent FOUC) -->
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (theme === 'dark' || (!theme && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- Scripts & Styles -->
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
     @inertiaHead
 </head>
-<body class="h-full bg-slate-50 text-slate-900 font-sans antialiased selection:bg-amber-500 selection:text-white">
+<body class="h-full bg-background text-foreground font-sans antialiased selection:bg-[#ff8806] selection:text-white transition-colors duration-200">
     @inertia
 </body>
 </html>

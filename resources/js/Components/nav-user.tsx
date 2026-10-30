@@ -1,3 +1,6 @@
+"use client"
+
+import * as React from "react"
 import {
   Avatar,
   AvatarFallback,
@@ -19,7 +22,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { router } from "@inertiajs/react"
-import { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon, UserIcon } from "lucide-react"
+import { 
+  ChevronsUpDownIcon, 
+  UserIcon, 
+  CreditCardIcon, 
+  BellIcon, 
+  LogOutIcon,
+  ShieldCheckIcon
+} from "lucide-react"
 
 export function NavUser({
   user,
@@ -29,6 +39,7 @@ export function NavUser({
     email: string
     avatar?: string
     role?: string
+    store_name?: string
   }
 }) {
   const { isMobile } = useSidebar()
@@ -44,62 +55,71 @@ export function NavUser({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton size="lg" className="aria-expanded:bg-muted hover:bg-slate-800/50 transition-colors" />
+              <SidebarMenuButton 
+                size="lg" 
+                className="w-full data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground hover:bg-sidebar-accent/80 transition-colors rounded-xl p-2" 
+              />
             }
           >
-            <Avatar className="h-8 w-8 rounded-lg bg-[#004c68] text-white font-bold text-xs flex items-center justify-center border border-slate-700">
+            <Avatar className="h-9 w-9 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-bold text-xs flex items-center justify-center border border-sidebar-border shadow-sm">
               {user.avatar ? (
                 <AvatarImage src={user.avatar} alt={user.name} />
               ) : null}
-              <AvatarFallback className="bg-[#004c68] text-white font-bold">{initials}</AvatarFallback>
+              <AvatarFallback className="bg-sidebar-primary text-white font-bold">{initials}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold text-white">{user.name || 'Client OUAISS'}</span>
-              <span className="truncate text-xs text-slate-400">{user.email || 'client@ouaissexpress.com'}</span>
+              <span className="truncate font-bold text-sidebar-foreground">
+                {user.name || 'Client OUAISS'}
+              </span>
+              <span className="truncate text-[11px] text-sidebar-foreground/70">
+                {user.email || 'client@ouaissexpress.com'}
+              </span>
             </div>
-            <ChevronsUpDownIcon className="ml-auto size-4 text-slate-400" />
+            <ChevronsUpDownIcon className="ml-auto size-4 text-sidebar-foreground/60" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-56 rounded-xl border border-slate-800 bg-[#0a1a24] text-white shadow-xl"
+            className="w-60 rounded-xl border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-2xl p-1.5"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={6}
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
-                <div className="flex items-center gap-3 px-3 py-2 text-left text-sm border-b border-slate-800/80">
-                  <Avatar className="h-8 w-8 rounded-lg bg-[#004c68] text-white font-bold text-xs flex items-center justify-center">
-                    <AvatarFallback className="bg-[#004c68] text-white font-bold">{initials}</AvatarFallback>
+                <div className="flex items-center gap-3 px-2.5 py-2 text-left text-sm border-b border-sidebar-border/80">
+                  <Avatar className="h-9 w-9 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-bold text-xs flex items-center justify-center">
+                    <AvatarFallback className="bg-sidebar-primary text-white font-bold">{initials}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-bold text-white">{user.name || 'Client OUAISS'}</span>
-                    <span className="truncate text-[11px] text-slate-400">{user.email}</span>
+                    <span className="truncate font-bold text-sidebar-foreground">
+                      {user.name || 'Client OUAISS'}
+                    </span>
+                    <span className="truncate text-[11px] text-sidebar-foreground/70">{user.email}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator className="bg-slate-800" />
+            <DropdownMenuSeparator className="bg-sidebar-border" />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="gap-2 cursor-pointer text-slate-300 hover:text-white hover:bg-slate-800/80 focus:bg-slate-800">
-                <UserIcon className="size-4 text-[#ff8806]" />
-                Mon Profil Marchand
+              <DropdownMenuItem className="gap-2.5 p-2 rounded-lg cursor-pointer text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-colors">
+                <UserIcon className="size-4 text-sidebar-primary" />
+                <span className="text-xs font-semibold">Mon Profil Boutique</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 cursor-pointer text-slate-300 hover:text-white hover:bg-slate-800/80 focus:bg-slate-800">
+              <DropdownMenuItem className="gap-2.5 p-2 rounded-lg cursor-pointer text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-colors">
                 <CreditCardIcon className="size-4 text-emerald-400" />
-                Mes Relevés & Factures
+                <span className="text-xs font-semibold">Relevés de Paiement</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 cursor-pointer text-slate-300 hover:text-white hover:bg-slate-800/80 focus:bg-slate-800">
+              <DropdownMenuItem className="gap-2.5 p-2 rounded-lg cursor-pointer text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-colors">
                 <BellIcon className="size-4 text-amber-400" />
-                Notifications
+                <span className="text-xs font-semibold">Notifications</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator className="bg-slate-800" />
+            <DropdownMenuSeparator className="bg-sidebar-border" />
             <DropdownMenuItem 
               onClick={handleLogout}
-              className="gap-2 cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-500/10 focus:bg-red-500/10 font-medium"
+              className="gap-2.5 p-2 rounded-lg cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-500/15 transition-colors font-semibold text-xs"
             >
               <LogOutIcon className="size-4" />
-              Se déconnecter
+              <span>Se déconnecter</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

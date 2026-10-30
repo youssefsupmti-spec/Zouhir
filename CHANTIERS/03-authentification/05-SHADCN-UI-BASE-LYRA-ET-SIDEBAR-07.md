@@ -1,4 +1,4 @@
-# 05 — Intégration Shadcn/UI (Preset b5dLKX1LE · base-lyra) et Bloc sidebar-07
+![alt text](image.png)# 05 — Intégration Shadcn/UI (Preset b5dLKX1LE · base-lyra) et Bloc sidebar-07
 
 **Date** : 30 octobre 2026  
 **Auteur** : Gemini (Antigravity)  
@@ -91,3 +91,4 @@ Le projet nécessitait l'intégration officielle du design system **Shadcn/UI** 
 
 ## 4. Conclusion & Prochaines Étapes
 La fondation Shadcn/UI (base-lyra) et le composant `sidebar-07` sont pleinement opérationnels et déployés en production sur l'instance de développement. Le tableau de bord et les vues connectées bénéficient d'une interface responsive et moderne.
+
