@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Domain\Auth\Enums\UserRole;
 use App\Domain\Clients\Enums\ClientType;
+use App\Domain\Commande\Support\PerimetreColis;
+use App\Domain\RolesPermissions\Support\RoleIds;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -76,7 +78,6 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'client_type' => ClientType::class,
             'active' => 'boolean',
-            'is_active' => 'boolean',
         ];
     }
 
@@ -86,15 +87,15 @@ class User extends Authenticatable
     protected function password(): Attribute
     {
         return Attribute::make(
-            set: function (?string $value): array {
+            set: function (?string $value): ?string {
                 if ($value === null || $value === '') {
-                    return ['password' => $value];
+                    return $value;
                 }
                 // Si déjà un hash bcrypt ($2y$, $2a$) ou argon2, ne pas re-hacher
                 if (preg_match('/^\$(2[aby]|argon2)/', $value) === 1) {
-                    return ['password' => $value];
+                    return $value;
                 }
-                return ['password' => Hash::make($value)];
+                return Hash::make($value);
             },
         );
     }
@@ -173,27 +174,42 @@ class User extends Authenticatable
 
     public function isClient(): bool
     {
-        return $this->hasRole('client') || $this->role === UserRole::CLIENT;
+        return PerimetreColis::compteVendeur($this)
+            || $this->hasRole('client')
+            || $this->role === UserRole::CLIENT;
     }
 
     public function isAdmin(): bool
     {
-        return $this->hasAnyRole(['admin', 'super_admin']) || $this->role === UserRole::ADMIN;
+        return PerimetreColis::administration($this)
+            || $this->hasAnyRole(['admin', 'super_admin'])
+            || $this->role === UserRole::ADMIN;
     }
 
     public function isDriver(): bool
     {
-        return $this->hasRole('livreur') || $this->role === UserRole::LIVREUR;
+        return PerimetreColis::colisAffectes($this)
+            || $this->hasRole('livreur')
+            || $this->role === UserRole::LIVREUR;
     }
 
     public function isAgency(): bool
     {
-        return $this->hasRole('agence') || $this->role === UserRole::AGENCE;
+        return PerimetreColis::agence($this)
+            || $this->hasRole('agence')
+            || $this->role === UserRole::AGENCE;
     }
 
     public function isOperator(): bool
     {
-        return $this->hasRole('moderator') || $this->hasRole('operateur') || $this->role === UserRole::OPERATEUR;
+        return $this->hasRole('moderator')
+            || $this->hasRole('operateur')
+            || $this->role === UserRole::OPERATEUR;
+    }
+
+    public function isStaff(): bool
+    {
+        return ! $this->isClient() && ! $this->isDriver();
     }
 
     public function canAccessDashboard(): bool
@@ -201,15 +217,71 @@ class User extends Authenticatable
         return (bool) ($this->active ?? true);
     }
 
-    /* ════════════════════ Scopes Eloquent ════════════════════ */
+    /* ════════════════════ Scopes Eloquent Caches (RoleIds) ════════════════════
+     * Remplacent les ->role('client') qui déclenchent un findByName() non caché
+     * à chaque appel SQL.
+     * Supportent également les rôles personnalisés dotés des permissions périmètres.
+     */
 
-    public function scopeClients(Builder $query): Builder
+    /**
+     * Comptes portant un rôle Spatie donné (id résolu depuis le cache RoleIds).
+     */
+    public function scopeWithRoleNamed(Builder $query, string $role): Builder
     {
-        return $query->role('client');
+        $id = app(RoleIds::class)->id($role);
+
+        if ($id === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('roles', fn (Builder $q) => $q->whereKey($id));
     }
 
+    /**
+     * Comptes clients / marchands (rôle standard Spatie, permission ActAsClient:Command ou colonne role).
+     */
+    public function scopeClients(Builder $query): Builder
+    {
+        $clientRoleId = app(RoleIds::class)->id('client');
+
+        return $query->where(function (Builder $q) use ($clientRoleId) {
+            if ($clientRoleId !== null) {
+                $q->whereHas('roles', fn (Builder $sub) => $sub->whereKey($clientRoleId));
+            } else {
+                $q->whereRaw('1 = 0');
+            }
+
+            $q->orWhereHas('roles.permissions', fn (Builder $sub) => $sub->where('name', PerimetreColis::PROPRE_COMPTE))
+              ->orWhereHas('permissions', fn (Builder $sub) => $sub->where('name', PerimetreColis::PROPRE_COMPTE))
+              ->orWhere('role', UserRole::CLIENT->value);
+        });
+    }
+
+    /**
+     * Comptes livreurs / chauffeurs (rôle standard Spatie, permission ActAsDriver:Command ou colonne role).
+     */
     public function scopeDrivers(Builder $query): Builder
     {
-        return $query->role('livreur');
+        $driverRoleId = app(RoleIds::class)->id('livreur');
+
+        return $query->where(function (Builder $q) use ($driverRoleId) {
+            if ($driverRoleId !== null) {
+                $q->whereHas('roles', fn (Builder $sub) => $sub->whereKey($driverRoleId));
+            } else {
+                $q->whereRaw('1 = 0');
+            }
+
+            $q->orWhereHas('roles.permissions', fn (Builder $sub) => $sub->where('name', PerimetreColis::COLIS_AFFECTES))
+              ->orWhereHas('permissions', fn (Builder $sub) => $sub->where('name', PerimetreColis::COLIS_AFFECTES))
+              ->orWhere('role', UserRole::LIVREUR->value);
+        });
+    }
+
+    /**
+     * Comptes actifs.
+     */
+    public function scopeActiveAccounts(Builder $query): Builder
+    {
+        return $query->where('active', true);
     }
 }

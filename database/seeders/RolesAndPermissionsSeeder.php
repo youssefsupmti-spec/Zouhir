@@ -34,15 +34,18 @@ class RolesAndPermissionsSeeder extends Seeder
                 PermissionEnum::TRACK_COLIS,
                 PermissionEnum::VIEW_FINANCES,
                 PermissionEnum::EXPORT_EXCEL,
+                PermissionEnum::ACT_AS_CLIENT,
             ],
             UserRole::LIVREUR->value => [
                 PermissionEnum::VIEW_DASHBOARD,
                 PermissionEnum::TRACK_COLIS,
+                PermissionEnum::ACT_AS_DRIVER,
             ],
             UserRole::AGENCE->value => [
                 PermissionEnum::VIEW_DASHBOARD,
                 PermissionEnum::MANAGE_COLIS,
                 PermissionEnum::TRACK_COLIS,
+                PermissionEnum::ACT_AS_AGENCY,
             ],
             UserRole::OPERATEUR->value => [
                 PermissionEnum::VIEW_DASHBOARD,

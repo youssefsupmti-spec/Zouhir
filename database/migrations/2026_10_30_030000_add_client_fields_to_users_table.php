@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('phone', 30)->nullable()->after('email')->index();
-            $table->string('role', 30)->default('client')->after('phone')->index();
+            $table->string('role', 30)->nullable()->default('client')->after('phone')->index();
             $table->string('client_type', 30)->default('e_commerce')->after('role'); // e_commerce, entreprise, particulier
             $table->string('store_name')->nullable()->after('client_type');
             $table->string('city', 100)->nullable()->after('store_name')->index();
