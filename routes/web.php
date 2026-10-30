@@ -30,4 +30,11 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // 5 Référentiels Métier & Pages de Gestion (Sprint 1)
+    Route::get('/businesses', [\App\Http\Controllers\BusinessController::class, 'index'])->name('businesses.index');
+    Route::get('/clients', [\App\Http\Controllers\ClientController::class, 'index'])->name('clients.index');
+    Route::get('/livreurs', [\App\Http\Controllers\LivreurController::class, 'index'])->name('livreurs.index');
+    Route::get('/villes', [\App\Http\Controllers\VilleController::class, 'index'])->name('villes.index');
+    Route::get('/banks', [\App\Http\Controllers\BankController::class, 'index'])->name('banks.index');
 });

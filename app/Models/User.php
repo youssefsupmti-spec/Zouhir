@@ -60,6 +60,15 @@ class User extends Authenticatable
         'client_type',
         'store_name',
         'address',
+        'adresse',
+        'ville',
+        'status',
+        'solde',
+    ];
+
+    protected $appends = [
+        'ville',
+        'status',
     ];
 
     protected $hidden = [
@@ -152,6 +161,28 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * Alias bidirectionnel: ville <-> ville_name
+     */
+    protected function ville(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['ville_name'] ?? $attributes['city'] ?? $value ?? '',
+            set: fn ($value) => ['ville_name' => $value],
+        );
+    }
+
+    /**
+     * Alias bidirectionnel: status <-> active
+     */
+    protected function status(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => isset($attributes['active']) && ! (bool) $attributes['active'] ? 'inactive' : 'active',
+            set: fn ($value) => ['active' => in_array($value, ['active', '1', true, 1], true)],
+        );
+    }
+
     /* ════════════════════ Relations WinningExpress ════════════════════ */
 
     /**
@@ -168,6 +199,30 @@ class User extends Authenticatable
     public function comptesBancaires(): HasMany
     {
         return $this->hasMany(CompteBancaire::class, 'owner_id', 'id');
+    }
+
+    /**
+     * Alias snake_case pour sérialisation Inertia : comptes_bancaires
+     */
+    public function comptes_bancaires(): HasMany
+    {
+        return $this->hasMany(CompteBancaire::class, 'owner_id', 'id');
+    }
+
+    /**
+     * Commandes expédiées en tant que client marchand.
+     */
+    public function commands(): HasMany
+    {
+        return $this->hasMany(Command::class, 'client_id');
+    }
+
+    /**
+     * Colis pris en charge en tant que livreur coursier.
+     */
+    public function driverCommands(): HasMany
+    {
+        return $this->hasMany(Command::class, 'livreur_id');
     }
 
     /* ════════════════════ Rôles & Autorisations Spatie ════════════════════ */

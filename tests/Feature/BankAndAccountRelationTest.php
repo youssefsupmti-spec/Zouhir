@@ -105,3 +105,4 @@ class BankAndAccountRelationTest extends TestCase
         $this->assertEquals('BMCI (Groupe BNP Paribas)', $compte2->bank->name);
     }
 }
+

@@ -39,3 +39,4 @@ class Bank extends Model
         return $query->where('status', 'active');
     }
 }
+

@@ -23,7 +23,11 @@ import {
   GlobeIcon, 
   CalculatorIcon, 
   PhoneCallIcon,
-  Building2Icon
+  Building2Icon,
+  UsersIcon,
+  MapPinIcon,
+  LandmarkIcon,
+  StoreIcon
 } from "lucide-react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -70,6 +74,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ],
     },
     {
+      title: "Référentiels Métier",
+      url: "/businesses",
+      icon: <StoreIcon className="size-4" />,
+      badge: "5",
+      isActive: true,
+      items: [
+        {
+          title: "Enseignes & Boutiques",
+          url: "/businesses",
+        },
+        {
+          title: "Clients Marchands",
+          url: "/clients",
+        },
+        {
+          title: "Livreurs (DLM)",
+          url: "/livreurs",
+        },
+        {
+          title: "Villes & Zones",
+          url: "/villes",
+        },
+        {
+          title: "Banques & RIBs",
+          url: "/banks",
+        },
+      ],
+    },
+    {
       title: "Expéditions & Colis",
       url: "/dashboard",
       icon: <PackageIcon className="size-4" />,
@@ -111,31 +144,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Finances & CRBT",
-      url: "/dashboard",
+      url: "/banks",
       icon: <WalletIcon className="size-4" />,
       badge: "MAD",
       items: [
+        {
+          title: "Coordonnées Bancaires",
+          url: "/banks",
+        },
         {
           title: "Relevés de paiement (CRBT)",
           url: "/dashboard",
         },
         {
           title: "Historique des virements",
-          url: "/dashboard",
-        },
-      ],
-    },
-    {
-      title: "Paramètres Boutique",
-      url: "/dashboard",
-      icon: <Settings2Icon className="size-4" />,
-      items: [
-        {
-          title: "Profil & Adresses",
-          url: "/dashboard",
-        },
-        {
-          title: "Grille tarifaire négociée",
           url: "/dashboard",
         },
       ],
