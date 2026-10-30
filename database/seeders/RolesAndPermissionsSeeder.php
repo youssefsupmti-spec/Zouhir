@@ -26,7 +26,10 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // 2. Create Roles and assign permissions
         $rolesPermissions = [
-            UserRole::ADMIN->value => PermissionEnum::cases(),
+            UserRole::ADMIN->value => array_values(array_filter(
+                PermissionEnum::cases(),
+                fn ($p) => ! in_array($p, [PermissionEnum::ACT_AS_CLIENT, PermissionEnum::ACT_AS_DRIVER], true)
+            )),
             UserRole::CLIENT->value => [
                 PermissionEnum::VIEW_DASHBOARD,
                 PermissionEnum::CREATE_COLIS,
