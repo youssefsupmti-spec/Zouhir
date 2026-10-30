@@ -14,4 +14,4 @@
 | **02-landing-page** | Vitrine, Calculateur de Tarifs, Tracking Modal | LIVRÉ | 100% |
 | **03-authentification** | Login, Inscription Client, Sécurité & Sessions | LIVRÉ | 100% |
 | **04-base-de-donnees-et-tests** | Migrations MySQL, Suite Tests PHPUnit (12/12 verts) | LIVRÉ | 100% |
-| **05-deploiement-hostinger** | Hostinger Shared, dev.ouaissexpress.com, PHP 8.4 | EN COURS | 95% |
+| **05-deploiement-hostinger** | Hostinger Shared, dev.ouaissexpress.com, PHP 8.4 | LIVRÉ & VÉRIFIÉ | 100% |
