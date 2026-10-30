@@ -1,47 +1,109 @@
-<laravel-boost-guidelines>
-# Laravel Application
+# CLAUDE.md — Référence Centrale du Projet OUAISS EXPRESS (Client : ZOUHIR)
 
-This repository contains a Laravel application. Complete the following setup before working on the user's request.
+Plateforme indépendante de livraison express et logistique e-commerce au Maroc pour le client **ZOUHIR** (Marque commerciale : **OUAISS EXPRESS** · Domaines : `ouaissexpress.com` / `dev.ouaissexpress.com`).
 
-## Prerequisites
+---
 
-Verify that PHP and Composer are available:
+## 🎯 MISSION & PÉRIMÈTRE STRICT (PHASE 1)
 
-```sh
-php -v
-composer -V
+Ce projet utilise **WinningExpress** et **Zakaria2** uniquement comme références fonctionnelles et techniques, et **ne doit jamais être une copie conforme de leurs interfaces ni de leur code**.
+
+### Périmètre Phase 1 (Livré et Validé) :
+1. **Fondation technique & Architecture DDD pragmatique** (Domain, Application, Infrastructure, Presentation).
+2. **Landing Page Premium Internationale** : Vitrine corporate, simulateur interactif de tarifs, widget de suivi de colis par satellite en temps réel, garanties 24/48h & CRBT à J+2.
+3. **Authentification & Inscription Fonctionnelles** : Login et Register complets avec React Hook Form, Zod, validation Laravel stricte, CSRF, rate limiting, protection contre l'escalade de privilèges (rôle forcé côté serveur).
+4. **Design System Original OUAISS EXPRESS** : Couleurs officielles `#004c68` (Deep Ocean Blue) et `#ff8806` (Vibrant Delivery Orange), typographies *Outfit* & *Plus Jakarta Sans*.
+5. **Préparation Déploiement Hostinger Shared** : Document root `public/`, assets précompilés (aucun daemon Node en production), `.env` sécurisé, migrations Phase 1 non destructives.
+
+### ⛔ INTERDICTIONS FORMELLES (Règles permanentes) :
+- **NE PAS développer** le Dashboard interne, la gestion des colis/expéditions, les livreurs, le stock, la facturation, les paiements, le scanner, les bons de livraison/retour, l'import Excel, le reporting ni aucun autre module métier sans demande explicite du propriétaire.
+- **NE PAS copier** textuellement ou visuellement les interfaces de WinningExpress ou Zakaria2.
+- **NE JAMAIS exécuter** `migrate:fresh`, `db:wipe` ou toute migration destructive.
+- **NE PAS déployer**, commit ou push en production sans validation explicite du propriétaire.
+
+---
+
+## 🛠️ STACK TECHNIQUE OFFICIELLE
+
+| Composant | Technologie | Version / Remarques |
+|---|---|---|
+| **Backend** | Laravel | Framework 13.x |
+| **Langage Backend** | PHP | 8.4+ (Compatible PHP 8.5 Hostinger) |
+| **Architecture** | DDD Pragmatique | Domain / Application / Infrastructure / Presentation |
+| **Frontend Framework** | React | React 19 (19.3+) |
+| **Liaison Monolithe** | Inertia.js | Inertia React Adapter v3.x |
+| **Styles & CSS** | Tailwind CSS v4 | `@tailwindcss/vite` + Design Tokens |
+| **UI Components** | Custom shadcn/ui | Primitives modulaires, Radix & Lucide React |
+| **Validation Formulaires** | React Hook Form + Zod | Couplé aux FormRequests Laravel |
+| **Bundler** | Vite 8 | Configuration ESM moderne avec `@vitejs/plugin-react` |
+| **Base de Données** | MySQL 8 | Hostinger Shared DB `u405480831_dev` |
+| **Hébergement Cible** | Hostinger Premium Shared | Document root `public/`, CLI SSH, pas de Docker |
+
+---
+
+## 🏛️ STRUCTURE DU CODE (DDD PRAGMATIQUE)
+
+```
+app/
+├── Domain/                         # Cœur métier (Entities, Enums, Value Objects)
+│   ├── Auth/
+│   │   └── Enums/UserRole.php      # ADMIN, CLIENT, LIVREUR, AGENCE, OPERATEUR
+│   ├── Clients/
+│   │   └── Enums/ClientType.php    # E_COMMERCE, ENTREPRISE, PARTICULIER
+│   └── Colis/                      # Bounded Context préparé pour les futures phases
+│       └── Enums/ColisStatus.php   # NOUVEAU, RAMASSE, EXPEDIE, EN_TRANSIT, LIVRE...
+├── Application/                    # Cas d'utilisation & Actions
+│   └── Auth/
+│       └── Actions/RegisterClientAction.php  # Rôle forcé CLIENT côté serveur
+├── Http/                           # Présentation Web / Inertia
+│   ├── Controllers/
+│   │   ├── Auth/AuthController.php
+│   │   └── LandingController.php
+│   ├── Requests/Auth/
+│   │   ├── LoginRequest.php        # Rate limiting + verrouillage de compte
+│   │   └── RegisterRequest.php     # Validation forte (MDP, téléphone, unicité email)
+│   └── Middleware/
+│       └── HandleInertiaRequests.php
+└── Models/
+    └── User.php                    # Casts d'Enums, sécurité mass-assignment
 ```
 
-If either command is unavailable, detect the user's operating system and install the prerequisites with the appropriate command:
+---
 
-macOS:
+## 🎨 IDENTITÉ VISUELLE & COULEURS
 
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/mac/8.5)"
+- **Couleur Primaire** : `#004c68` (Bleu Océan Profond — Stabilité, confiance institutionnelle)
+- **Couleur Secondaire** : `#ff8806` (Orange Livraison Vif — Vitesse, dynamisme logistique)
+- **Surfaces Sombres** : `#05161f` (Fond footer & cartes premium), `#0a2533` (Surfaces de contraste)
+- **Typographie Titres** : *Outfit* (Bold & Black)
+- **Typographie Texte** : *Plus Jakarta Sans*
+
+---
+
+## 🧪 COMMANDES ESSENTIELLES DU PROJET
+
+```bash
+# Compilation des assets (développement)
+npm run dev
+
+# Compilation des assets (production Hostinger)
+npm run build
+
+# Vérification stricte TypeScript (0 erreur tolérée)
+npx tsc --noEmit
+
+# Exécution de la suite de tests automatisés (100% verts)
+php vendor/phpunit/phpunit/phpunit --testdox
+
+# Application des migrations locales
+php artisan migrate
 ```
 
-Windows PowerShell:
+---
 
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
+## 🔒 SÉCURITÉ & BONNES PRATIQUES
 
-Linux:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
-```
-
-After installation, ask the user to restart their terminal. If the agent needs the restarted shell to continue, ask the user to reopen their terminal and rerun their original prompt.
-
-## Agent Setup
-
-Install Laravel Boost from the application root before making application changes:
-
-```sh
-composer require laravel/boost --dev
-php artisan boost:install
-```
-
-Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
-</laravel-boost-guidelines>
+1. **Rôles sécurisés** : L'inscription publique force impérativement `UserRole::CLIENT`. Aucun paramètre de rôle envoyé par le navigateur n'est pris en compte.
+2. **Rate Limiting** : `LoginRequest` protège contre les attaques brute-force (5 tentatives max par IP/email avant verrouillage temporaire).
+3. **Protection CSRF** : Active sur toutes les routes POST (`/login`, `/register`, `/logout`, `/api/*`).
+4. **Secrets protégés** : Aucun secret, identifiant SSH ou mot de passe de base de données n'est commité en clair dans le code.
