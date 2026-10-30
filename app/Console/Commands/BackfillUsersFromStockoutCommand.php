@@ -148,7 +148,9 @@ class BackfillUsersFromStockoutCommand extends Command
                     'active' => $isActive ? 1 : 0,
                     'role' => $targetRole,
                     'client_type' => 'e_commerce',
-                    'store_name' => trim($row['store'] ?? '') ?: null,
+                    'store_name' => $type === 'client' 
+                        ? (trim($row['store'] ?? '') ?: trim($row['fullname'] ?? '') ?: ('Boutique #' . $id))
+                        : (trim($row['store'] ?? '') ?: null),
                     'deleted_at' => $isSoftDeleted ? now() : null,
                     'created_at' => $createdAt,
                     'updated_at' => now(),
@@ -170,14 +172,19 @@ class BackfillUsersFromStockoutCommand extends Command
                     $user->syncRoles([$targetRole]);
                 }
 
-                // Créer l'enseigne marchande si `store` est renseigné
-                $storeName = trim($row['store'] ?? '');
-                if ($storeName !== '' && $type === 'client') {
+                // Créer l'enseigne marchande pour TOUS les clients (repli sur fullname si store vide)
+                // Note : le nom est unique au niveau du même client (user_id), jamais unique globalement.
+                if ($type === 'client') {
+                    $businessName = trim($row['store'] ?? '');
+                    if ($businessName === '') {
+                        $businessName = trim($row['fullname'] ?? '') ?: ('Boutique #' . $id);
+                    }
+
                     Business::updateOrCreate(
-                        ['user_id' => $id, 'name' => $storeName],
+                        ['user_id' => $id, 'name' => $businessName],
                         [
-                            'phone' => trim($row['phone'] ?? ''),
-                            'city' => trim($row['city'] ?? ''),
+                            'phone' => trim($row['phone'] ?? '') ?: null,
+                            'city' => trim($row['city'] ?? '') ?: null,
                             'status' => 'active',
                         ]
                     );

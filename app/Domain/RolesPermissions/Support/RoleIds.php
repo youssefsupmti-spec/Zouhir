@@ -53,3 +53,4 @@ class RoleIds
         Cache::forget(self::CACHE_PREFIX . $name . '|' . $guard);
     }
 }
+

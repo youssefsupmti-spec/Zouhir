@@ -134,3 +134,4 @@ Toutes les enseignes marchandes ont été créées dans la table `businesses` su
 | **Enseignes Marchandes (`businesses`)** | **16** | **16** | **100 %** |
 | **Comptes Bancaires (`comptes_bancaires`)** | **8** | **8** | **100 %** |
 | **Base Legacy `u405480831_stockout`** | Strictement préservée en lecture seule | Zéro modification | **100 % SÉCURISÉ** |
+

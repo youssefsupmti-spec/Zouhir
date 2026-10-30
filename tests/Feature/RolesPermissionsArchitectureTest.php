@@ -128,3 +128,4 @@ class RolesPermissionsArchitectureTest extends TestCase
         $this->assertNull(User::drivers()->where('email', 'admin@ouaissexpress.com')->first());
     }
 }
+
