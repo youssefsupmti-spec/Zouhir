@@ -6,6 +6,7 @@ use App\Domain\Auth\Enums\UserRole;
 use App\Domain\Clients\Enums\ClientType;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class RegisterClientAction
 {
@@ -30,7 +31,8 @@ class RegisterClientAction
             'is_active' => true,
         ]);
 
-        // Assigner le rôle Spatie correspondant
+        // Assigner le rôle Spatie correspondant en s'assurant de son existence
+        Role::firstOrCreate(['name' => UserRole::CLIENT->value, 'guard_name' => 'web']);
         $user->assignRole(UserRole::CLIENT->value);
 
         return $user;
