@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -6,8 +6,10 @@ import { StatsCard } from '@/components/common/StatsCard';
 import { PageToolbar } from '@/components/common/PageToolbar';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ServerDataTable, DataTableFeatures } from '@/components/common/ServerDataTable';
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
+import { ClientFormDialog } from './ClientFormDialog';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Users, UserCheck, Store, Package, Plus, MoreHorizontal, Landmark, ShieldCheck } from 'lucide-react';
+import { Users, UserCheck, Store, Package, Plus, MoreHorizontal, Landmark, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -62,14 +64,56 @@ interface ClientsIndexProps {
   };
 }
 
-export default function ClientsIndex({ clients, stats, villesList, filters }: ClientsIndexProps) {
-  const handleVilleFilter = (selectedVille?: string) => {
-    const queryParams = { ...filters, ville: selectedVille || undefined, page: 1 };
-    router.get(window.location.pathname, queryParams, {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
+export default function ClientsIndex({
+  clients,
+  stats,
+  villesList,
+  filters,
+}: ClientsIndexProps) {
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<ClientItem | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingClient, setDeletingClient] = useState<ClientItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleCreate = () => {
+    setEditingClient(null);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (c: ClientItem) => {
+    setEditingClient(c);
+    setFormOpen(true);
+  };
+
+  const handleDeleteClick = (c: ClientItem) => {
+    setDeletingClient(c);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingClient) return;
+    setIsDeleting(true);
+    router.delete(`/clients/${deletingClient.id}`, {
+      onFinish: () => {
+        setIsDeleting(false);
+        setDeleteOpen(false);
+        setDeletingClient(null);
+      },
     });
+  };
+
+  const handleVilleFilter = (v?: string) => {
+    router.get(
+      '/clients',
+      {
+        ...filters,
+        ville: v,
+        page: 1,
+      },
+      { preserveState: true }
+    );
   };
 
   const columns: ColumnDef<DataTableFeatures, ClientItem>[] = [
@@ -78,7 +122,7 @@ export default function ClientsIndex({ clients, stats, villesList, filters }: Cl
       header: 'ID',
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">
-          #CL-{row.original.id}
+          #{row.original.id}
         </span>
       ),
     },
@@ -86,13 +130,18 @@ export default function ClientsIndex({ clients, stats, villesList, filters }: Cl
       accessorKey: 'nom_complet',
       header: 'Marchand',
       cell: ({ row }) => (
-        <div>
-          <span className="font-semibold text-foreground block">
-            {row.original.nom_complet}
-          </span>
-          <span className="text-xs text-muted-foreground font-mono block">
-            {row.original.email}
-          </span>
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-full bg-[#004c68]/10 text-[#004c68] dark:bg-[#004c68]/30 dark:text-cyan-300 flex items-center justify-center font-bold text-xs shrink-0">
+            {row.original.nom_complet.substring(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <span className="font-semibold text-foreground block">
+              {row.original.nom_complet}
+            </span>
+            <span className="text-xs text-muted-foreground font-mono block">
+              {row.original.email}
+            </span>
+          </div>
         </div>
       ),
     },
@@ -109,13 +158,9 @@ export default function ClientsIndex({ clients, stats, villesList, filters }: Cl
       accessorKey: 'ville',
       header: 'Ville',
       cell: ({ row }) => (
-        row.original.ville ? (
-          <Badge variant="outline" className="rounded-md text-xs font-normal">
-            {row.original.ville}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground text-xs">-</span>
-        )
+        <span className="text-xs text-foreground font-medium">
+          {row.original.ville || 'Non spécifiée'}
+        </span>
       ),
     },
     {
@@ -179,11 +224,28 @@ export default function ClientsIndex({ clients, stats, villesList, filters }: Cl
     {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
-      cell: () => (
+      cell: ({ row }) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 text-xs">
+              <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
+                <Edit className="h-3.5 w-3.5" />
+                Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDeleteClick(row.original)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Archiver
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },
@@ -201,7 +263,10 @@ export default function ClientsIndex({ clients, stats, villesList, filters }: Cl
           icon={Users}
           badge={`${stats.total} marchands`}
           actions={
-            <Button className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold">
+            <Button
+              onClick={handleCreate}
+              className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold cursor-pointer"
+            >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Nouveau Marchand
             </Button>
@@ -247,11 +312,11 @@ export default function ClientsIndex({ clients, stats, villesList, filters }: Cl
           >
             {/* Filtre par Ville */}
             <DropdownMenu>
-              <DropdownMenuTrigger render={
-                <Button variant="outline" size="sm" className="h-9 text-xs rounded-md">
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs rounded-md">
                   {filters.ville ? `Ville: ${filters.ville}` : 'Toutes les villes'}
                 </Button>
-              } />
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48 max-h-60 overflow-y-auto">
                 <DropdownMenuItem onClick={() => handleVilleFilter(undefined)} className="text-xs cursor-pointer">
                   Toutes les villes
@@ -274,6 +339,22 @@ export default function ClientsIndex({ clients, stats, villesList, filters }: Cl
           />
         </div>
       </div>
+
+      {/* Modals Dialog CRUD */}
+      <ClientFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        client={editingClient}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Archiver le compte client"
+        description={`Êtes-vous sûr de vouloir archiver le marchand "${deletingClient?.nom_complet}" ? Ses données seront conservées de manière sécurisée.`}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </AuthenticatedLayout>
   );
 }

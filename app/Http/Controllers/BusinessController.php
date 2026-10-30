@@ -53,9 +53,11 @@ class BusinessController extends Controller
         $activeBusinesses = Business::where('status', 'active')->count();
         $clientsWithBusiness = Business::distinct('user_id')->count('user_id');
         $totalClients = User::where('role', 'client')->count();
+        $clientsList = User::where('role', 'client')->select('id', 'nom_complet')->orderBy('nom_complet')->get();
 
         return Inertia::render('Businesses/Index', [
             'businesses' => $businesses,
+            'clientsList' => $clientsList,
             'stats' => [
                 'total' => $totalBusinesses,
                 'active' => $activeBusinesses,
@@ -72,4 +74,70 @@ class BusinessController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Enregistrer une nouvelle enseigne marchande.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('businesses')->where(fn ($q) => $q->where('user_id', $request->user_id)),
+            ],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'address' => ['nullable', 'string'],
+            'status' => ['nullable', 'in:active,suspended,inactive'],
+        ], [
+            'name.unique' => 'Ce client possède déjà une enseigne portant ce nom.',
+            'user_id.required' => 'Le client marchand propriétaire est requis.',
+        ]);
+
+        $validated['status'] = $validated['status'] ?? 'active';
+
+        Business::create($validated);
+
+        return back()->with('success', 'Enseigne marchande créée avec succès.');
+    }
+
+    /**
+     * Mettre à jour une enseigne marchande.
+     */
+    public function update(Request $request, Business $business)
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('businesses')
+                    ->where(fn ($q) => $q->where('user_id', $request->user_id))
+                    ->ignore($business->id),
+            ],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'address' => ['nullable', 'string'],
+            'status' => ['nullable', 'in:active,suspended,inactive'],
+        ], [
+            'name.unique' => 'Ce client possède déjà une enseigne portant ce nom.',
+        ]);
+
+        $business->update($validated);
+
+        return back()->with('success', 'Enseigne marchande mise à jour avec succès.');
+    }
+
+    /**
+     * Supprimer une enseigne marchande.
+     */
+    public function destroy(Business $business)
+    {
+        $business->delete();
+
+        return back()->with('success', 'Enseigne marchande supprimée avec succès.');
+    }
 }
+

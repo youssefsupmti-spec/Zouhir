@@ -90,4 +90,86 @@ class LivreurController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Enregistrer un nouveau coursier / livreur.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nom_complet' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'telephone' => ['required', 'string', 'max:30'],
+            'ville_name' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'in:active,suspended,inactive'],
+            'password' => ['nullable', 'string', 'min:8'],
+        ]);
+
+        $password = ! empty($validated['password']) ? $validated['password'] : 'livreur@2026';
+        $isActive = ($validated['status'] ?? 'active') === 'active';
+
+        $livreur = User::create([
+            'nom_complet' => $validated['nom_complet'],
+            'email' => $validated['email'],
+            'telephone' => $validated['telephone'],
+            'ville_name' => $validated['ville_name'] ?? null,
+            'role' => 'livreur',
+            'active' => $isActive,
+            'password' => $password,
+        ]);
+
+        if (method_exists($livreur, 'assignRole')) {
+            try {
+                $livreur->assignRole('livreur');
+            } catch (\Throwable $e) {
+                // Rôle Spatie déjà pris en charge
+            }
+        }
+
+        return back()->with('success', 'Livreur enregistré avec succès.');
+    }
+
+    /**
+     * Mettre à jour les informations du coursier.
+     */
+    public function update(Request $request, User $livreur)
+    {
+        $validated = $request->validate([
+            'nom_complet' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->ignore($livreur->id)],
+            'telephone' => ['required', 'string', 'max:30'],
+            'ville_name' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'in:active,suspended,inactive'],
+            'password' => ['nullable', 'string', 'min:8'],
+        ]);
+
+        $data = [
+            'nom_complet' => $validated['nom_complet'],
+            'email' => $validated['email'],
+            'telephone' => $validated['telephone'],
+            'ville_name' => $validated['ville_name'] ?? null,
+        ];
+
+        if (isset($validated['status'])) {
+            $data['active'] = $validated['status'] === 'active';
+        }
+
+        if (! empty($validated['password'])) {
+            $data['password'] = $validated['password'];
+        }
+
+        $livreur->update($data);
+
+        return back()->with('success', 'Fiche livreur mise à jour.');
+    }
+
+    /**
+     * Désactiver / supprimer un coursier.
+     */
+    public function destroy(User $livreur)
+    {
+        $livreur->delete();
+
+        return back()->with('success', 'Livreur archivé avec succès.');
+    }
 }

@@ -67,9 +67,13 @@ class BankController extends Controller
         $totalComptes = CompteBancaire::count();
         $linkedComptes = CompteBancaire::whereNotNull('bank_id')->count();
 
+        // Liste des acteurs pour le formulaire d'ajout
+        $ownersList = \App\Models\User::whereIn('role', ['client', 'livreur'])->select('id', 'nom_complet', 'role')->orderBy('nom_complet')->get();
+
         return Inertia::render('Banks/Index', [
             'comptes' => $comptes,
             'banks' => $banksList,
+            'owners' => $ownersList,
             'stats' => [
                 'total_banks' => $totalBanks,
                 'total_comptes' => $totalComptes,
@@ -84,4 +88,91 @@ class BankController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Enregistrer un nouveau compte bancaire (RIB BAM).
+     */
+    public function storeCompte(Request $request)
+    {
+        $validated = $request->validate([
+            'owner_id' => ['required', 'exists:users,id'],
+            'owner_type' => ['nullable', 'in:client,livreur,agence'],
+            'titulaire_nom' => ['required', 'string', 'max:255'],
+            'bank_id' => ['required', 'exists:banks,id'],
+            'rib' => ['required', 'string', 'min:24', 'max:30'],
+            'is_default' => ['nullable', 'boolean'],
+        ]);
+
+        // Nettoyage strict du RIB (chiffres uniquement)
+        $cleanRib = preg_replace('/\D/', '', $validated['rib']);
+        if (strlen($cleanRib) !== 24) {
+            return back()->withErrors(['rib' => 'Le RIB doit comporter exactement 24 chiffres (norme Bank Al-Maghrib).']);
+        }
+
+        $bank = Bank::find($validated['bank_id']);
+        $owner = \App\Models\User::find($validated['owner_id']);
+        $ownerType = $validated['owner_type'] ?? ($owner?->role?->value ?? $owner?->role ?? 'client');
+
+        $isDefault = (bool) ($validated['is_default'] ?? false);
+        if ($isDefault) {
+            CompteBancaire::where('owner_id', $validated['owner_id'])->update(['is_default' => false]);
+        }
+
+        CompteBancaire::create([
+            'owner_id' => $validated['owner_id'],
+            'owner_type' => $ownerType,
+            'titulaire_nom' => $validated['titulaire_nom'],
+            'bank_id' => $bank->id,
+            'bank_name' => $bank->name,
+            'rib' => $cleanRib,
+            'is_default' => $isDefault,
+        ]);
+
+        return back()->with('success', 'Coordonnées bancaires enregistrées avec succès.');
+    }
+
+    /**
+     * Mettre à jour un compte bancaire.
+     */
+    public function updateCompte(Request $request, CompteBancaire $compte)
+    {
+        $validated = $request->validate([
+            'titulaire_nom' => ['required', 'string', 'max:255'],
+            'bank_id' => ['required', 'exists:banks,id'],
+            'rib' => ['nullable', 'string', 'min:24', 'max:30'],
+            'is_default' => ['nullable', 'boolean'],
+        ]);
+
+        $bank = Bank::find($validated['bank_id']);
+        $compte->bank_id = $bank->id;
+        $compte->bank_name = $bank->name;
+        $compte->titulaire_nom = $validated['titulaire_nom'];
+
+        if (! empty($validated['rib'])) {
+            $cleanRib = preg_replace('/\D/', '', $validated['rib']);
+            if (strlen($cleanRib) === 24) {
+                $compte->rib = $cleanRib;
+            }
+        }
+
+        if (isset($validated['is_default']) && $validated['is_default']) {
+            CompteBancaire::where('owner_id', $compte->owner_id)->where('id', '!=', $compte->id)->update(['is_default' => false]);
+            $compte->is_default = true;
+        }
+
+        $compte->save();
+
+        return back()->with('success', 'Coordonnées bancaires mises à jour.');
+    }
+
+    /**
+     * Supprimer un compte bancaire.
+     */
+    public function destroyCompte(CompteBancaire $compte)
+    {
+        $compte->delete();
+
+        return back()->with('success', 'Compte bancaire supprimé.');
+    }
 }
+

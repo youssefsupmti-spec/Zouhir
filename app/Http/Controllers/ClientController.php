@@ -118,4 +118,97 @@ class ClientController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Enregistrer un nouveau client marchand.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'nom_complet' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'telephone' => ['required', 'string', 'max:30'],
+            'ville_name' => ['nullable', 'string', 'max:100'],
+            'store_name' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:active,suspended,inactive'],
+            'password' => ['nullable', 'string', 'min:8'],
+        ]);
+
+        $password = ! empty($validated['password']) ? $validated['password'] : 'ouaiss@2026';
+        $isActive = ($validated['status'] ?? 'active') === 'active';
+
+        $client = User::create([
+            'nom_complet' => $validated['nom_complet'],
+            'email' => $validated['email'],
+            'telephone' => $validated['telephone'],
+            'ville_name' => $validated['ville_name'] ?? null,
+            'role' => 'client',
+            'active' => $isActive,
+            'password' => $password,
+        ]);
+
+        // Assigner rôle Spatie si la méthode existe
+        if (method_exists($client, 'assignRole')) {
+            try {
+                $client->assignRole('client');
+            } catch (\Throwable $e) {
+                // Rôle Spatie déjà géré par la colonne 'role'
+            }
+        }
+
+        // Créer l'enseigne marchande initiale
+        $storeName = $validated['store_name'] ?? ('Enseigne ' . $validated['nom_complet']);
+        Business::create([
+            'user_id' => $client->id,
+            'name' => $storeName,
+            'phone' => $validated['telephone'],
+            'status' => 'active',
+        ]);
+
+        return back()->with('success', 'Client marchand créé avec succès.');
+    }
+
+    /**
+     * Mettre à jour les informations d'un client.
+     */
+    public function update(Request $request, User $client)
+    {
+        $validated = $request->validate([
+            'nom_complet' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->ignore($client->id)],
+            'telephone' => ['required', 'string', 'max:30'],
+            'ville_name' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'in:active,suspended,inactive'],
+            'password' => ['nullable', 'string', 'min:8'],
+        ]);
+
+        $data = [
+            'nom_complet' => $validated['nom_complet'],
+            'email' => $validated['email'],
+            'telephone' => $validated['telephone'],
+            'ville_name' => $validated['ville_name'] ?? null,
+        ];
+
+        if (isset($validated['status'])) {
+            $data['active'] = $validated['status'] === 'active';
+        }
+
+        if (! empty($validated['password'])) {
+            $data['password'] = $validated['password'];
+        }
+
+        $client->update($data);
+
+        return back()->with('success', 'Informations du client mises à jour.');
+    }
+
+    /**
+     * Supprimer / archiver un client.
+     */
+    public function destroy(User $client)
+    {
+        $client->delete();
+
+        return back()->with('success', 'Compte client archivé avec succès.');
+    }
 }

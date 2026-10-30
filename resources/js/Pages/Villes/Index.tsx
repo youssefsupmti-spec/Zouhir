@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatsCard } from '@/components/common/StatsCard';
 import { PageToolbar } from '@/components/common/PageToolbar';
 import { ServerDataTable, DataTableFeatures } from '@/components/common/ServerDataTable';
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
+import { VilleFormDialog } from './VilleFormDialog';
 import { type ColumnDef } from '@tanstack/react-table';
-import { MapPin, Network, Layers, Clock, Plus, MoreHorizontal } from 'lucide-react';
+import { MapPin, Network, Navigation, CheckCircle2, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,16 +18,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+interface ZoneItem {
+  id: number;
+  name: string;
+  code: string;
+}
+
 interface VilleItem {
   id: number;
   name_fr: string;
   name_ar?: string;
+  zone_id?: number;
   code_zone?: string;
-  zone?: {
-    id: number;
-    name: string;
-    code: string;
-  };
+  zone?: ZoneItem;
 }
 
 interface VillesIndexProps {
@@ -38,7 +43,7 @@ interface VillesIndexProps {
     from: number | null;
     to: number | null;
   };
-  zones: Array<{ id: number; name: string; code: string }>;
+  zones: ZoneItem[];
   stats: {
     total_villes: number;
     total_zones: number;
@@ -53,14 +58,53 @@ interface VillesIndexProps {
 }
 
 export default function VillesIndex({ villes, zones, stats, filters }: VillesIndexProps) {
-  const handleZoneFilter = (selectedZoneId?: string | number) => {
-    const queryParams = { ...filters, zone_id: selectedZoneId || undefined, page: 1 };
-    router.get(window.location.pathname, queryParams, {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingVille, setEditingVille] = useState<VilleItem | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingVille, setDeletingVille] = useState<VilleItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleCreate = () => {
+    setEditingVille(null);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (v: VilleItem) => {
+    setEditingVille(v);
+    setFormOpen(true);
+  };
+
+  const handleDeleteClick = (v: VilleItem) => {
+    setDeletingVille(v);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingVille) return;
+    setIsDeleting(true);
+    router.delete(`/villes/${deletingVille.id}`, {
+      onFinish: () => {
+        setIsDeleting(false);
+        setDeleteOpen(false);
+        setDeletingVille(null);
+      },
     });
   };
+
+  const handleZoneFilter = (zoneId?: string) => {
+    router.get(
+      '/villes',
+      {
+        ...filters,
+        zone_id: zoneId ?? 'all',
+        page: 1,
+      },
+      { preserveState: true }
+    );
+  };
+
+  const currentZone = zones.find((z) => z.id.toString() === filters.zone_id);
 
   const columns: ColumnDef<DataTableFeatures, VilleItem>[] = [
     {
@@ -85,7 +129,7 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
       accessorKey: 'name_ar',
       header: 'Ville (Arabe)',
       cell: ({ row }) => (
-        <span className="font-arabic text-sm text-muted-foreground" dir="rtl">
+        <span className="text-xs text-muted-foreground font-medium" dir="rtl">
           {row.original.name_ar || '-'}
         </span>
       ),
@@ -111,11 +155,28 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
     {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
-      cell: () => (
+      cell: ({ row }) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 text-xs">
+              <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
+                <Edit className="h-3.5 w-3.5" />
+                Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDeleteClick(row.original)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },
@@ -133,7 +194,10 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
           icon={MapPin}
           badge={`${stats.total_villes} villes`}
           actions={
-            <Button className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold">
+            <Button
+              onClick={handleCreate}
+              className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold cursor-pointer"
+            >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Ajouter une Ville
             </Button>
@@ -158,15 +222,14 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
           <StatsCard
             title="Bassin Historique"
             value="Témara (46%)"
-            description="42 569 colis urbains"
-            icon={Layers}
-            iconColor="text-blue-600 dark:text-blue-400"
+            description="Centre de tri principal"
+            icon={Navigation}
           />
           <StatsCard
-            title="Délai Moyen"
-            value="24h / 48h"
-            description="J+1 sur axe principal"
-            icon={Clock}
+            title="Intégrité Référentiel"
+            value="100 %"
+            description="Toutes rattachées à une zone"
+            icon={CheckCircle2}
             iconColor="text-emerald-600 dark:text-emerald-400"
           />
         </div>
@@ -174,27 +237,24 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
         {/* Toolbar & Server Data Table */}
         <div className="space-y-3">
           <PageToolbar
-            searchPlaceholder="Rechercher une ville (français, arabe, code)..."
+            searchPlaceholder="Rechercher une ville par nom FR, nom arabe ou zone..."
             initialSearch={filters.search}
             currentParams={filters}
           >
             {/* Filtre par Zone */}
             <DropdownMenu>
-              <DropdownMenuTrigger render={
-                <Button variant="outline" size="sm" className="h-9 text-xs rounded-md">
-                  {filters.zone_id && filters.zone_id !== 'all'
-                    ? `Zone: ${zones.find((z) => String(z.id) === String(filters.zone_id))?.code || filters.zone_id}`
-                    : 'Toutes les zones'}
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs rounded-md">
+                  {currentZone ? `Zone: ${currentZone.name}` : 'Toutes les zones'}
                 </Button>
-              } />
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52">
-                <DropdownMenuItem onClick={() => handleZoneFilter('all')} className="text-xs cursor-pointer">
+                <DropdownMenuItem onClick={() => handleZoneFilter(undefined)} className="text-xs cursor-pointer">
                   Toutes les zones
                 </DropdownMenuItem>
                 {zones.map((z) => (
-                  <DropdownMenuItem key={z.id} onClick={() => handleZoneFilter(z.id)} className="text-xs cursor-pointer">
-                    <span className="font-mono font-bold mr-2 text-[#004c68]">{z.code}</span>
-                    <span>{z.name}</span>
+                  <DropdownMenuItem key={z.id} onClick={() => handleZoneFilter(z.id.toString())} className="text-xs cursor-pointer">
+                    {z.name} ({z.code})
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -206,10 +266,27 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
             data={villes.data}
             paginationMeta={villes}
             currentParams={filters}
-            emptyMessage="Aucune ville ne correspond aux critères sélectionnés"
+            emptyMessage="Aucune ville trouvée dans ce périmètre"
           />
         </div>
       </div>
+
+      {/* Modals Dialog CRUD */}
+      <VilleFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        ville={editingVille}
+        zones={zones}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Retirer la ville du référentiel"
+        description={`Êtes-vous sûr de vouloir supprimer la ville "${deletingVille?.name_fr}" du catalogue ?`}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </AuthenticatedLayout>
   );
 }

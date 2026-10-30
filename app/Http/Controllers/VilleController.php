@@ -67,4 +67,59 @@ class VilleController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Enregistrer une nouvelle ville dans le référentiel.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name_fr' => ['required', 'string', 'max:100', 'unique:villes,name_fr'],
+            'name_ar' => ['nullable', 'string', 'max:100'],
+            'zone_id' => ['required', 'exists:zones,id'],
+            'code_zone' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        if (empty($validated['code_zone'])) {
+            $zone = Zone::find($validated['zone_id']);
+            $validated['code_zone'] = $zone?->code;
+        }
+
+        Ville::create($validated);
+
+        return back()->with('success', 'Ville ajoutée au référentiel.');
+    }
+
+    /**
+     * Mettre à jour une ville.
+     */
+    public function update(Request $request, Ville $ville)
+    {
+        $validated = $request->validate([
+            'name_fr' => ['required', 'string', 'max:100', \Illuminate\Validation\Rule::unique('villes')->ignore($ville->id)],
+            'name_ar' => ['nullable', 'string', 'max:100'],
+            'zone_id' => ['required', 'exists:zones,id'],
+            'code_zone' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        if (empty($validated['code_zone'])) {
+            $zone = Zone::find($validated['zone_id']);
+            $validated['code_zone'] = $zone?->code;
+        }
+
+        $ville->update($validated);
+
+        return back()->with('success', 'Ville mise à jour avec succès.');
+    }
+
+    /**
+     * Supprimer une ville.
+     */
+    public function destroy(Ville $ville)
+    {
+        $ville->delete();
+
+        return back()->with('success', 'Ville retirée du référentiel.');
+    }
 }
+

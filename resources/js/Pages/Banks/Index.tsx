@@ -5,11 +5,14 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { StatsCard } from '@/components/common/StatsCard';
 import { PageToolbar } from '@/components/common/PageToolbar';
 import { ServerDataTable, DataTableFeatures } from '@/components/common/ServerDataTable';
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
+import { CompteBancaireFormDialog } from './CompteBancaireFormDialog';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Landmark, CreditCard, CheckCircle2, ShieldCheck, Plus, MoreHorizontal, Copy, Check } from 'lucide-react';
+import { Landmark, CreditCard, CheckCircle2, ShieldCheck, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,38 +20,42 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface CompteItem {
-  id: number;
-  titulaire_nom: string;
-  masked_rib: string;
-  is_default: boolean;
-  bank?: {
-    id: number;
-    name: string;
-    code_etablissement?: string;
-    swift_code?: string;
-  };
-  bank_name?: string;
-  owner?: {
-    id: number;
-    nom_complet: string;
-    email: string;
-    role: string;
-  };
-}
-
 interface BankItem {
   id: number;
   name: string;
   code_etablissement?: string;
   swift_code?: string;
-  status: string;
   comptes_count?: number;
+}
+
+interface OwnerItem {
+  id: number;
+  nom_complet: string;
+  role?: string;
+}
+
+interface CompteBancaireItem {
+  id: number;
+  owner_id: number;
+  owner_type?: string;
+  titulaire_nom: string;
+  bank_id?: number;
+  bank_name?: string;
+  masked_rib: string;
+  is_default: boolean;
+  bank?: BankItem;
+  owner?: {
+    id: number;
+    nom_complet: string;
+    email: string;
+    telephone?: string;
+    role?: string;
+  };
 }
 
 interface BanksIndexProps {
   comptes: {
-    data: CompteItem[];
+    data: CompteBancaireItem[];
     current_page: number;
     last_page: number;
     per_page: number;
@@ -57,6 +64,7 @@ interface BanksIndexProps {
     to: number | null;
   };
   banks: BankItem[];
+  owners?: OwnerItem[];
   stats: {
     total_banks: number;
     total_comptes: number;
@@ -71,25 +79,64 @@ interface BanksIndexProps {
   };
 }
 
-export default function BanksIndex({ comptes, banks, stats, filters }: BanksIndexProps) {
+export default function BanksIndex({ comptes, banks, owners = [], stats, filters }: BanksIndexProps) {
   const [activeTab, setActiveTab] = useState(filters.tab || 'comptes');
 
-  const handleBankFilter = (selectedBankId?: string | number) => {
-    const queryParams = { ...filters, bank_id: selectedBankId || undefined, page: 1 };
-    router.get(window.location.pathname, queryParams, {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingCompte, setEditingCompte] = useState<CompteBancaireItem | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingCompte, setDeletingCompte] = useState<CompteBancaireItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleCreate = () => {
+    setEditingCompte(null);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (c: CompteBancaireItem) => {
+    setEditingCompte(c);
+    setFormOpen(true);
+  };
+
+  const handleDeleteClick = (c: CompteBancaireItem) => {
+    setDeletingCompte(c);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingCompte) return;
+    setIsDeleting(true);
+    router.delete(`/banks/comptes/${deletingCompte.id}`, {
+      onFinish: () => {
+        setIsDeleting(false);
+        setDeleteOpen(false);
+        setDeletingCompte(null);
+      },
     });
   };
 
-  const columns: ColumnDef<DataTableFeatures, CompteItem>[] = [
+  const handleBankFilter = (bankId?: string) => {
+    router.get(
+      '/banks',
+      {
+        ...filters,
+        bank_id: bankId ?? 'all',
+        page: 1,
+      },
+      { preserveState: true }
+    );
+  };
+
+  const currentBank = banks.find((b) => b.id.toString() === filters.bank_id);
+
+  const columns: ColumnDef<DataTableFeatures, CompteBancaireItem>[] = [
     {
       accessorKey: 'id',
       header: 'ID',
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">
-          #CB-{row.original.id}
+          #{row.original.id}
         </span>
       ),
     },
@@ -97,45 +144,34 @@ export default function BanksIndex({ comptes, banks, stats, filters }: BanksInde
       accessorKey: 'titulaire_nom',
       header: 'Titulaire du Compte',
       cell: ({ row }) => (
-        <span className="font-semibold text-foreground">
-          {row.original.titulaire_nom}
-        </span>
-      ),
-    },
-    {
-      id: 'owner',
-      header: 'Propriétaire',
-      cell: ({ row }) => (
         <div>
-          <span className="font-medium text-foreground block">
-            {row.original.owner?.nom_complet || 'Marchand OUAISS'}
+          <span className="font-semibold text-foreground block">
+            {row.original.titulaire_nom}
           </span>
-          <span className="text-xs text-muted-foreground capitalize">
-            {row.original.owner?.role || 'Client'}
+          <span className="text-xs text-muted-foreground block font-mono">
+            {row.original.owner?.nom_complet || 'Client OUAISS'} ({row.original.owner_type || 'client'})
           </span>
         </div>
       ),
     },
     {
-      id: 'bank',
-      header: 'Banque BAM',
-      cell: ({ row }) => {
-        const bankName = row.original.bank?.name || row.original.bank_name || 'Banque BAM';
-        const code = row.original.bank?.code_etablissement;
-        return (
-          <div className="flex items-center gap-1.5">
-            <Badge className="bg-[#004c68]/10 text-[#004c68] dark:bg-[#004c68]/30 dark:text-cyan-300 border-none rounded-md text-xs font-medium">
-              <Landmark className="mr-1 h-3 w-3" />
-              {bankName}
-            </Badge>
-            {code && (
-              <span className="font-mono text-xs text-muted-foreground">
-                ({code})
-              </span>
-            )}
+      id: 'banque',
+      header: 'Établissement BAM',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-md bg-[#004c68]/10 text-[#004c68] dark:bg-[#004c68]/30 dark:text-cyan-300 flex items-center justify-center font-bold text-xs shrink-0">
+            <Landmark className="h-3.5 w-3.5" />
           </div>
-        );
-      },
+          <div>
+            <span className="font-medium text-foreground block">
+              {row.original.bank?.name || row.original.bank_name || 'Banque BAM'}
+            </span>
+            <span className="text-xs text-muted-foreground block font-mono">
+              Code: {row.original.bank?.code_etablissement || 'BAM'}
+            </span>
+          </div>
+        </div>
+      ),
     },
     {
       accessorKey: 'masked_rib',
@@ -162,11 +198,28 @@ export default function BanksIndex({ comptes, banks, stats, filters }: BanksInde
     {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
-      cell: () => (
+      cell: ({ row }) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 text-xs">
+              <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
+                <Edit className="h-3.5 w-3.5" />
+                Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDeleteClick(row.original)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },
@@ -184,7 +237,10 @@ export default function BanksIndex({ comptes, banks, stats, filters }: BanksInde
           icon={Landmark}
           badge={`${stats.total_banks} banques BAM`}
           actions={
-            <Button className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold">
+            <Button
+              onClick={handleCreate}
+              className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold cursor-pointer"
+            >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Nouveau Compte
             </Button>
@@ -229,7 +285,7 @@ export default function BanksIndex({ comptes, banks, stats, filters }: BanksInde
               Comptes Bancaires Tiers ({stats.total_comptes})
             </TabsTrigger>
             <TabsTrigger value="catalogue" className="rounded-md text-xs">
-              Catalogue BAM ({stats.total_banks})
+              Catalogue Officiel BAM ({stats.total_banks})
             </TabsTrigger>
           </TabsList>
 
@@ -239,23 +295,20 @@ export default function BanksIndex({ comptes, banks, stats, filters }: BanksInde
               initialSearch={filters.search}
               currentParams={filters}
             >
-              {/* Filtre par Banque */}
+              {/* Filtre Banque */}
               <DropdownMenu>
-                <DropdownMenuTrigger render={
-                  <Button variant="outline" size="sm" className="h-9 text-xs rounded-md">
-                    {filters.bank_id && filters.bank_id !== 'all'
-                      ? `Banque: ${banks.find((b) => String(b.id) === String(filters.bank_id))?.name || filters.bank_id}`
-                      : 'Toutes les banques'}
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs rounded-md">
+                    {currentBank ? `Banque: ${currentBank.name}` : 'Toutes les banques'}
                   </Button>
-                } />
+                </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56 max-h-60 overflow-y-auto">
-                  <DropdownMenuItem onClick={() => handleBankFilter('all')} className="text-xs cursor-pointer">
+                  <DropdownMenuItem onClick={() => handleBankFilter(undefined)} className="text-xs cursor-pointer">
                     Toutes les banques
                   </DropdownMenuItem>
                   {banks.map((b) => (
-                    <DropdownMenuItem key={b.id} onClick={() => handleBankFilter(b.id)} className="text-xs cursor-pointer">
-                      <span className="font-mono text-muted-foreground mr-1.5">[{b.code_etablissement}]</span>
-                      <span>{b.name}</span>
+                    <DropdownMenuItem key={b.id} onClick={() => handleBankFilter(b.id.toString())} className="text-xs cursor-pointer">
+                      {b.name} (Code {b.code_etablissement})
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -267,36 +320,50 @@ export default function BanksIndex({ comptes, banks, stats, filters }: BanksInde
               data={comptes.data}
               paginationMeta={comptes}
               currentParams={filters}
-              emptyMessage="Aucun compte bancaire trouvé"
+              emptyMessage="Aucun compte bancaire enregistré"
             />
           </TabsContent>
 
           <TabsContent value="catalogue">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {banks.map((bank) => (
-                <div key={bank.id} className="p-4 rounded-md border border-border bg-card shadow-2xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      Code BAM: {bank.code_etablissement || 'N/A'}
-                    </Badge>
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-none text-xs">
-                      {bank.status}
-                    </Badge>
-                  </div>
-                  <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
-                    <Landmark className="h-4 w-4 text-[#004c68] dark:text-[#ff8806]" />
-                    {bank.name}
-                  </h3>
-                  <div className="text-xs text-muted-foreground flex justify-between pt-1 border-t border-border/60">
-                    <span>SWIFT: {bank.swift_code || '-'}</span>
-                    <span className="font-medium text-foreground">{bank.comptes_count || 0} comptes reliés</span>
-                  </div>
-                </div>
+              {banks.map((b) => (
+                <Card key={b.id} className="p-4 rounded-lg bg-card border-border shadow-xs">
+                  <CardContent className="p-0 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-foreground">{b.name}</span>
+                      <Badge className="bg-[#004c68]/10 text-[#004c68] dark:bg-[#004c68]/30 dark:text-cyan-300 border-none font-mono text-xs">
+                        Code {b.code_etablissement}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center justify-between">
+                      <span>Code SWIFT : <span className="font-mono">{b.swift_code || '-'}</span></span>
+                      <span>Comptes liés : <strong>{b.comptes_count ?? 0}</strong></span>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modals Dialog CRUD */}
+      <CompteBancaireFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        compte={editingCompte}
+        banks={banks}
+        owners={owners}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Supprimer les coordonnées bancaires"
+        description={`Êtes-vous sûr de vouloir supprimer le compte bancaire de "${deletingCompte?.titulaire_nom}" ?`}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </AuthenticatedLayout>
   );
 }

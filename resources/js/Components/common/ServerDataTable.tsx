@@ -199,3 +199,4 @@ export function ServerDataTable<TData extends RowData>({
     </div>
   );
 }
+

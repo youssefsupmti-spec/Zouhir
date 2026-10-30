@@ -1,20 +1,28 @@
-import React from 'react';
-import { Head } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatsCard } from '@/components/common/StatsCard';
 import { PageToolbar } from '@/components/common/PageToolbar';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ServerDataTable, DataTableFeatures } from '@/components/common/ServerDataTable';
+import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
+import { LivreurFormDialog } from './LivreurFormDialog';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Truck, CheckCircle2, Package, MapPin, Plus, MoreHorizontal } from 'lucide-react';
+import { Truck, CheckCircle2, Package, MapPin, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface LivreurItem {
   id: number;
   nom_complet: string;
+  email?: string;
   telephone?: string;
   ville?: string;
   status: string;
@@ -50,38 +58,77 @@ interface LivreursIndexProps {
 }
 
 export default function LivreursIndex({ livreurs, stats, filters }: LivreursIndexProps) {
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingLivreur, setEditingLivreur] = useState<LivreurItem | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingLivreur, setDeletingLivreur] = useState<LivreurItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleCreate = () => {
+    setEditingLivreur(null);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (l: LivreurItem) => {
+    setEditingLivreur(l);
+    setFormOpen(true);
+  };
+
+  const handleDeleteClick = (l: LivreurItem) => {
+    setDeletingLivreur(l);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingLivreur) return;
+    setIsDeleting(true);
+    router.delete(`/livreurs/${deletingLivreur.id}`, {
+      onFinish: () => {
+        setIsDeleting(false);
+        setDeleteOpen(false);
+        setDeletingLivreur(null);
+      },
+    });
+  };
+
   const columns: ColumnDef<DataTableFeatures, LivreurItem>[] = [
     {
       accessorKey: 'id',
       header: 'ID',
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">
-          #LIV-{row.original.id}
+          #{row.original.id}
         </span>
       ),
     },
     {
       accessorKey: 'nom_complet',
-      header: 'Livreur (DLM)',
+      header: 'Livreur',
       cell: ({ row }) => (
-        <div>
-          <span className="font-semibold text-foreground block">
-            {row.original.nom_complet}
-          </span>
-          <span className="text-xs text-muted-foreground font-mono block">
-            {row.original.telephone || '-'}
-          </span>
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-full bg-[#ff8806]/10 text-[#c26200] dark:bg-[#ff8806]/30 dark:text-orange-300 flex items-center justify-center font-bold text-xs shrink-0">
+            {row.original.nom_complet.substring(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <span className="font-semibold text-foreground block">
+              {row.original.nom_complet}
+            </span>
+            <span className="text-xs text-muted-foreground font-mono block">
+              {row.original.telephone || '-'}
+            </span>
+          </div>
         </div>
       ),
     },
     {
       accessorKey: 'ville',
-      header: 'Zone / Ville',
+      header: 'Secteur',
       cell: ({ row }) => (
-        <Badge className="bg-[#004c68]/10 text-[#004c68] dark:bg-[#004c68]/30 dark:text-cyan-300 border-none rounded-md text-xs">
-          <MapPin className="mr-1 h-3 w-3" />
-          {row.original.ville || 'Témara'}
-        </Badge>
+        <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
+          <MapPin className="h-3 w-3 text-muted-foreground" />
+          <span>{row.original.ville || 'Toutes zones'}</span>
+        </div>
       ),
     },
     {
@@ -122,11 +169,28 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
     {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
-      cell: () => (
+      cell: ({ row }) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 text-xs">
+              <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
+                <Edit className="h-3.5 w-3.5" />
+                Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDeleteClick(row.original)}
+                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Archiver
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },
@@ -144,7 +208,10 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
           icon={Truck}
           badge={`${stats.total} livreurs`}
           actions={
-            <Button className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold">
+            <Button
+              onClick={handleCreate}
+              className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold cursor-pointer"
+            >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Nouveau Livreur
             </Button>
@@ -185,7 +252,7 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
         {/* Toolbar & Server Data Table */}
         <div className="space-y-3">
           <PageToolbar
-            searchPlaceholder="Rechercher un livreur par nom, GSM, ville..."
+            searchPlaceholder="Rechercher par nom de coursier, téléphone, ville..."
             initialSearch={filters.search}
             currentParams={filters}
           />
@@ -195,10 +262,26 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
             data={livreurs.data}
             paginationMeta={livreurs}
             currentParams={filters}
-            emptyMessage="Aucun livreur trouvé pour cette recherche"
+            emptyMessage="Aucun coursier trouvé"
           />
         </div>
       </div>
+
+      {/* Modals Dialog CRUD */}
+      <LivreurFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        livreur={editingLivreur}
+      />
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Archiver le livreur"
+        description={`Êtes-vous sûr de vouloir archiver le coursier "${deletingLivreur?.nom_complet}" ? Ses tournées passées resteront archivées.`}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </AuthenticatedLayout>
   );
 }
