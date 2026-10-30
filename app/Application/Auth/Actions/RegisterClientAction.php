@@ -15,7 +15,7 @@ class RegisterClientAction
      */
     public function execute(array $data): User
     {
-        return User::create([
+        $user = User::create([
             'name' => trim($data['name']),
             'email' => strtolower(trim($data['email'])),
             'phone' => trim($data['phone']),
@@ -29,5 +29,10 @@ class RegisterClientAction
             'address' => isset($data['address']) ? trim($data['address']) : null,
             'is_active' => true,
         ]);
+
+        // Assigner le rôle Spatie correspondant
+        $user->assignRole(UserRole::CLIENT->value);
+
+        return $user;
     }
 }

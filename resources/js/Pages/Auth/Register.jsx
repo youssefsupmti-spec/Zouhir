@@ -68,6 +68,16 @@ export default function Register() {
 
             {/* Left Column: Visual Brand Storytelling */}
             <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#004c68] via-[#072432] to-[#05161f] text-white p-12 flex-col justify-between relative overflow-hidden">
+                {/* Background Image Texture */}
+                <div className="absolute inset-0 z-0 opacity-20 mix-blend-overlay pointer-events-none">
+                    <img 
+                        src="/images/login-bg.webp" 
+                        alt="Logistique OUAISS EXPRESS" 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => { e.target.src = '/images/login-bg.jpg'; }}
+                    />
+                </div>
+
                 {/* Decorative glowing backdrops */}
                 <div className="absolute top-0 right-0 w-80 h-80 bg-[#ff8806]/15 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute bottom-10 left-10 w-80 h-80 bg-[#004c68]/30 rounded-full blur-3xl pointer-events-none" />

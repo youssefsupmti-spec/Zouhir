@@ -70,14 +70,16 @@ export default function Navbar({ onOpenTracking }) {
                     <div className="hidden sm:flex items-center gap-3">
                         {auth?.user ? (
                             <div className="flex items-center gap-3">
-                                <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full">
-                                    Bonjour, {auth.user.name}
-                                </span>
+                                <Link href="/dashboard">
+                                    <Button variant="primary" size="sm" icon={User} className="font-bold shadow-md shadow-[#004c68]/20">
+                                        Mon Tableau de Bord
+                                    </Button>
+                                </Link>
                                 <Link
                                     href="/logout"
                                     method="post"
                                     as="button"
-                                    className="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-red-50 transition-colors"
+                                    className="text-xs font-semibold text-slate-500 hover:text-red-600 flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-red-50 transition-colors"
                                 >
                                     <LogOut className="w-3.5 h-3.5" />
                                     <span>Déconnexion</span>
@@ -151,14 +153,21 @@ export default function Navbar({ onOpenTracking }) {
 
                         <div className="pt-2 flex flex-col gap-2.5">
                             {auth?.user ? (
-                                <Link
-                                    href="/logout"
-                                    method="post"
-                                    as="button"
-                                    className="w-full text-center text-xs font-semibold text-red-600 py-2.5 rounded-xl border border-red-200"
-                                >
-                                    Se déconnecter ({auth.user.name})
-                                </Link>
+                                <div className="space-y-2">
+                                    <Link href="/dashboard" className="w-full">
+                                        <Button variant="primary" size="md" className="w-full font-bold">
+                                            Mon Tableau de Bord
+                                        </Button>
+                                    </Link>
+                                    <Link
+                                        href="/logout"
+                                        method="post"
+                                        as="button"
+                                        className="w-full text-center text-xs font-semibold text-red-600 py-2.5 rounded-xl border border-red-200"
+                                    >
+                                        Se déconnecter ({auth.user.name})
+                                    </Link>
+                                </div>
                             ) : (
                                 <>
                                     <Link href="/login" className="w-full">

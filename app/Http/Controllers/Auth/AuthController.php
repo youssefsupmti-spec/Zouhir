@@ -33,7 +33,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended('/')->with('success', 'Bienvenue sur votre espace Ouais Express !');
+        return redirect()->intended(route('dashboard'))->with('success', 'Bienvenue sur votre espace OUAISS EXPRESS !');
     }
 
     /**
@@ -55,7 +55,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect('/')->with('success', 'Votre compte Ouais Express a été créé avec succès.');
+        return redirect(route('dashboard'))->with('success', 'Votre compte OUAISS EXPRESS a été créé avec succès.');
     }
 
     /**
