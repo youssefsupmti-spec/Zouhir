@@ -33,7 +33,7 @@ class AuthTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect('/');
+        $response->assertRedirect('/dashboard');
     }
 
     public function test_users_cannot_authenticate_with_invalid_password(): void
@@ -74,13 +74,47 @@ class AuthTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect('/');
+        $response->assertRedirect('/dashboard');
 
         $this->assertDatabaseHas('users', [
             'email' => 'zouhir@boutique.ma',
             'role' => UserRole::CLIENT->value,
             'store_name' => 'Zouhir Store',
         ]);
+
+        $createdUser = User::where('email', 'zouhir@boutique.ma')->first();
+        $this->assertTrue($createdUser->hasRole('client'), 'Le rôle Spatie client doit être assigné');
+    }
+
+    public function test_guest_accessing_dashboard_is_redirected_to_login(): void
+    {
+        $response = $this->get('/dashboard');
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_authenticated_user_accessing_login_is_redirected_to_dashboard(): void
+    {
+        $user = User::factory()->create([
+            'role' => UserRole::CLIENT,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->get('/login');
+
+        $response->assertRedirect('/dashboard');
+    }
+
+    public function test_authenticated_client_can_access_dashboard(): void
+    {
+        $user = User::factory()->create([
+            'role' => UserRole::CLIENT,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->get('/dashboard');
+
+        $response->assertStatus(200);
     }
 
     public function test_registration_strictly_forces_client_role_even_if_tampered(): void
