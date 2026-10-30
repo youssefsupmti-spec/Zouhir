@@ -8,10 +8,15 @@
     <title inertia>{{ config('app.name', 'Ouais Express') }} - Livraison Express & Logistique au Maroc</title>
     <meta name="description" content="Ouais Express - Votre partenaire logistique de référence au Maroc. Livraison e-commerce 24/48h, ramassage gratuit, gestion des retours et remboursement CRBT express.">
 
-    <!-- Fonts -->
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/images/logo-icon-192.png">
+
+    <!-- Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Scripts & Styles -->
     @viteReactRefresh

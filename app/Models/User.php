@@ -7,10 +7,11 @@ use App\Domain\Clients\Enums\ClientType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -58,11 +59,31 @@ class User extends Authenticatable
 
     public function isClient(): bool
     {
-        return $this->role === UserRole::CLIENT;
+        return $this->role === UserRole::CLIENT || $this->hasRole(UserRole::CLIENT->value);
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::ADMIN;
+        return $this->role === UserRole::ADMIN || $this->hasRole(UserRole::ADMIN->value);
+    }
+
+    public function isDriver(): bool
+    {
+        return $this->role === UserRole::LIVREUR || $this->hasRole(UserRole::LIVREUR->value);
+    }
+
+    public function isAgency(): bool
+    {
+        return $this->role === UserRole::AGENCE || $this->hasRole(UserRole::AGENCE->value);
+    }
+
+    public function isOperator(): bool
+    {
+        return $this->role === UserRole::OPERATEUR || $this->hasRole(UserRole::OPERATEUR->value);
+    }
+
+    public function canAccessDashboard(): bool
+    {
+        return (bool) $this->is_active;
     }
 }
