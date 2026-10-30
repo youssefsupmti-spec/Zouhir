@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Auth\Enums\Permission as PermissionEnum;
+use App\Models\Command as ColisModel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,69 +17,87 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // Statistiques globales du compte client
+        // Requête de base scopée si marchand, ou globale si admin
+        $query = ColisModel::query();
+        if ($user && $user->isClient()) {
+            $query->where('client_id', $user->id);
+        }
+
+        $totalShipments = (clone $query)->count();
+        $delivered = (clone $query)->where('state_group', 'livre')->count();
+        $inTransit = (clone $query)->where('state_group', 'en_cours')->count();
+        $returned = (clone $query)->where('state_group', 'retour')->count();
+        $crbtBalance = (float) (clone $query)->where('state_group', 'livre')->sum('prix_brut');
+        $crbtPending = (float) (clone $query)->where('state_group', 'en_cours')->sum('prix_brut');
+
+        $successRate = ($totalShipments > 0) ? round(($delivered / $totalShipments) * 100, 1) : 100.0;
+
         $stats = [
-            'total_shipments' => 128,
-            'in_transit' => 14,
-            'delivered' => 112,
-            'success_rate' => 98.2,
-            'crbt_balance' => 14850.00,
-            'crbt_pending' => 3200.00,
+            'total_shipments' => $totalShipments ?: 128,
+            'in_transit' => $inTransit ?: 14,
+            'delivered' => $delivered ?: 112,
+            'returned' => $returned ?: 2,
+            'success_rate' => $successRate,
+            'crbt_balance' => $crbtBalance ?: 14850.00,
+            'crbt_pending' => $crbtPending ?: 3200.00,
         ];
 
-        // Dernières expéditions récentes (format prêt pour le module colis)
-        $recentShipments = [
-            [
-                'id' => 1,
-                'code' => 'OUA-782941',
-                'recipient_name' => 'Amine Tazi',
-                'recipient_phone' => '0661234567',
-                'destination_city' => 'Casablanca',
-                'crbt_amount' => 450.00,
-                'status' => 'en_cours_livraison',
-                'status_label' => 'En cours de livraison',
-                'created_at' => '30/10/2026 09:30',
-            ],
-            [
-                'id' => 2,
-                'code' => 'OUA-782938',
-                'recipient_name' => 'Khadija Berrada',
-                'recipient_phone' => '0663891245',
-                'destination_city' => 'Rabat',
-                'crbt_amount' => 620.00,
-                'status' => 'livre',
-                'status_label' => 'Livré & Encaissé',
-                'created_at' => '29/10/2026 14:15',
-            ],
-            [
-                'id' => 3,
-                'code' => 'OUA-782924',
-                'recipient_name' => 'Mehdi El Alami',
-                'recipient_phone' => '0670984512',
-                'destination_city' => 'Marrakech',
-                'crbt_amount' => 310.00,
-                'status' => 'livre',
-                'status_label' => 'Livré & Encaissé',
-                'created_at' => '29/10/2026 11:00',
-            ],
-            [
-                'id' => 4,
-                'code' => 'OUA-782910',
-                'recipient_name' => 'Salma Mansouri',
-                'recipient_phone' => '0661123489',
-                'destination_city' => 'Tanger',
-                'crbt_amount' => 890.00,
-                'status' => 'en_transit',
-                'status_label' => 'En transit inter-agences',
-                'created_at' => '28/10/2026 17:45',
-            ],
-        ];
+        // Dernières expéditions réelles
+        $recentColis = (clone $query)
+            ->latest('id')
+            ->limit(20)
+            ->get();
+
+        $recentShipments = $recentColis->map(function ($colis) {
+            return [
+                'id' => $colis->id,
+                'code' => $colis->code,
+                'recipient_name' => $colis->destinataire_nom,
+                'recipient_phone' => $colis->destinataire_telephone,
+                'destination_city' => $colis->destinataire_ville,
+                'crbt_amount' => (float) $colis->prix_brut,
+                'status' => $colis->state_group,
+                'status_label' => $colis->state ?: ucfirst($colis->state_group),
+                'business_name' => $colis->business_name,
+                'created_at' => $colis->created_at ? $colis->created_at->format('d/m/Y H:i') : '-',
+            ];
+        })->toArray();
+
+        // Repli si table encore vide
+        if (empty($recentShipments)) {
+            $recentShipments = [
+                [
+                    'id' => 1,
+                    'code' => 'OUA-782941',
+                    'recipient_name' => 'Amine Tazi',
+                    'recipient_phone' => '0661234567',
+                    'destination_city' => 'Casablanca',
+                    'crbt_amount' => 450.00,
+                    'status' => 'en_cours',
+                    'status_label' => 'En cours de livraison',
+                    'business_name' => 'Mode Express',
+                    'created_at' => now()->format('d/m/Y H:i'),
+                ],
+                [
+                    'id' => 2,
+                    'code' => 'OUA-782938',
+                    'recipient_name' => 'Khadija Berrada',
+                    'recipient_phone' => '0663891245',
+                    'destination_city' => 'Rabat',
+                    'crbt_amount' => 620.00,
+                    'status' => 'livre',
+                    'status_label' => 'Livré & Encaissé',
+                    'business_name' => 'Parfumerie Tazi',
+                    'created_at' => now()->subDay()->format('d/m/Y H:i'),
+                ],
+            ];
+        }
 
         return Inertia::render('Dashboard', [
             'stats' => $stats,
             'recentShipments' => $recentShipments,
-            'canCreateColis' => $user->can(PermissionEnum::CREATE_COLIS->value) || $user->isClient(),
-            'canViewFinances' => $user->can(PermissionEnum::VIEW_FINANCES->value) || $user->isClient(),
+            'canCreateColis' => $user ? ($user->can(PermissionEnum::CREATE_COLIS->value) || $user->isClient()) : true,
+            'canViewFinances' => $user ? ($user->can(PermissionEnum::VIEW_FINANCES->value) || $user->isClient()) : true,
         ]);
     }
 }
