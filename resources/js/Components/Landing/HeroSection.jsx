@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import Button from '@/components/ui/AppButton';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/AppBadge';
 import { 
     Search, 
     ArrowRight, 

@@ -16,7 +16,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/AppBadge';
 import { CheckCircle2, X } from 'lucide-react';
 
 export default function AuthenticatedLayout({ children, title = "Tableau de bord" }) {

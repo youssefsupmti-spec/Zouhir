@@ -3,7 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/AppButton';
 import Input from '@/components/ui/AppInput';
-import Badge from '@/components/ui/Badge';
+import Badge from '@/components/ui/AppBadge';
 import { 
     Mail, 
     Lock, 
