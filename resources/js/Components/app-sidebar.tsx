@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePage } from "@inertiajs/react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
@@ -13,180 +14,161 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
+import { 
+  TruckIcon, 
+  PackageIcon, 
+  LayoutDashboardIcon, 
+  WalletIcon, 
+  Settings2Icon, 
+  GlobeIcon, 
+  CalculatorIcon, 
+  PhoneCallIcon,
+  ShieldCheckIcon,
+  Building2Icon
+} from "lucide-react"
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { auth = {} } = usePage().props as any
+  const user = auth?.user || {
+    name: "Client OUAISS",
+    email: "contact@ouaissexpress.com",
+    avatar: "/favicon.png",
+  }
+
+  const teams = [
     {
-      name: "Acme Inc",
-      logo: (
-        <GalleryVerticalEndIcon
-        />
-      ),
-      plan: "Enterprise",
+      name: "OUAISS EXPRESS",
+      logo: <TruckIcon className="size-4 text-[#ff8806]" />,
+      plan: "Hub National Casablanca",
     },
     {
-      name: "Acme Corp.",
-      logo: (
-        <AudioLinesIcon
-        />
-      ),
-      plan: "Startup",
+      name: "Agence Rabat",
+      logo: <Building2Icon className="size-4 text-emerald-400" />,
+      plan: "Hub Régional Centre",
     },
     {
-      name: "Evil Corp.",
-      logo: (
-        <TerminalIcon
-        />
-      ),
-      plan: "Free",
+      name: "Agence Tanger",
+      logo: <Building2Icon className="size-4 text-sky-400" />,
+      plan: "Hub Nord & Port",
     },
-  ],
-  navMain: [
+  ]
+
+  const navMain = [
     {
-      title: "Playground",
-      url: "#",
-      icon: (
-        <TerminalSquareIcon
-        />
-      ),
+      title: "Tableau de bord",
+      url: "/dashboard",
+      icon: <LayoutDashboardIcon className="size-4" />,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Vue d'ensemble",
+          url: "/dashboard",
         },
         {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
+          title: "Performances & Taux",
+          url: "/dashboard",
         },
       ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: (
-        <BotIcon
-        />
-      ),
+      title: "Expéditions & Colis",
+      url: "/dashboard",
+      icon: <PackageIcon className="size-4" />,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Toutes les expéditions",
+          url: "/dashboard",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "Nouveau Colis Express",
+          url: "/dashboard",
         },
         {
-          title: "Quantum",
-          url: "#",
+          title: "Demande de Ramassage",
+          url: "/dashboard",
         },
       ],
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: (
-        <BookOpenIcon
-        />
-      ),
+      title: "Suivi National",
+      url: "/dashboard",
+      icon: <TruckIcon className="size-4" />,
       items: [
         {
-          title: "Introduction",
-          url: "#",
+          title: "Recherche en direct",
+          url: "/dashboard",
         },
         {
-          title: "Get Started",
-          url: "#",
+          title: "En cours de livraison",
+          url: "/dashboard",
         },
         {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
+          title: "Retours & Réclamations",
+          url: "/dashboard",
         },
       ],
     },
     {
-      title: "Settings",
-      url: "#",
-      icon: (
-        <Settings2Icon
-        />
-      ),
+      title: "Finances & CRBT",
+      url: "/dashboard",
+      icon: <WalletIcon className="size-4" />,
       items: [
         {
-          title: "General",
-          url: "#",
+          title: "Relevés de paiement (MAD)",
+          url: "/dashboard",
         },
         {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
+          title: "Historique des virements",
+          url: "/dashboard",
         },
       ],
     },
-  ],
-  projects: [
     {
-      name: "Design Engineering",
-      url: "#",
-      icon: (
-        <FrameIcon
-        />
-      ),
+      title: "Paramètres Compte",
+      url: "/dashboard",
+      icon: <Settings2Icon className="size-4" />,
+      items: [
+        {
+          title: "Boutique & Adresses",
+          url: "/dashboard",
+        },
+        {
+          title: "Tarifs & Conventions",
+          url: "/dashboard",
+        },
+      ],
     },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: (
-        <PieChartIcon
-        />
-      ),
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: (
-        <MapIcon
-        />
-      ),
-    },
-  ],
-}
+  ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const quickLinks = [
+    {
+      name: "Vitrine Publique",
+      url: "/",
+      icon: <GlobeIcon className="size-4" />,
+    },
+    {
+      name: "Calculateur Tarifs",
+      url: "/#tarifs",
+      icon: <CalculatorIcon className="size-4" />,
+    },
+    {
+      name: "Support WhatsApp",
+      url: "https://wa.me/212600000000",
+      icon: <PhoneCallIcon className="size-4" />,
+    },
+  ]
+
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+    <Sidebar collapsible="icon" className="bg-[#05161f] text-white border-r border-slate-800" {...props}>
+      <SidebarHeader className="border-b border-slate-800/80 p-3">
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+      <SidebarContent className="px-2 py-3">
+        <NavMain items={navMain} />
+        <NavProjects projects={quickLinks} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+      <SidebarFooter className="border-t border-slate-800/80 p-3">
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
