@@ -152,3 +152,4 @@ class ColisManagementTest extends TestCase
         $this->assertSoftDeleted('commands', ['id' => $colis->id]);
     }
 }
+
