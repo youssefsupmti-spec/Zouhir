@@ -63,4 +63,19 @@ Route::middleware('auth')->group(function () {
     Route::put('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'update'])->name('colis.update');
     Route::patch('/colis/{coli}/state', [\App\Http\Controllers\ColisController::class, 'updateState'])->name('colis.state');
     Route::delete('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'destroy'])->name('colis.destroy');
+
+    // Administration & Sécurité : rôles et permissions Spatie (Sprint 25).
+    // Autorisation dans les contrôleurs / FormRequests (RolePolicy, PermissionPolicy).
+    Route::get('/roles', [\App\Http\Controllers\RoleController::class, 'index'])->name('roles.index');
+    Route::post('/roles', [\App\Http\Controllers\RoleController::class, 'store'])->name('roles.store');
+    Route::get('/roles/{role}', [\App\Http\Controllers\RoleController::class, 'show'])->name('roles.show');
+    Route::put('/roles/{role}', [\App\Http\Controllers\RoleController::class, 'update'])->name('roles.update');
+    Route::delete('/roles/{role}', [\App\Http\Controllers\RoleController::class, 'destroy'])->name('roles.destroy');
+    Route::post('/roles/{role}/duplicate', [\App\Http\Controllers\RoleController::class, 'duplicate'])->name('roles.duplicate');
+    Route::post('/roles/{role}/users', [\App\Http\Controllers\RoleController::class, 'addMember'])->name('roles.users.store');
+    Route::delete('/roles/{role}/users/{user}', [\App\Http\Controllers\RoleController::class, 'removeMember'])->name('roles.users.destroy');
+
+    Route::get('/permissions', [\App\Http\Controllers\PermissionController::class, 'index'])->name('permissions.index');
+    Route::post('/permissions/sync', [\App\Http\Controllers\PermissionController::class, 'synchronize'])->name('permissions.sync');
+    Route::delete('/permissions/{permission}', [\App\Http\Controllers\PermissionController::class, 'destroy'])->name('permissions.destroy');
 });

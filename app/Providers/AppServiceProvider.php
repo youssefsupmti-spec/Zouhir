@@ -12,10 +12,13 @@ use App\Models\Ville;
 use App\Policies\BusinessPolicy;
 use App\Policies\CommandPolicy;
 use App\Policies\CompteBancairePolicy;
+use App\Policies\PermissionPolicy;
+use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
 use App\Policies\VillePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
@@ -57,5 +60,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Business::class, BusinessPolicy::class);
         Gate::policy(CompteBancaire::class, CompteBancairePolicy::class);
         Gate::policy(Ville::class, VillePolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
+        Gate::policy(Permission::class, PermissionPolicy::class);
     }
 }
