@@ -104,21 +104,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Expéditions & Colis",
-      url: "/dashboard",
+      url: "/colis",
       icon: <PackageIcon className="size-4" />,
-      badge: "128",
+      badge: "Colis",
       items: [
         {
           title: "Toutes les expéditions",
-          url: "/dashboard",
+          url: "/colis",
         },
         {
           title: "Nouveau Colis Express",
-          url: "/dashboard",
-        },
-        {
-          title: "Demande de Ramassage",
-          url: "/dashboard",
+          url: "/colis",
         },
       ],
     },

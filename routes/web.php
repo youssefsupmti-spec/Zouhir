@@ -56,4 +56,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/banks/comptes', [\App\Http\Controllers\BankController::class, 'storeCompte'])->name('banks.comptes.store');
     Route::put('/banks/comptes/{compte}', [\App\Http\Controllers\BankController::class, 'updateCompte'])->name('banks.comptes.update');
     Route::delete('/banks/comptes/{compte}', [\App\Http\Controllers\BankController::class, 'destroyCompte'])->name('banks.comptes.destroy');
+
+    // Colis & Expéditions (Sprint 3)
+    Route::get('/colis', [\App\Http\Controllers\ColisController::class, 'index'])->name('colis.index');
+    Route::post('/colis', [\App\Http\Controllers\ColisController::class, 'store'])->name('colis.store');
+    Route::put('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'update'])->name('colis.update');
+    Route::patch('/colis/{coli}/state', [\App\Http\Controllers\ColisController::class, 'updateState'])->name('colis.state');
+    Route::delete('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'destroy'])->name('colis.destroy');
 });
