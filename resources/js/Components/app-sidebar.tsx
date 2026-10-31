@@ -3,7 +3,7 @@
 import * as React from "react"
 import { usePage } from "@inertiajs/react"
 
-import { NavMain } from "@/components/nav-main"
+import { NavMain, type NavItem } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
@@ -19,19 +19,16 @@ import {
   PackageIcon, 
   LayoutDashboardIcon, 
   WalletIcon, 
-  Settings2Icon, 
   GlobeIcon, 
   CalculatorIcon, 
   PhoneCallIcon,
   Building2Icon,
-  UsersIcon,
-  MapPinIcon,
-  LandmarkIcon,
   StoreIcon
 } from "lucide-react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { auth = {} } = usePage().props as any
+  const pageProps = usePage().props as any
+  const auth = pageProps?.auth || {}
   const user = auth?.user || {
     name: "Client OUAISS",
     email: "contact@ouaissexpress.com",
@@ -56,29 +53,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
   ]
 
-  const navMain = [
+  const navMain: NavItem[] = [
     {
       title: "Tableau de bord",
       url: "/dashboard",
       icon: <LayoutDashboardIcon className="size-4" />,
-      isActive: true,
+    },
+    {
+      title: "Expéditions & Colis",
+      url: "/colis",
+      icon: <PackageIcon className="size-4" />,
+      badge: "Colis",
       items: [
         {
-          title: "Vue d'ensemble",
-          url: "/dashboard",
+          title: "Toutes les expéditions",
+          url: "/colis",
         },
         {
-          title: "Performances & Taux",
-          url: "/dashboard",
+          title: "Historique & Suivi AWB",
+          badge: "Bientôt",
+          disabled: true,
         },
       ],
     },
     {
       title: "Référentiels Métier",
-      url: "/businesses",
       icon: <StoreIcon className="size-4" />,
       badge: "5",
-      isActive: true,
       items: [
         {
           title: "Enseignes & Boutiques",
@@ -103,44 +104,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ],
     },
     {
-      title: "Expéditions & Colis",
-      url: "/colis",
-      icon: <PackageIcon className="size-4" />,
-      badge: "Colis",
-      items: [
-        {
-          title: "Toutes les expéditions",
-          url: "/colis",
-        },
-        {
-          title: "Nouveau Colis Express",
-          url: "/colis",
-        },
-      ],
-    },
-    {
       title: "Suivi National",
-      url: "/dashboard",
       icon: <TruckIcon className="size-4" />,
-      badge: "14",
+      badge: "Bientôt",
       items: [
         {
           title: "Recherche par Code",
-          url: "/dashboard",
+          badge: "Bientôt",
+          disabled: true,
         },
         {
           title: "Colis en cours de livraison",
-          url: "/dashboard",
+          badge: "Bientôt",
+          disabled: true,
         },
         {
           title: "Retours & Réclamations",
-          url: "/dashboard",
+          badge: "Bientôt",
+          disabled: true,
         },
       ],
     },
     {
       title: "Finances & CRBT",
-      url: "/banks",
       icon: <WalletIcon className="size-4" />,
       badge: "MAD",
       items: [
@@ -150,11 +136,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         {
           title: "Relevés de paiement (CRBT)",
-          url: "/dashboard",
+          badge: "Bientôt",
+          disabled: true,
         },
         {
           title: "Historique des virements",
-          url: "/dashboard",
+          badge: "Bientôt",
+          disabled: true,
         },
       ],
     },
