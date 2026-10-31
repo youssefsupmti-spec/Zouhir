@@ -57,11 +57,11 @@ export function NavUser({
             render={
               <SidebarMenuButton 
                 size="lg" 
-                className="w-full data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground hover:bg-sidebar-accent/80 transition-colors rounded-xl p-2" 
+                className="w-full data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground hover:bg-sidebar-accent/80 transition-colors rounded-lg" 
               />
             }
           >
-            <Avatar className="h-9 w-9 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-bold text-xs flex items-center justify-center border border-sidebar-border shadow-sm">
+            <Avatar className="size-8 shrink-0 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-xs flex items-center justify-center border border-sidebar-border shadow-sm">
               {user.avatar ? (
                 <AvatarImage src={user.avatar} alt={user.name} />
               ) : null}
@@ -86,7 +86,7 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-3 px-2.5 py-2 text-left text-sm border-b border-sidebar-border/80">
-                  <Avatar className="h-9 w-9 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-bold text-xs flex items-center justify-center">
+                  <Avatar className="size-8 shrink-0 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-xs flex items-center justify-center">
                     <AvatarFallback className="bg-sidebar-primary text-white font-bold">{initials}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">

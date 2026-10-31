@@ -9,7 +9,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -82,7 +81,7 @@ function isNavigable(entry: { url?: string; disabled?: boolean }): boolean {
 
 /**
  * Badge inline léger, placé dans le flux flexbox (jamais en position absolue)
- * afin de ne jamais entrer en collision avec le chevron SidebarMenuAction.
+ * afin de ne jamais entrer en collision avec le chevron.
  * Masqué automatiquement en mode réduit (48px).
  */
 function NavInlineBadge({ badge, className }: { badge?: NavBadge; className?: string }) {
@@ -129,11 +128,11 @@ function NavGroupCollapsible({
   currentUrl: string
   onNavigate: () => void
 }) {
-  const isParentActive = isPathActive(item.url, currentUrl)
+  const { state, isMobile, setOpen: setSidebarOpen } = useSidebar()
   const isAnyChildActive = Boolean(
     item.items?.some((sub) => isNavigable(sub) && isPathActive(sub.url, currentUrl))
   )
-  const shouldBeOpen = isParentActive || isAnyChildActive
+  const shouldBeOpen = isAnyChildActive
 
   // État contrôlé : initialisé selon la route, puis ré-ouvert automatiquement
   // lorsque la navigation entre dans cette rubrique (sans forcer la fermeture).
@@ -144,56 +143,40 @@ function NavGroupCollapsible({
     if (shouldBeOpen && !open) setOpen(true)
   }
 
+  // En mode réduit (48px), le sous-menu est masqué : un clic sur l'icône
+  // ré-ouvre le Sidebar et déplie la rubrique au lieu de ne rien afficher.
+  const handleOpenChange = (next: boolean) => {
+    if (state === "collapsed" && !isMobile) {
+      setSidebarOpen(true)
+      setOpen(true)
+      return
+    }
+    setOpen(next)
+  }
+
   return (
     <Collapsible
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={handleOpenChange}
       className="group/collapsible"
       render={<SidebarMenuItem />}
     >
-      {item.url ? (
-        // Cas A : la rubrique possède sa propre page.
-        // Titre + icône = Link Inertia ; chevron = action indépendante (accordéon).
-        <>
+      {/* Comportement sidebar-07 : une rubrique avec sous-menu est un déclencheur
+          d'accordéon (aucune navigation). Les pages sont accessibles via les sous-liens. */}
+      <CollapsibleTrigger
+        render={
           <SidebarMenuButton
-            isActive={isParentActive}
+            isActive={isAnyChildActive}
             tooltip={item.title}
-            className={MENU_BUTTON_CLASS}
-            render={<Link href={item.url} onClick={onNavigate} />}
-          >
-            {item.icon}
-            <NavTitle>{item.title}</NavTitle>
-            <NavInlineBadge badge={item.badge} />
-          </SidebarMenuButton>
-          <CollapsibleTrigger
-            render={
-              <SidebarMenuAction
-                showOnHover={false}
-                aria-label={`Afficher ou masquer le sous-menu ${item.title}`}
-                className="cursor-pointer rounded-md text-sidebar-foreground/60 transition-transform duration-200 group-data-open/collapsible:rotate-90"
-              />
-            }
-          >
-            <ChevronRightIcon />
-          </CollapsibleTrigger>
-        </>
-      ) : (
-        // Cas B : rubrique « dossier » sans page : tout le bouton bascule l'accordéon.
-        <CollapsibleTrigger
-          render={
-            <SidebarMenuButton
-              isActive={isAnyChildActive}
-              tooltip={item.title}
-              className={cn(MENU_BUTTON_CLASS, "cursor-pointer")}
-            />
-          }
-        >
-          {item.icon}
-          <NavTitle>{item.title}</NavTitle>
-          <NavInlineBadge badge={item.badge} className="ml-0" />
-          <ChevronRightIcon className="ml-auto text-sidebar-foreground/60 transition-transform duration-200 group-data-open/collapsible:rotate-90" />
-        </CollapsibleTrigger>
-      )}
+            className={cn(MENU_BUTTON_CLASS, "cursor-pointer")}
+          />
+        }
+      >
+        {item.icon}
+        <NavTitle>{item.title}</NavTitle>
+        <NavInlineBadge badge={item.badge} className="ml-0" />
+        <ChevronRightIcon className="ml-auto text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden transition-transform duration-200 group-data-open/collapsible:rotate-90" />
+      </CollapsibleTrigger>
 
       <CollapsibleContent>
         <SidebarMenuSub className="mr-0 gap-0.5 pr-0">
@@ -283,10 +266,9 @@ export function NavMain({ items }: { items: NavItem[] }) {
       </SidebarGroupLabel>
       <SidebarMenu className="gap-0.5">
         {items.map((item) => {
-          // Une rubrique dossier dont aucun enfant n'est navigable n'ouvre pas
+          // Une rubrique dont aucun enfant n'est navigable n'ouvre pas
           // d'accordéon « vide » : elle est rendue comme un élément désactivé.
-          const hasNavigableChildren = Boolean(item.items?.some(isNavigable))
-          if (item.items?.length && (hasNavigableChildren || isNavigable(item))) {
+          if (item.items?.some(isNavigable)) {
             return (
               <NavGroupCollapsible
                 key={item.title}

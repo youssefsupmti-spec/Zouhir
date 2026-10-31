@@ -65,7 +65,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Expéditions & Colis",
-      url: "/colis",
       icon: <PackageIcon />,
       items: [
         { title: "Toutes les expéditions", url: "/colis" },
@@ -126,14 +125,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
-      <SidebarHeader className="border-b border-sidebar-border p-3">
+      <SidebarHeader className="border-b border-sidebar-border">
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
-      <SidebarContent className="px-2 py-3">
+      <SidebarContent className="py-2">
         <NavMain items={navMain} />
         <NavProjects projects={quickLinks} />
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-3">
+      <SidebarFooter className="border-t border-sidebar-border">
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
