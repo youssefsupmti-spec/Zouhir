@@ -157,8 +157,17 @@ class RolesPermissionsAdministrationTest extends TestCase
     {
         $adminRole = Role::findByName('admin');
 
-        $this->actingAs($this->admin)->delete("/roles/{$adminRole->id}")->assertForbidden();
-        $this->actingAs($this->admin)->delete('/roles/'.Role::findByName('client')->id)->assertForbidden();
+        // Le super-admin passe Gate::before : la protection est alors portée par DeleteRoleAction.
+        $this->actingAs($this->admin)->delete("/roles/{$adminRole->id}")->assertSessionHasErrors('role');
+        $this->actingAs($this->admin)->delete('/roles/'.Role::findByName('client')->id)->assertSessionHasErrors('role');
+        $this->assertNotNull(Role::where('name', 'admin')->first());
+
+        // Un administrateur délégué (access_admin, sans Gate::before) est refusé dès la Policy.
+        $delegated = Role::create(['name' => 'securite', 'guard_name' => 'web']);
+        $delegated->givePermissionTo(PermissionEnum::ACCESS_ADMIN->value);
+        $officer = User::factory()->create(['role' => null]);
+        $officer->assignRole($delegated);
+        $this->actingAs($officer)->delete('/roles/'.Role::findByName('livreur')->id)->assertForbidden();
 
         $this->actingAs($this->admin)->put("/roles/{$adminRole->id}", ['name' => 'administrateur', 'permissions' => $adminRole->permissions->pluck('name')->all()])
             ->assertSessionHasErrors('name');
@@ -342,7 +351,8 @@ class RolesPermissionsAdministrationTest extends TestCase
         $this->assertTrue(Permission::where('name', PermissionEnum::EXPORT_EXCEL->value)->exists());
 
         $catalogued = Permission::findByName(PermissionEnum::TRACK_COLIS->value);
-        $this->actingAs($this->admin)->delete("/permissions/{$catalogued->id}")->assertForbidden();
+        $this->actingAs($this->admin)->delete("/permissions/{$catalogued->id}")->assertSessionHasErrors('permission');
+        $this->assertNotNull(Permission::where('name', PermissionEnum::TRACK_COLIS->value)->first());
 
         $orphan = Permission::create(['name' => 'orpheline', 'guard_name' => 'web']);
         $used = Permission::create(['name' => 'orpheline_utilisee', 'guard_name' => 'web']);

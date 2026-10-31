@@ -250,7 +250,7 @@ function NavSingleItem({
   )
 }
 
-export function NavMain({ items }: { items: NavItem[] }) {
+export function NavMain({ items, label = "Menu Principal" }: { items: NavItem[]; label?: string }) {
   const { url = "" } = usePage()
   const { isMobile, setOpenMobile } = useSidebar()
 
@@ -262,7 +262,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="mb-1 px-2 text-[10px] font-bold tracking-wider text-sidebar-foreground/60 uppercase">
-        Menu Principal
+        {label}
       </SidebarGroupLabel>
       <SidebarMenu className="gap-0.5">
         {items.map((item) => {

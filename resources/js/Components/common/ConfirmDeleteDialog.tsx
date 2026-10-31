@@ -48,10 +48,10 @@ export function ConfirmDeleteDialog({
         </DialogHeader>
 
         <DialogFooter className="mt-4 flex items-center justify-end gap-2">
-          <DialogClose asChild>
-            <Button variant="outline" size="sm" disabled={isLoading} className="text-xs h-8">
-              Annuler
-            </Button>
+          <DialogClose
+            render={<Button variant="outline" size="sm" disabled={isLoading} className="text-xs h-8" />}
+          >
+            Annuler
           </DialogClose>
           <Button
             variant="destructive"

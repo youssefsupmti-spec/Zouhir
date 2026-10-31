@@ -23,7 +23,9 @@ import {
   CalculatorIcon, 
   PhoneCallIcon,
   Building2Icon,
-  StoreIcon
+  StoreIcon,
+  ShieldCheckIcon,
+  KeyRoundIcon,
 } from "lucide-react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -115,6 +117,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/livreurs": "users",
     "/villes": "villes",
     "/banks": "banks",
+    "/roles": "roles",
+    "/permissions": "permissions",
   }
   const isAllowed = (url?: string) => !url || !ABILITY_BY_URL[url] || can[ABILITY_BY_URL[url]] === true
   const hasLink = (i: { url?: string; disabled?: boolean }) => Boolean(i.url) && !i.disabled
@@ -126,6 +130,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (item.items.some(hasLink) && !items.some(hasLink)) return []
     return [{ ...item, items }]
   })
+
+  // Groupe indépendant « Administration & Sécurité » (accès vérifié côté Laravel par RolePolicy / PermissionPolicy).
+  const adminNav: NavItem[] = [
+    { title: "Rôles", url: "/roles", icon: <ShieldCheckIcon /> },
+    { title: "Permissions", url: "/permissions", icon: <KeyRoundIcon /> },
+  ].filter((item) => isAllowed(item.url))
 
   const quickLinks = [
     {
@@ -152,6 +162,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent className="py-2">
         <NavMain items={navMain} />
+        {adminNav.length > 0 && <NavMain label="Administration & Sécurité" items={adminNav} />}
         <NavProjects projects={quickLinks} />
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">

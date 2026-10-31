@@ -106,6 +106,9 @@ class RoleController extends Controller
             'users_count' => $role->users()->count(),
             'members' => $members,
             'can_manage_members' => $request->user()->can('manageMembers', $role),
+            'locked_permissions' => \App\Application\RolesPermissions\Support\RoleGuard::isAdminRole($role)
+                ? PermissionCatalog::critical()
+                : [],
         ]);
     }
 
