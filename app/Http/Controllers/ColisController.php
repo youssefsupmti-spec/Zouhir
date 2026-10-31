@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Application\Tarifs\Actions\FigerTarifClientColis;
 use App\Models\Business;
 use App\Models\Command;
 use App\Models\User;
@@ -115,6 +116,7 @@ class ColisController extends Controller
         return Inertia::render('Colis/Index', [
             'colis' => $colis,
             'canCreate' => $user->can('create', Command::class),
+            'canSetManualFee' => $user->isAdmin(),
             'clients' => $clientsList,
             'villes' => $villesList,
             'livreurs' => $livreursList,
@@ -201,7 +203,6 @@ class ColisController extends Controller
             'destinataire_ville_id' => $ville->id,
             'destinataire_zone_code' => $ville->code_zone,
             'prix_brut' => $validated['prix_brut'],
-            'frais_livraison_client' => $validated['frais_livraison_client'] ?? 35.00,
             'frais_livraison_livreur' => $validated['frais_livraison_livreur'] ?? 15.00,
             'state' => 'Nouveau Colis',
             'state_group' => 'nouveau',
@@ -210,9 +211,19 @@ class ColisController extends Controller
             'note' => $validated['note'] ?? null,
         ];
 
-        Command::create($data);
+        // Snapshot tarifaire (Sprint 28) : tarif négocié → standard → anomalie « missing ».
+        // Seule l'administration peut imposer un montant manuel ; aucune valeur par défaut inventée.
+        $colis = new Command($data);
+        $tarif = app(FigerTarifClientColis::class)->aLaCreation($colis, $this->montantManuel($request, $validated));
+        $colis->save();
 
-        return back()->with('success', "Colis #{$code} créé avec succès.");
+        $message = "Colis #{$code} créé avec succès.";
+        if ($tarif->estManquant()) {
+            return back()->with('success', $message)
+                ->with('error', "Aucun tarif négocié ni standard pour {$ville->name_fr} : frais client à compléter (anomalie « missing »).");
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -244,7 +255,7 @@ class ColisController extends Controller
             ? (! empty($validated['livreur_id']) ? User::drivers()->findOrFail($validated['livreur_id']) : null)
             : $coli->livreur;
 
-        $coli->update([
+        $coli->fill([
             'produit' => $validated['produit'] ?? $coli->produit,
             'quantite' => $validated['quantite'] ?? $coli->quantite,
             'destinataire_nom' => $validated['destinataire_nom'],
@@ -254,7 +265,6 @@ class ColisController extends Controller
             'destinataire_ville_id' => $ville->id,
             'destinataire_zone_code' => $ville->code_zone,
             'prix_brut' => $validated['prix_brut'],
-            'frais_livraison_client' => $validated['frais_livraison_client'] ?? $coli->frais_livraison_client,
             'livreur_id' => $livreur?->id,
             'livreur_nom' => $livreur?->nom_complet,
             'livreur_telephone' => $livreur?->telephone,
@@ -262,6 +272,10 @@ class ColisController extends Controller
             'echange' => (bool) ($validated['echange'] ?? false),
             'note' => $validated['note'] ?? null,
         ]);
+
+        // Snapshot : recalcul uniquement si la ville change sur un colis non finalisé et non manuel.
+        app(FigerTarifClientColis::class)->aLaModification($coli, $this->montantManuel($request, $validated));
+        $coli->save();
 
         return back()->with('success', "Colis #{$coli->code} mis à jour.");
     }
@@ -325,6 +339,21 @@ class ColisController extends Controller
         $coli->delete();
 
         return back()->with('success', "Colis #{$coli->code} archivé avec succès.");
+    }
+
+    /**
+     * Montant manuel saisi : pris en compte UNIQUEMENT pour l'administration.
+     * Champ vide = pas de saisie (résolution automatique), jamais 0 implicite.
+     */
+    private function montantManuel(Request $request, array $validated): ?string
+    {
+        if (! $request->user()->isAdmin()) {
+            return null;
+        }
+
+        $valeur = $validated['frais_livraison_client'] ?? null;
+
+        return ($valeur === null || $valeur === '') ? null : (string) $valeur;
     }
 
     /**

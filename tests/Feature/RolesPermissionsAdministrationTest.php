@@ -326,11 +326,12 @@ class RolesPermissionsAdministrationTest extends TestCase
                 ->where('stats.total', $total)
                 ->where('stats.unassigned', 1)
                 ->where('stats.assigned', $total - 1)
-                ->where('stats.modules', 6)
+                // 7 modules depuis le Sprint 28 (ajout du module « tarifs »).
+                ->where('stats.modules', count(PermissionCatalog::MODULES))
                 ->where('missingFromDatabase', [])
-                ->where('groups.5.key', PermissionCatalog::UNCATALOGUED_MODULE)
-                ->where('groups.5.permissions.0.can_delete', true)
-                ->where('groups.5.permissions.0.catalogued', false)
+                ->where('groups.'.(count(PermissionCatalog::MODULES) - 1).'.key', PermissionCatalog::UNCATALOGUED_MODULE)
+                ->where('groups.'.(count(PermissionCatalog::MODULES) - 1).'.permissions.0.can_delete', true)
+                ->where('groups.'.(count(PermissionCatalog::MODULES) - 1).'.permissions.0.catalogued', false)
             );
 
         $this->actingAs($this->admin)->get('/permissions?module=colis')

@@ -185,6 +185,12 @@ class User extends Authenticatable
 
     /* ════════════════════ Relations WinningExpress ════════════════════ */
 
+    /** Tarifs négociés de ce compte marchand (actifs ; corbeille via withTrashed()). */
+    public function clientTarifs(): HasMany
+    {
+        return $this->hasMany(ClientTarif::class, 'client_id');
+    }
+
     /**
      * Enseignes marchandes associées à ce compte (Businesses).
      */

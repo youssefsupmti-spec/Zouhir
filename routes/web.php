@@ -64,6 +64,15 @@ Route::middleware('auth')->group(function () {
     Route::patch('/colis/{coli}/state', [\App\Http\Controllers\ColisController::class, 'updateState'])->name('colis.state');
     Route::delete('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'destroy'])->name('colis.destroy');
 
+    // Tarifs Clients négociés (Sprint 28) — autorisation : ClientTarifPolicy (contrôleur / FormRequests).
+    Route::get('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'index'])->name('tarifs-clients.index');
+    Route::get('/tarifs-clients/referentiel', [\App\Http\Controllers\ClientTarifController::class, 'referentiel'])->name('tarifs-clients.referentiel');
+    Route::post('/tarifs-clients/apercu', [\App\Http\Controllers\ClientTarifController::class, 'apercu'])->name('tarifs-clients.apercu');
+    Route::get('/tarifs-clients/{client}/grille', [\App\Http\Controllers\ClientTarifController::class, 'grille'])->whereNumber('client')->name('tarifs-clients.grille');
+    Route::post('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'store'])->name('tarifs-clients.store');
+    Route::put('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'update'])->name('tarifs-clients.update');
+    Route::delete('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'destroy'])->name('tarifs-clients.destroy');
+
     // Administration & Sécurité : rôles et permissions Spatie (Sprint 25).
     // Autorisation dans les contrôleurs / FormRequests (RolePolicy, PermissionPolicy).
     Route::get('/roles', [\App\Http\Controllers\RoleController::class, 'index'])->name('roles.index');

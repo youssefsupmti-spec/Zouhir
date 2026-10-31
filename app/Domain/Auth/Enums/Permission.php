@@ -19,6 +19,12 @@ enum Permission: string
     case ACT_AS_AGENCY = 'ActAsAgency:Command';
     case ACT_AS_ADMIN = 'ActAsAdmin:Command';
 
+    // Module Tarifs Clients (Sprint 28) — vérifiées par ClientTarifPolicy.
+    case TARIFS_CLIENT_VOIR = 'tarifs_client:voir';
+    case TARIFS_CLIENT_CREER = 'tarifs_client:creer';
+    case TARIFS_CLIENT_MODIFIER = 'tarifs_client:modifier';
+    case TARIFS_CLIENT_SUPPRIMER = 'tarifs_client:supprimer';
+
     public function label(): string
     {
         return match ($this) {
@@ -34,6 +40,21 @@ enum Permission: string
             self::ACT_AS_DRIVER => 'Périmètre Données Livreur (colis affectés)',
             self::ACT_AS_AGENCY => 'Périmètre Données Agence (hub régional)',
             self::ACT_AS_ADMIN => 'Périmètre Données Administrateur',
+            self::TARIFS_CLIENT_VOIR => 'Consulter les tarifs clients',
+            self::TARIFS_CLIENT_CREER => 'Négocier de nouveaux tarifs clients',
+            self::TARIFS_CLIENT_MODIFIER => 'Modifier les tarifs clients',
+            self::TARIFS_CLIENT_SUPPRIMER => 'Supprimer les tarifs clients',
         };
+    }
+
+    /** @return list<self> Permissions du module Tarifs Clients. */
+    public static function tarifsClient(): array
+    {
+        return [
+            self::TARIFS_CLIENT_VOIR,
+            self::TARIFS_CLIENT_CREER,
+            self::TARIFS_CLIENT_MODIFIER,
+            self::TARIFS_CLIENT_SUPPRIMER,
+        ];
     }
 }

@@ -110,6 +110,19 @@ export default function AuthenticatedLayout({ children, title }) {
                                 </button>
                             </div>
                         )}
+                        {flash.error && !dismissFlash && (
+                            <div role="alert" className="mb-6 p-4 bg-[#ff8806]/10 border border-[#ff8806]/30 rounded-2xl text-[#9a4d00] dark:text-[#ffb366] text-xs font-semibold shadow-sm flex items-center justify-between">
+                                <span>{flash.error}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setDismissFlash(true)}
+                                    className="p-1 rounded-lg hover:bg-[#ff8806]/15 transition-colors"
+                                    aria-label="Fermer"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
                         {children}
                     </main>
                 </SidebarInset>

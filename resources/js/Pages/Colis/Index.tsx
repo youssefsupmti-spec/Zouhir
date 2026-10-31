@@ -33,6 +33,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+
+// Provenance du frais client figé (commands.type_tarif_client) — libellés seulement, aucun calcul.
+const TYPE_TARIF_LABEL: Record<string, string> = {
+  client: 'négocié',
+  standard: 'standard',
+  manual: 'manuel',
+  promo: 'promo',
+};
+
 interface ClientOption {
   id: number;
   nom_complet: string;
@@ -67,6 +76,7 @@ interface ColisItem {
   destinataire_zone_code?: string;
   prix_brut: number;
   frais_livraison_client: number;
+  type_tarif_client?: string | null;
   state: string;
   state_group: string;
   client_id: number;
@@ -100,6 +110,7 @@ interface ColisItem {
 
 interface ColisIndexProps {
   canCreate?: boolean;
+  canSetManualFee?: boolean;
   colis: {
     data: ColisItem[];
     current_page: number;
@@ -140,6 +151,7 @@ export default function ColisIndex({
   stats,
   filters,
   canCreate = false,
+  canSetManualFee = false,
 }: ColisIndexProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingColis, setEditingColis] = useState<ColisItem | null>(null);
@@ -271,7 +283,12 @@ export default function ColisIndex({
             {Number(row.original.prix_brut).toFixed(2)} MAD
           </span>
           <span className="text-[10px] text-muted-foreground font-mono">
-            Frais: {Number(row.original.frais_livraison_client).toFixed(2)}
+            Frais: {row.original.type_tarif_client === 'missing'
+              ? <span className="font-sans font-semibold text-[#b45f00]">tarif manquant</span>
+              : Number(row.original.frais_livraison_client).toFixed(2)}
+            {TYPE_TARIF_LABEL[row.original.type_tarif_client ?? ''] && row.original.type_tarif_client !== 'missing' && (
+              <span className="ml-1 font-sans">· {TYPE_TARIF_LABEL[row.original.type_tarif_client ?? '']}</span>
+            )}
           </span>
         </div>
       ),
@@ -465,6 +482,7 @@ export default function ColisIndex({
         clients={clients}
         villes={villes}
         livreurs={livreurs}
+        canSetManualFee={canSetManualFee}
       />
 
       <ChangeStatutDialog

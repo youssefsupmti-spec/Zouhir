@@ -66,6 +66,8 @@ interface ColisFormDialogProps {
   clients: ClientOption[];
   villes: VilleOption[];
   livreurs: LivreurOption[];
+  /** Seule l'administration peut imposer un frais manuel (sinon : tarif résolu côté serveur). */
+  canSetManualFee?: boolean;
 }
 
 export function ColisFormDialog({
@@ -75,6 +77,7 @@ export function ColisFormDialog({
   clients,
   villes,
   livreurs,
+  canSetManualFee = false,
 }: ColisFormDialogProps) {
   const isEditing = !!colis?.id;
 
@@ -92,7 +95,7 @@ export function ColisFormDialog({
     destinataire_adresse: colis?.destinataire_adresse || '',
     destinataire_ville_id: colis?.destinataire_ville_id?.toString() || (villes[0]?.id?.toString() ?? ''),
     prix_brut: colis?.prix_brut?.toString() || '',
-    frais_livraison_client: colis?.frais_livraison_client?.toString() || '35.00',
+    frais_livraison_client: colis?.frais_livraison_client?.toString() ?? '',
     livreur_id: colis?.livreur_id?.toString() || '',
     ouverture_autorisee: colis?.ouverture_autorisee ?? false,
     echange: colis?.echange ?? false,
@@ -114,7 +117,7 @@ export function ColisFormDialog({
         destinataire_adresse: colis.destinataire_adresse || '',
         destinataire_ville_id: colis.destinataire_ville_id?.toString() || (villes[0]?.id?.toString() ?? ''),
         prix_brut: colis.prix_brut?.toString() || '',
-        frais_livraison_client: colis.frais_livraison_client?.toString() || '35.00',
+        frais_livraison_client: colis.frais_livraison_client?.toString() ?? '',
         livreur_id: colis.livreur_id?.toString() || '',
         ouverture_autorisee: colis.ouverture_autorisee ?? false,
         echange: colis.echange ?? false,
@@ -350,18 +353,34 @@ export function ColisFormDialog({
                 )}
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="frais_livraison_client">Frais Livraison Client (MAD)</Label>
-                <Input
-                  id="frais_livraison_client"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={data.frais_livraison_client}
-                  onChange={(e) => setData('frais_livraison_client', e.target.value)}
-                  className="font-mono"
-                />
-              </div>
+              {canSetManualFee ? (
+                <div className="space-y-1">
+                  <Label htmlFor="frais_livraison_client">Frais Livraison Client (MAD)</Label>
+                  <Input
+                    id="frais_livraison_client"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Automatique"
+                    value={data.frais_livraison_client}
+                    onChange={(e) => setData('frais_livraison_client', e.target.value)}
+                    className="font-mono"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    {isEditing ? 'Modifier ce montant le fige en tarif manuel.' : 'Vide = tarif négocié du client, sinon standard de la ville.'}
+                  </p>
+                  {errors.frais_livraison_client && (
+                    <p className="text-[11px] text-destructive font-medium">{errors.frais_livraison_client}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label>Frais Livraison Client</Label>
+                  <p className="rounded-md border border-dashed border-border px-3 py-2 text-[11px] text-muted-foreground">
+                    Calculés automatiquement (tarif négocié ou standard de la ville).
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-6 pt-1">

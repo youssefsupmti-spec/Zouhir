@@ -101,6 +101,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         // Entrée unique pour /banks (doublon supprimé de « Référentiels Métier »).
         { title: "Banques & RIBs", url: "/banks" },
+        { title: "Tarifs Clients", url: "/tarifs-clients" },
         { title: "Relevés de paiement (CRBT)", badge: SOON, disabled: true },
         { title: "Historique des virements", badge: SOON, disabled: true },
       ],
@@ -119,6 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/banks": "banks",
     "/roles": "roles",
     "/permissions": "permissions",
+    "/tarifs-clients": "tarifsClients",
   }
   const isAllowed = (url?: string) => !url || !ABILITY_BY_URL[url] || can[ABILITY_BY_URL[url]] === true
   const hasLink = (i: { url?: string; disabled?: boolean }) => Boolean(i.url) && !i.disabled

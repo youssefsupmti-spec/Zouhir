@@ -34,6 +34,7 @@ class Command extends Model
         'destinataire_zone_code',
         'prix_brut',
         'frais_livraison_client',
+        'type_tarif_client',
         'frais_livraison_livreur',
         'state',
         'state_group',

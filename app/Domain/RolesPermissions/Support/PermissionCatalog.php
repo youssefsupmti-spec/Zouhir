@@ -30,6 +30,10 @@ final class PermissionCatalog
             'label' => 'Finances & CRBT',
             'description' => 'Coordonnées bancaires et données financières.',
         ],
+        'tarifs' => [
+            'label' => 'Tarifs Clients',
+            'description' => 'Grilles tarifaires négociées par client et par ville.',
+        ],
         'pilotage' => [
             'label' => 'Pilotage & Exports',
             'description' => 'Tableau de bord et exports de données.',
@@ -73,6 +77,26 @@ final class PermissionCatalog
                 'module' => 'finances',
                 'description' => 'Consulter et gérer ses propres coordonnées bancaires (RIB).',
                 'enforced_by' => ['CompteBancairePolicy', 'CompteBancaire::visibleTo'],
+            ],
+            PermissionEnum::TARIFS_CLIENT_VOIR->value => [
+                'module' => 'tarifs',
+                'description' => 'Consulter les grilles tarifaires négociées de tous les clients.',
+                'enforced_by' => ['ClientTarifPolicy::viewAny'],
+            ],
+            PermissionEnum::TARIFS_CLIENT_CREER->value => [
+                'module' => 'tarifs',
+                'description' => 'Négocier de nouveaux tarifs (villes ou zone entière) et restaurer un tarif supprimé.',
+                'enforced_by' => ['ClientTarifPolicy::create'],
+            ],
+            PermissionEnum::TARIFS_CLIENT_MODIFIER->value => [
+                'module' => 'tarifs',
+                'description' => 'Modifier les montants négociés, à la ligne ou en lot.',
+                'enforced_by' => ['ClientTarifPolicy::update'],
+            ],
+            PermissionEnum::TARIFS_CLIENT_SUPPRIMER->value => [
+                'module' => 'tarifs',
+                'description' => 'Supprimer un tarif négocié (la ville repasse au tarif standard).',
+                'enforced_by' => ['ClientTarifPolicy::delete'],
             ],
             PermissionEnum::VIEW_DASHBOARD->value => [
                 'module' => 'pilotage',
