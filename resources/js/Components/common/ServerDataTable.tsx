@@ -4,6 +4,7 @@ import {
   columnFilteringFeature,
   columnVisibilityFeature,
   createSortedRowModel,
+  FlexRender,
   rowSelectionFeature,
   rowSortingFeature,
   tableFeatures,
@@ -149,7 +150,7 @@ export function ServerDataTable<TData extends RowData>({
                     <TableHead key={header.id} className="h-10 text-xs font-semibold text-foreground/80">
                       {header.isPlaceholder
                         ? null
-                        : header.renderHeader()}
+                        : <FlexRender header={header} />}
                     </TableHead>
                   );
                 })}
@@ -166,7 +167,7 @@ export function ServerDataTable<TData extends RowData>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-2.5 text-xs text-foreground">
-                      {cell.renderCell()}
+                      <FlexRender cell={cell} />
                     </TableCell>
                   ))}
                 </TableRow>

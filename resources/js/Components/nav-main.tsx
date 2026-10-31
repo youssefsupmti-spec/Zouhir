@@ -10,7 +10,6 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -18,12 +17,20 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { cn } from "cn"
 import { ChevronRightIcon } from "lucide-react"
+
+/**
+ * Badge de navigation.
+ * - "count" : compteur numérique RÉEL fourni par le Backend (jamais fictif).
+ * - "soon"  : fonctionnalité pas encore disponible (élément désactivé).
+ */
+export type NavBadge = { kind: "count"; value: number } | { kind: "soon" }
 
 export interface NavSubItem {
   title: string
   url?: string
-  badge?: string
+  badge?: NavBadge
   disabled?: boolean
 }
 
@@ -31,10 +38,25 @@ export interface NavItem {
   title: string
   url?: string
   icon?: React.ReactNode
-  badge?: string
+  badge?: NavBadge
   disabled?: boolean
   items?: NavSubItem[]
 }
+
+/* -------------------------------------------------------------------------- */
+/* Styles partagés (Base Lyra + Design System OUAISS EXPRESS, radius 0.375rem) */
+/* -------------------------------------------------------------------------- */
+
+// Ligne principale : hauteur 32px, icône 16px, état actif marqué par une barre orange
+// en box-shadow inset (aucun décalage de layout, fonctionne aussi en mode icône 48px).
+const MENU_BUTTON_CLASS =
+  "rounded-lg text-sidebar-foreground/85 hover:text-sidebar-foreground data-active:bg-sidebar-accent data-active:font-semibold data-active:text-white data-active:shadow-[inset_2px_0_0_var(--sidebar-primary)]"
+
+const SUB_BUTTON_CLASS =
+  "rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground data-active:font-semibold data-active:text-sidebar-primary"
+
+const DISABLED_ROW_CLASS =
+  "flex h-7 min-w-0 items-center gap-2 rounded-lg px-2 text-xs text-sidebar-foreground/45 cursor-not-allowed select-none"
 
 function getCleanPathname(rawUrl: string): string {
   if (!rawUrl) return ""
@@ -46,14 +68,56 @@ function isPathActive(targetUrl: string | undefined, currentUrl: string): boolea
   const targetClean = getCleanPathname(targetUrl)
   const currentClean = getCleanPathname(currentUrl)
 
-  if (targetClean === "/dashboard") {
-    return currentClean === "/dashboard"
-  }
-  if (targetClean === "/") {
-    return currentClean === "/"
+  if (targetClean === "/dashboard" || targetClean === "/") {
+    return currentClean === targetClean
   }
 
   return currentClean === targetClean || currentClean.startsWith(`${targetClean}/`)
+}
+
+/** Un élément est navigable s'il possède une URL et n'est pas désactivé. */
+function isNavigable(entry: { url?: string; disabled?: boolean }): boolean {
+  return Boolean(entry.url) && !entry.disabled
+}
+
+/**
+ * Badge inline léger, placé dans le flux flexbox (jamais en position absolue)
+ * afin de ne jamais entrer en collision avec le chevron SidebarMenuAction.
+ * Masqué automatiquement en mode réduit (48px).
+ */
+function NavInlineBadge({ badge, className }: { badge?: NavBadge; className?: string }) {
+  if (!badge) return null
+
+  if (badge.kind === "count") {
+    if (!Number.isFinite(badge.value) || badge.value <= 0) return null
+    return (
+      <span
+        data-slot="nav-inline-badge"
+        className={cn(
+          "ml-auto inline-flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded-md bg-sidebar-primary px-1 text-[10px] leading-none font-bold text-sidebar-primary-foreground tabular-nums group-data-[collapsible=icon]:hidden",
+          className
+        )}
+      >
+        {badge.value > 99 ? "99+" : badge.value}
+      </span>
+    )
+  }
+
+  return (
+    <span
+      data-slot="nav-inline-badge"
+      className={cn(
+        "ml-auto inline-flex h-4 shrink-0 items-center rounded-md border border-sidebar-border px-1.5 text-[9px] leading-none font-semibold tracking-wide text-sidebar-foreground/60 uppercase group-data-[collapsible=icon]:hidden",
+        className
+      )}
+    >
+      Bientôt
+    </span>
+  )
+}
+
+function NavTitle({ children }: { children: React.ReactNode }) {
+  return <span className="min-w-0 flex-1 truncate">{children}</span>
 }
 
 function NavGroupCollapsible({
@@ -63,27 +127,22 @@ function NavGroupCollapsible({
 }: {
   item: NavItem
   currentUrl: string
-  onNavigate?: () => void
+  onNavigate: () => void
 }) {
   const isParentActive = isPathActive(item.url, currentUrl)
   const isAnyChildActive = Boolean(
-    item.items?.some((sub) => sub.url && isPathActive(sub.url, currentUrl))
+    item.items?.some((sub) => isNavigable(sub) && isPathActive(sub.url, currentUrl))
   )
   const shouldBeOpen = isParentActive || isAnyChildActive
 
-  // Controlled open state for the collapsible
+  // État contrôlé : initialisé selon la route, puis ré-ouvert automatiquement
+  // lorsque la navigation entre dans cette rubrique (sans forcer la fermeture).
   const [open, setOpen] = React.useState<boolean>(shouldBeOpen)
-  const prevUrlRef = React.useRef<string>(currentUrl)
-
-  React.useEffect(() => {
-    // If the route changes to one inside this section, expand automatically
-    if (prevUrlRef.current !== currentUrl) {
-      prevUrlRef.current = currentUrl
-      if (shouldBeOpen) {
-        setOpen(true)
-      }
-    }
-  }, [currentUrl, shouldBeOpen])
+  const [syncedUrl, setSyncedUrl] = React.useState<string>(currentUrl)
+  if (syncedUrl !== currentUrl) {
+    setSyncedUrl(currentUrl)
+    if (shouldBeOpen && !open) setOpen(true)
+  }
 
   return (
     <Collapsible
@@ -93,86 +152,71 @@ function NavGroupCollapsible({
       render={<SidebarMenuItem />}
     >
       {item.url ? (
-        // Case A: Group has its own page URL
-        // Title & icon navigate directly via Inertia Link
-        // Chevron on the right is an independent action that toggles the accordion
+        // Cas A : la rubrique possède sa propre page.
+        // Titre + icône = Link Inertia ; chevron = action indépendante (accordéon).
         <>
           <SidebarMenuButton
             isActive={isParentActive}
             tooltip={item.title}
+            className={MENU_BUTTON_CLASS}
             render={<Link href={item.url} onClick={onNavigate} />}
           >
             {item.icon}
-            <span>{item.title}</span>
-            {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+            <NavTitle>{item.title}</NavTitle>
+            <NavInlineBadge badge={item.badge} />
           </SidebarMenuButton>
           <CollapsibleTrigger
             render={
               <SidebarMenuAction
                 showOnHover={false}
-                className="cursor-pointer transition-transform duration-200 group-data-open/collapsible:rotate-90"
+                aria-label={`Afficher ou masquer le sous-menu ${item.title}`}
+                className="cursor-pointer rounded-md text-sidebar-foreground/60 transition-transform duration-200 group-data-open/collapsible:rotate-90"
               />
             }
           >
-            <ChevronRightIcon className="size-3.5" />
-            <span className="sr-only">Ouvrir/Fermer {item.title}</span>
+            <ChevronRightIcon />
           </CollapsibleTrigger>
         </>
       ) : (
-        // Case B: Group does NOT have its own page URL (pure accordion category)
-        // Clicking anywhere on the button toggles the accordion
+        // Cas B : rubrique « dossier » sans page : tout le bouton bascule l'accordéon.
         <CollapsibleTrigger
           render={
             <SidebarMenuButton
               isActive={isAnyChildActive}
               tooltip={item.title}
-              className="cursor-pointer"
+              className={cn(MENU_BUTTON_CLASS, "cursor-pointer")}
             />
           }
         >
           {item.icon}
-          <span>{item.title}</span>
-          {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
-          <ChevronRightIcon className="ml-auto size-3.5 transition-transform duration-200 group-data-open/collapsible:rotate-90" />
+          <NavTitle>{item.title}</NavTitle>
+          <NavInlineBadge badge={item.badge} className="ml-0" />
+          <ChevronRightIcon className="ml-auto text-sidebar-foreground/60 transition-transform duration-200 group-data-open/collapsible:rotate-90" />
         </CollapsibleTrigger>
       )}
 
       <CollapsibleContent>
-        <SidebarMenuSub>
-          {item.items?.map((subItem) => {
-            const isSubActive = isPathActive(subItem.url, currentUrl)
-
-            if (subItem.disabled || !subItem.url) {
-              return (
-                <SidebarMenuSubItem key={subItem.title}>
-                  <div className="flex h-7 min-w-0 items-center justify-between px-2 text-xs text-sidebar-foreground/40 cursor-not-allowed select-none">
-                    <span className="truncate">{subItem.title}</span>
-                    {subItem.badge && (
-                      <span className="ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded bg-sidebar-accent/60 text-sidebar-foreground/50 border border-sidebar-border/40">
-                        {subItem.badge}
-                      </span>
-                    )}
-                  </div>
-                </SidebarMenuSubItem>
-              )
-            }
-
-            return (
-              <SidebarMenuSubItem key={subItem.title}>
+        <SidebarMenuSub className="mr-0 gap-0.5 pr-0">
+          {item.items?.map((subItem) => (
+            <SidebarMenuSubItem key={subItem.title}>
+              {isNavigable(subItem) ? (
                 <SidebarMenuSubButton
-                  isActive={isSubActive}
-                  render={<Link href={subItem.url} onClick={onNavigate} />}
+                  isActive={isPathActive(subItem.url, currentUrl)}
+                  className={SUB_BUTTON_CLASS}
+                  render={<Link href={subItem.url!} onClick={onNavigate} />}
                 >
-                  <span>{subItem.title}</span>
-                  {subItem.badge && (
-                    <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-sidebar-primary/20 text-sidebar-primary">
-                      {subItem.badge}
-                    </span>
-                  )}
+                  <NavTitle>{subItem.title}</NavTitle>
+                  <NavInlineBadge badge={subItem.badge} />
                 </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            )
-          })}
+              ) : (
+                <span aria-disabled="true" className={DISABLED_ROW_CLASS}>
+                  <NavTitle>{subItem.title}</NavTitle>
+                  <NavInlineBadge badge={subItem.badge ?? { kind: "soon" }} />
+                  <span className="sr-only">(bientôt disponible)</span>
+                </span>
+              )}
+            </SidebarMenuSubItem>
+          ))}
         </SidebarMenuSub>
       </CollapsibleContent>
     </Collapsible>
@@ -186,36 +230,38 @@ function NavSingleItem({
 }: {
   item: NavItem
   currentUrl: string
-  onNavigate?: () => void
+  onNavigate: () => void
 }) {
-  const isItemActive = isPathActive(item.url, currentUrl)
-
-  if (item.disabled || !item.url) {
+  if (!isNavigable(item)) {
+    // Élément désactivé : aucun lien, aucun accordéon, état visuel et ARIA explicites.
     return (
-      <SidebarMenuItem key={item.title}>
+      <SidebarMenuItem>
         <SidebarMenuButton
           disabled
-          tooltip={item.title}
-          className="cursor-not-allowed opacity-50"
+          aria-disabled="true"
+          tooltip={`${item.title} (bientôt)`}
+          className={cn(MENU_BUTTON_CLASS, "cursor-not-allowed text-sidebar-foreground/45 disabled:opacity-100")}
         >
           {item.icon}
-          <span>{item.title}</span>
-          {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+          <NavTitle>{item.title}</NavTitle>
+          <NavInlineBadge badge={item.badge ?? { kind: "soon" }} />
+          <span className="sr-only">(bientôt disponible)</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     )
   }
 
   return (
-    <SidebarMenuItem key={item.title}>
+    <SidebarMenuItem>
       <SidebarMenuButton
-        isActive={isItemActive}
+        isActive={isPathActive(item.url, currentUrl)}
         tooltip={item.title}
-        render={<Link href={item.url} onClick={onNavigate} />}
+        className={MENU_BUTTON_CLASS}
+        render={<Link href={item.url!} onClick={onNavigate} />}
       >
         {item.icon}
-        <span>{item.title}</span>
-        {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+        <NavTitle>{item.title}</NavTitle>
+        <NavInlineBadge badge={item.badge} />
       </SidebarMenuButton>
     </SidebarMenuItem>
   )
@@ -225,22 +271,22 @@ export function NavMain({ items }: { items: NavItem[] }) {
   const { url = "" } = usePage()
   const { isMobile, setOpenMobile } = useSidebar()
 
-  const handleNavigate = () => {
-    // Automatically close the mobile sheet drawer after selecting an item
-    if (isMobile) {
-      setOpenMobile(false)
-    }
-  }
+  const handleNavigate = React.useCallback(() => {
+    // Ferme automatiquement le drawer mobile après sélection d'un lien.
+    if (isMobile) setOpenMobile(false)
+  }, [isMobile, setOpenMobile])
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/60 px-2.5 mb-1.5">
+      <SidebarGroupLabel className="mb-1 px-2 text-[10px] font-bold tracking-wider text-sidebar-foreground/60 uppercase">
         Menu Principal
       </SidebarGroupLabel>
-      <SidebarMenu className="gap-1">
+      <SidebarMenu className="gap-0.5">
         {items.map((item) => {
-          const hasChildren = Boolean(item.items && item.items.length > 0)
-          if (hasChildren) {
+          // Une rubrique dossier dont aucun enfant n'est navigable n'ouvre pas
+          // d'accordéon « vide » : elle est rendue comme un élément désactivé.
+          const hasNavigableChildren = Boolean(item.items?.some(isNavigable))
+          if (item.items?.length && (hasNavigableChildren || isNavigable(item))) {
             return (
               <NavGroupCollapsible
                 key={item.title}

@@ -53,97 +53,55 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
   ]
 
+  // Badges : uniquement des compteurs réels fournis par le Backend ({ kind: "count" })
+  // ou l'état « Bientôt » ({ kind: "soon" }). Aucun compteur fictif.
+  const SOON = { kind: "soon" } as const
+
   const navMain: NavItem[] = [
     {
       title: "Tableau de bord",
       url: "/dashboard",
-      icon: <LayoutDashboardIcon className="size-4" />,
+      icon: <LayoutDashboardIcon />,
     },
     {
       title: "Expéditions & Colis",
       url: "/colis",
-      icon: <PackageIcon className="size-4" />,
-      badge: "Colis",
+      icon: <PackageIcon />,
       items: [
-        {
-          title: "Toutes les expéditions",
-          url: "/colis",
-        },
-        {
-          title: "Historique & Suivi AWB",
-          badge: "Bientôt",
-          disabled: true,
-        },
+        { title: "Toutes les expéditions", url: "/colis" },
+        { title: "Historique & Suivi AWB", badge: SOON, disabled: true },
       ],
     },
     {
       title: "Référentiels Métier",
-      icon: <StoreIcon className="size-4" />,
-      badge: "5",
+      icon: <StoreIcon />,
       items: [
-        {
-          title: "Enseignes & Boutiques",
-          url: "/businesses",
-        },
-        {
-          title: "Clients Marchands",
-          url: "/clients",
-        },
-        {
-          title: "Livreurs (DLM)",
-          url: "/livreurs",
-        },
-        {
-          title: "Villes & Zones",
-          url: "/villes",
-        },
-        {
-          title: "Banques & RIBs",
-          url: "/banks",
-        },
+        { title: "Enseignes & Boutiques", url: "/businesses" },
+        { title: "Clients Marchands", url: "/clients" },
+        { title: "Livreurs (DLM)", url: "/livreurs" },
+        { title: "Villes & Zones", url: "/villes" },
       ],
     },
     {
+      // Aucun sous-élément navigable : nav-main la rend comme rubrique désactivée
+      // « Bientôt » (pas d'accordéon). Les sous-éléments restent documentés ici.
       title: "Suivi National",
-      icon: <TruckIcon className="size-4" />,
-      badge: "Bientôt",
+      icon: <TruckIcon />,
+      badge: SOON,
       items: [
-        {
-          title: "Recherche par Code",
-          badge: "Bientôt",
-          disabled: true,
-        },
-        {
-          title: "Colis en cours de livraison",
-          badge: "Bientôt",
-          disabled: true,
-        },
-        {
-          title: "Retours & Réclamations",
-          badge: "Bientôt",
-          disabled: true,
-        },
+        { title: "Recherche par Code", badge: SOON, disabled: true },
+        { title: "Colis en cours de livraison", badge: SOON, disabled: true },
+        { title: "Retours & Réclamations", badge: SOON, disabled: true },
       ],
     },
     {
       title: "Finances & CRBT",
-      icon: <WalletIcon className="size-4" />,
-      badge: "MAD",
+      icon: <WalletIcon />,
       items: [
-        {
-          title: "Coordonnées Bancaires",
-          url: "/banks",
-        },
-        {
-          title: "Relevés de paiement (CRBT)",
-          badge: "Bientôt",
-          disabled: true,
-        },
-        {
-          title: "Historique des virements",
-          badge: "Bientôt",
-          disabled: true,
-        },
+        // Entrée unique pour /banks (doublon supprimé de « Référentiels Métier »).
+        { title: "Banques & RIBs", url: "/banks" },
+        { title: "Relevés de paiement (CRBT)", badge: SOON, disabled: true },
+        { title: "Historique des virements", badge: SOON, disabled: true },
       ],
     },
   ]
