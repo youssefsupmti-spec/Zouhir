@@ -7,6 +7,7 @@ use App\Models\Command;
 use App\Models\User;
 use App\Models\Ville;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,6 +19,9 @@ class ColisController extends Controller
      */
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Command::class);
+        $user = $request->user();
+
         $search = $request->input('search');
         $stateGroup = $request->input('state_group');
         $villeId = $request->input('ville_id');
@@ -25,7 +29,7 @@ class ColisController extends Controller
         $livreurId = $request->input('livreur_id');
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc');
-        $perPage = (int) $request->input('per_page', 25);
+        $perPage = min(max((int) $request->input('per_page', 25), 1), 100);
 
         $allowedSorts = ['id', 'code', 'prix_brut', 'destinataire_nom', 'created_at', 'livre_at'];
         if (! in_array($sort, $allowedSorts, true)) {
@@ -33,7 +37,10 @@ class ColisController extends Controller
         }
         $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
 
-        $query = Command::query()
+        // Data Isolation : toute la page (liste ET statistiques) est limitée au périmètre.
+        $scoped = fn () => Command::query()->visibleTo($user);
+
+        $query = $scoped()
             ->with([
                 'client:id,nom_complet,email,telephone',
                 'business:id,name',
@@ -66,16 +73,30 @@ class ColisController extends Controller
 
         $colis = $query->paginate($perPage)->withQueryString();
 
+        // Capacités calculées par les Policies : l'interface n'utilise aucun nom de rôle.
+        $colis->through(function (Command $c) use ($user) {
+            $c->setAttribute('can', [
+                'update' => $user->can('update', $c),
+                'updateState' => $user->can('updateState', $c),
+                'delete' => $user->can('delete', $c),
+            ]);
+
+            return $c;
+        });
+
         // Statistiques logistiques et financières réelles MariaDB
-        $totalColis = Command::count();
-        $livresColis = Command::where('state_group', 'livre')->count();
-        $enCoursColis = Command::where('state_group', 'en_cours')->count();
-        $retoursColis = Command::whereIn('state_group', ['retour', 'annule'])->count();
+        $totalColis = $scoped()->count();
+        $livresColis = $scoped()->where('state_group', 'livre')->count();
+        $enCoursColis = $scoped()->where('state_group', 'en_cours')->count();
+        $retoursColis = $scoped()->whereIn('state_group', ['retour', 'annule'])->count();
         $tauxLivraison = $totalColis > 0 ? round(($livresColis / $totalColis) * 100, 1) : 0;
-        $totalCrbtLivre = (float) Command::where('state_group', 'livre')->sum('prix_brut');
+        $totalCrbtLivre = (float) $scoped()->where('state_group', 'livre')->sum('prix_brut');
 
         // Référentiels pour les filtres et les formulaires d'expédition
-        $clientsList = User::where('role', 'client')
+        // Listes de référence limitées au périmètre : un marchand ne voit que lui-même,
+        // seule l'administration voit les autres marchands et les livreurs.
+        $clientsList = User::clients()
+            ->when(! $user->isAdmin(), fn ($q) => $q->whereKey($user->id))
             ->with(['businesses:id,user_id,name'])
             ->select('id', 'nom_complet', 'telephone')
             ->orderBy('nom_complet')
@@ -85,13 +106,15 @@ class ColisController extends Controller
             ->orderBy('name_fr')
             ->get();
 
-        $livreursList = User::where('role', 'livreur')
+        $livreursList = User::drivers()
+            ->when(! $user->isAdmin(), fn ($q) => $q->whereRaw('1 = 0'))
             ->select('id', 'nom_complet', 'telephone')
             ->orderBy('nom_complet')
             ->get();
 
         return Inertia::render('Colis/Index', [
             'colis' => $colis,
+            'canCreate' => $user->can('create', Command::class),
             'clients' => $clientsList,
             'villes' => $villesList,
             'livreurs' => $livreursList,
@@ -121,6 +144,14 @@ class ColisController extends Controller
      */
     public function store(Request $request)
     {
+        Gate::authorize('create', Command::class);
+        $user = $request->user();
+
+        // Le client_id est forcé côté serveur hors administration.
+        if (! $user->isAdmin()) {
+            $request->merge(['client_id' => $user->id]);
+        }
+
         $validated = $request->validate([
             'client_id' => ['required', 'exists:users,id'],
             'business_id' => ['nullable', 'exists:businesses,id'],
@@ -141,8 +172,14 @@ class ColisController extends Controller
 
         $client = User::find($validated['client_id']);
         $ville = Ville::find($validated['destinataire_ville_id']);
-        $business = ! empty($validated['business_id']) ? Business::find($validated['business_id']) : null;
-        $livreur = ! empty($validated['livreur_id']) ? User::find($validated['livreur_id']) : null;
+        // L'enseigne doit appartenir au client expéditeur.
+        $business = ! empty($validated['business_id'])
+            ? Business::where('user_id', $client->id)->findOrFail($validated['business_id'])
+            : null;
+        // L'affectation d'un livreur est une opération d'administration.
+        $livreur = ($user->isAdmin() && ! empty($validated['livreur_id']))
+            ? User::drivers()->findOrFail($validated['livreur_id'])
+            : null;
 
         $code = $this->generateUniqueCode();
 
@@ -183,6 +220,9 @@ class ColisController extends Controller
      */
     public function update(Request $request, Command $coli)
     {
+        Gate::authorize('update', $coli);
+        $isAdmin = $request->user()->isAdmin();
+
         $validated = $request->validate([
             'produit' => ['nullable', 'string', 'max:255'],
             'quantite' => ['nullable', 'integer', 'min:1'],
@@ -199,7 +239,10 @@ class ColisController extends Controller
         ]);
 
         $ville = Ville::find($validated['destinataire_ville_id']);
-        $livreur = ! empty($validated['livreur_id']) ? User::find($validated['livreur_id']) : null;
+        // Hors administration, l'affectation du livreur reste inchangée.
+        $livreur = $isAdmin
+            ? (! empty($validated['livreur_id']) ? User::drivers()->findOrFail($validated['livreur_id']) : null)
+            : $coli->livreur;
 
         $coli->update([
             'produit' => $validated['produit'] ?? $coli->produit,
@@ -228,6 +271,9 @@ class ColisController extends Controller
      */
     public function updateState(Request $request, Command $coli)
     {
+        Gate::authorize('updateState', $coli);
+        $isAdmin = $request->user()->isAdmin();
+
         $validated = $request->validate([
             'state_group' => ['required', 'in:nouveau,en_cours,livre,retour,annule'],
             'livreur_id' => ['nullable', 'exists:users,id'],
@@ -254,8 +300,8 @@ class ColisController extends Controller
             $coli->expedie_at = now();
         }
 
-        if (! empty($validated['livreur_id'])) {
-            $livreur = User::find($validated['livreur_id']);
+        if ($isAdmin && ! empty($validated['livreur_id'])) {
+            $livreur = User::drivers()->findOrFail($validated['livreur_id']);
             $coli->livreur_id = $livreur->id;
             $coli->livreur_nom = $livreur->nom_complet;
             $coli->livreur_telephone = $livreur->telephone;
@@ -275,6 +321,7 @@ class ColisController extends Controller
      */
     public function destroy(Command $coli)
     {
+        Gate::authorize('delete', $coli);
         $coli->delete();
 
         return back()->with('success', "Colis #{$coli->code} archivé avec succès.");

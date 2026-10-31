@@ -183,12 +183,15 @@ export function ClientFormDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="password">
-              {isEditing ? "Changer le mot de passe (Laisser vide pour conserver)" : "Mot de passe initial (Défaut: ouaiss@2026)"}
+              {isEditing ? "Changer le mot de passe (Laisser vide pour conserver)" : "Mot de passe initial (obligatoire, 8 caractères minimum)"}
             </Label>
             <Input
               id="password"
               type="password"
               placeholder="••••••••"
+              required={!isEditing}
+              minLength={8}
+              autoComplete="new-password"
               value={data.password}
               onChange={(e) => setData('password', e.target.value)}
             />

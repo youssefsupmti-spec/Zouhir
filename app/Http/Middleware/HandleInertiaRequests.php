@@ -2,6 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Business;
+use App\Models\Command;
+use App\Models\CompteBancaire;
+use App\Models\User;
+use App\Models\Ville;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -73,6 +78,15 @@ class HandleInertiaRequests extends Middleware
                     'store_name' => $user->store_name,
                     'city' => $user->city,
                 ] : null,
+                // Capacités de navigation issues des Policies (même règle que le serveur).
+                // Confort d'affichage uniquement : la sécurité reste dans les contrôleurs.
+                'can' => $user ? fn () => [
+                    'colis' => $user->can('viewAny', Command::class),
+                    'businesses' => $user->can('viewAny', Business::class),
+                    'users' => $user->can('viewAny', User::class),
+                    'villes' => $user->can('viewAny', Ville::class),
+                    'banks' => $user->can('viewAny', CompteBancaire::class),
+                ] : [],
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

@@ -4,8 +4,16 @@ namespace App\Providers;
 
 use App\Domain\Auth\Enums\UserRole;
 use App\Domain\RolesPermissions\Support\RoleIds;
+use App\Models\Business;
+use App\Models\Command;
+use App\Models\CompteBancaire;
 use App\Models\User;
+use App\Models\Ville;
+use App\Policies\BusinessPolicy;
+use App\Policies\CommandPolicy;
+use App\Policies\CompteBancairePolicy;
 use App\Policies\UserPolicy;
+use App\Policies\VillePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Models\Role;
@@ -45,5 +53,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Command::class, CommandPolicy::class);
+        Gate::policy(Business::class, BusinessPolicy::class);
+        Gate::policy(CompteBancaire::class, CompteBancairePolicy::class);
+        Gate::policy(Ville::class, VillePolicy::class);
     }
 }

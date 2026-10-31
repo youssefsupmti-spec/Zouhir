@@ -73,6 +73,7 @@ class ManagementMutationsCrudTest extends TestCase
             'ville_name' => 'Casablanca',
             'store_name' => 'Boutique Casa Mode',
             'status' => 'active',
+            'password' => 'Secret#2026x',
         ])->assertSessionHasNoErrors();
 
         $client = User::where('email', 'marchand.casa@test.ma')->first();
@@ -111,6 +112,7 @@ class ManagementMutationsCrudTest extends TestCase
             'telephone' => '0677112233',
             'ville_name' => 'Rabat',
             'status' => 'active',
+            'password' => 'Secret#2026x',
         ])->assertSessionHasNoErrors();
 
         $livreur = User::where('email', 'chauffeur.rbt@test.ma')->first();

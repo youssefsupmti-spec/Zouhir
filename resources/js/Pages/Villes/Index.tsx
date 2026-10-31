@@ -48,6 +48,7 @@ interface VillesIndexProps {
     total_villes: number;
     total_zones: number;
   };
+  canManage?: boolean;
   filters: {
     search?: string;
     zone_id?: string;
@@ -57,7 +58,7 @@ interface VillesIndexProps {
   };
 }
 
-export default function VillesIndex({ villes, zones, stats, filters }: VillesIndexProps) {
+export default function VillesIndex({ villes, zones, stats, filters, canManage = false }: VillesIndexProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingVille, setEditingVille] = useState<VilleItem | null>(null);
 
@@ -155,7 +156,7 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
     {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
+      cell: ({ row }) => !canManage ? null : (
         <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -194,7 +195,7 @@ export default function VillesIndex({ villes, zones, stats, filters }: VillesInd
           icon={MapPin}
           badge={`${stats.total_villes} villes`}
           actions={
-            <Button
+            canManage && <Button
               onClick={handleCreate}
               className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold cursor-pointer"
             >

@@ -102,4 +102,42 @@ class Command extends Model
     {
         return $query->where('client_id', $clientId);
     }
+
+    /**
+     * Data Isolation : colis visibles par l'utilisateur selon ses permissions
+     * de périmètre effectives (PerimetreColis / ActAs*), jamais selon un nom de rôle.
+     * - Administration (ActAsAdmin ou Gate::before admin) : tous les colis.
+     * - ActAsClient : colis dont il est l'expéditeur (client_id).
+     * - ActAsDriver : colis qui lui sont affectés (livreur_id).
+     * - Autres périmètres (ex. ActAsAgency, sans clé de rattachement) : aucun.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        $isClient = $user->isClient();
+        $isDriver = $user->isDriver();
+
+        if (! $isClient && ! $isDriver) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (Builder $q) use ($user, $isClient, $isDriver) {
+            if ($isClient) {
+                $q->orWhere('client_id', $user->id);
+            }
+            if ($isDriver) {
+                $q->orWhere('livreur_id', $user->id);
+            }
+        });
+    }
+
+    public function isVisibleTo(User $user): bool
+    {
+        return $user->isAdmin()
+            || ($user->isClient() && (int) $this->client_id === (int) $user->id)
+            || ($user->isDriver() && (int) $this->livreur_id === (int) $user->id);
+    }
 }

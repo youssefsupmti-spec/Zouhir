@@ -42,6 +42,21 @@ class CompteBancaire extends Model
         return $this->belongsTo(Bank::class, 'bank_id');
     }
 
+    /**
+     * Data Isolation : tous les comptes pour la gestion des comptes
+     * (manage_users / admin), sinon uniquement les comptes du titulaire (owner_id).
+     */
+    public function scopeVisibleTo(\Illuminate\Database\Eloquent\Builder $query, User $user): \Illuminate\Database\Eloquent\Builder
+    {
+        if ($user->can(\App\Domain\Auth\Enums\Permission::MANAGE_USERS->value)) {
+            return $query;
+        }
+
+        return $user->can(\App\Domain\Auth\Enums\Permission::VIEW_FINANCES->value)
+            ? $query->where('owner_id', $user->id)
+            : $query->whereRaw('1 = 0');
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');

@@ -6,6 +6,7 @@ use App\Models\Ville;
 use App\Models\Zone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,7 +21,7 @@ class VilleController extends Controller
         $zoneId = $request->input('zone_id');
         $sort = $request->input('sort', 'name_fr');
         $direction = $request->input('direction', 'asc');
-        $perPage = (int) $request->input('per_page', 50);
+        $perPage = min(max((int) $request->input('per_page', 50), 1), 100);
 
         $allowedSorts = ['id', 'name_fr', 'name_ar', 'code_zone', 'created_at'];
         if (! in_array($sort, $allowedSorts, true)) {
@@ -53,6 +54,7 @@ class VilleController extends Controller
 
         return Inertia::render('Villes/Index', [
             'villes' => $villes,
+            'canManage' => $request->user()->can('create', Ville::class),
             'zones' => $zones,
             'stats' => [
                 'total_villes' => $totalVilles,
@@ -73,6 +75,8 @@ class VilleController extends Controller
      */
     public function store(Request $request)
     {
+        Gate::authorize('create', Ville::class);
+
         $validated = $request->validate([
             'name_fr' => ['required', 'string', 'max:100', 'unique:villes,name_fr'],
             'name_ar' => ['nullable', 'string', 'max:100'],
@@ -95,6 +99,8 @@ class VilleController extends Controller
      */
     public function update(Request $request, Ville $ville)
     {
+        Gate::authorize('update', $ville);
+
         $validated = $request->validate([
             'name_fr' => ['required', 'string', 'max:100', \Illuminate\Validation\Rule::unique('villes')->ignore($ville->id)],
             'name_ar' => ['nullable', 'string', 'max:100'],
@@ -117,6 +123,8 @@ class VilleController extends Controller
      */
     public function destroy(Ville $ville)
     {
+        Gate::authorize('delete', $ville);
+
         $ville->delete();
 
         return back()->with('success', 'Ville retirée du référentiel.');

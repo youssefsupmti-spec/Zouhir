@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Business;
 use App\Models\User;
+use App\Domain\Auth\Enums\Permission as PermissionEnum;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,11 +17,14 @@ class BusinessController extends Controller
      */
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', Business::class);
+        $user = $request->user();
+
         $search = $request->input('search');
         $status = $request->input('status');
         $sort = $request->input('sort', 'created_at');
         $direction = $request->input('direction', 'desc');
-        $perPage = (int) $request->input('per_page', 25);
+        $perPage = min(max((int) $request->input('per_page', 25), 1), 100);
 
         // Validation des colonnes autorisées pour le tri
         $allowedSorts = ['id', 'name', 'status', 'created_at'];
@@ -28,7 +33,11 @@ class BusinessController extends Controller
         }
         $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
 
-        $query = Business::query()
+        // Data Isolation : liste et statistiques limitées au périmètre de l'utilisateur.
+        $scoped = fn () => Business::query()->visibleTo($user);
+        $canManage = $user->can(PermissionEnum::MANAGE_USERS->value);
+
+        $query = $scoped()
             ->with(['user:id,nom_complet,email,telephone'])
             ->withCount('commands')
             ->when($search, function ($q, $term) {
@@ -49,11 +58,12 @@ class BusinessController extends Controller
         $businesses = $query->paginate($perPage)->withQueryString();
 
         // Statistiques réelles calculées côté serveur (zéro valeur en dur)
-        $totalBusinesses = Business::count();
-        $activeBusinesses = Business::where('status', 'active')->count();
-        $clientsWithBusiness = Business::distinct('user_id')->count('user_id');
-        $totalClients = User::where('role', 'client')->count();
-        $clientsList = User::where('role', 'client')->select('id', 'nom_complet')->orderBy('nom_complet')->get();
+        $totalBusinesses = $scoped()->count();
+        $activeBusinesses = $scoped()->where('status', 'active')->count();
+        $clientsWithBusiness = $scoped()->distinct('user_id')->count('user_id');
+        $clientsScope = fn () => User::clients()->when(! $canManage, fn ($q) => $q->whereKey($user->id));
+        $totalClients = $clientsScope()->count();
+        $clientsList = $clientsScope()->select('id', 'nom_complet')->orderBy('nom_complet')->get();
 
         return Inertia::render('Businesses/Index', [
             'businesses' => $businesses,
@@ -80,6 +90,9 @@ class BusinessController extends Controller
      */
     public function store(Request $request)
     {
+        Gate::authorize('create', Business::class);
+        $this->scopeOwnerInput($request);
+
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
             'name' => [
@@ -96,7 +109,9 @@ class BusinessController extends Controller
             'user_id.required' => 'Le client marchand propriétaire est requis.',
         ]);
 
-        $validated['status'] = $validated['status'] ?? 'active';
+        $validated['status'] = $request->user()->can(PermissionEnum::MANAGE_USERS->value)
+            ? ($validated['status'] ?? 'active')
+            : 'active';
 
         Business::create($validated);
 
@@ -108,6 +123,9 @@ class BusinessController extends Controller
      */
     public function update(Request $request, Business $business)
     {
+        Gate::authorize('update', $business);
+        $this->scopeOwnerInput($request);
+
         $validated = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
             'name' => [
@@ -125,6 +143,11 @@ class BusinessController extends Controller
             'name.unique' => 'Ce client possède déjà une enseigne portant ce nom.',
         ]);
 
+        // Seule la gestion des comptes peut modifier le statut (ex. suspension).
+        if (! $request->user()->can(PermissionEnum::MANAGE_USERS->value)) {
+            unset($validated['status']);
+        }
+
         $business->update($validated);
 
         return back()->with('success', 'Enseigne marchande mise à jour avec succès.');
@@ -135,9 +158,29 @@ class BusinessController extends Controller
      */
     public function destroy(Business $business)
     {
+        Gate::authorize('delete', $business);
         $business->delete();
 
         return back()->with('success', 'Enseigne marchande supprimée avec succès.');
     }
-}
 
+    /**
+     * Le propriétaire d'une enseigne est forcé au marchand connecté hors gestion des comptes,
+     * et doit toujours être un compte marchand (User::clients()).
+     */
+    private function scopeOwnerInput(Request $request): void
+    {
+        $user = $request->user();
+        if (! $user->can(PermissionEnum::MANAGE_USERS->value)) {
+            $request->merge(['user_id' => $user->id]);
+        }
+
+        $request->validate([
+            'user_id' => ['required', function (string $attribute, mixed $value, \Closure $fail) {
+                if (! User::clients()->whereKey($value)->exists()) {
+                    $fail('Le propriétaire doit être un client marchand.');
+                }
+            }],
+        ]);
+    }
+}

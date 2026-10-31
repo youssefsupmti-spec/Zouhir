@@ -53,6 +53,8 @@ interface LivreurOption {
 }
 
 interface ColisItem {
+  /** Capacités calculées côté serveur par CommandPolicy. */
+  can?: { update: boolean; updateState: boolean; delete: boolean };
   id: number;
   code: string;
   produit?: string;
@@ -97,6 +99,7 @@ interface ColisItem {
 }
 
 interface ColisIndexProps {
+  canCreate?: boolean;
   colis: {
     data: ColisItem[];
     current_page: number;
@@ -136,6 +139,7 @@ export default function ColisIndex({
   livreurs = [],
   stats,
   filters,
+  canCreate = false,
 }: ColisIndexProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingColis, setEditingColis] = useState<ColisItem | null>(null);
@@ -291,7 +295,10 @@ export default function ColisIndex({
     {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
+      cell: ({ row }) => {
+        const can = row.original.can;
+        if (!can || (!can.update && !can.updateState && !can.delete)) return null;
+        return (
         <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -300,14 +307,19 @@ export default function ColisIndex({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44 text-xs">
+              {can.updateState && (
               <DropdownMenuItem onClick={() => handleStatusClick(row.original)} className="gap-2 cursor-pointer font-medium text-primary">
                 <RefreshCw className="h-3.5 w-3.5" />
                 Changer de statut
               </DropdownMenuItem>
+              )}
+              {can.update && (
               <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
                 <Edit className="h-3.5 w-3.5" />
                 Modifier le colis
               </DropdownMenuItem>
+              )}
+              {can.delete && (
               <DropdownMenuItem
                 onClick={() => handleDeleteClick(row.original)}
                 className="gap-2 text-destructive focus:text-destructive cursor-pointer"
@@ -315,10 +327,12 @@ export default function ColisIndex({
                 <Trash2 className="h-3.5 w-3.5" />
                 Archiver
               </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      ),
+        );
+      },
     },
   ];
 
@@ -334,7 +348,7 @@ export default function ColisIndex({
           icon={Package}
           badge={`${stats.total} colis`}
           actions={
-            <Button
+            canCreate && <Button
               onClick={handleCreate}
               className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold cursor-pointer"
             >

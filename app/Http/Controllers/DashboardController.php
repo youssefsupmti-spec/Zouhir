@@ -17,11 +17,8 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // Requête de base scopée si marchand, ou globale si admin
-        $query = ColisModel::query();
-        if ($user && $user->isClient()) {
-            $query->where('client_id', $user->id);
-        }
+        // Data Isolation : même périmètre que la page Colis (ActAs* / administration).
+        $query = ColisModel::query()->visibleTo($user);
 
         $totalShipments = (clone $query)->count();
         $delivered = (clone $query)->where('state_group', 'livre')->count();

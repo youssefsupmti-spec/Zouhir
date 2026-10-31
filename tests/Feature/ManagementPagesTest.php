@@ -9,6 +9,7 @@ use App\Models\CompteBancaire;
 use App\Models\User;
 use App\Models\Ville;
 use App\Models\Zone;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -137,11 +138,14 @@ class ManagementPagesTest extends TestCase
             );
     }
 
-    public function test_authenticated_user_can_access_banks_index(): void
+    public function test_client_with_view_finances_can_access_own_banks_index(): void
     {
         $user = User::factory()->create([
             'role' => UserRole::CLIENT,
         ]);
+        // /banks exige la permission effective view_finances (rôle Spatie client).
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $user->assignRole('client');
 
         $bank = Bank::create([
             'name' => 'Attijariwafa Bank',

@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Bank;
 use App\Models\CompteBancaire;
+use App\Domain\Auth\Enums\Permission as PermissionEnum;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,13 +18,18 @@ class BankController extends Controller
      */
     public function index(Request $request): Response
     {
+        Gate::authorize('viewAny', CompteBancaire::class);
+        $user = $request->user();
+        $canManage = $user->can(PermissionEnum::MANAGE_USERS->value);
+
         $search = $request->input('search');
         $bankId = $request->input('bank_id');
         $tab = $request->input('tab', 'comptes'); // 'comptes' ou 'catalogue'
-        $perPage = (int) $request->input('per_page', 25);
+        $perPage = min(max((int) $request->input('per_page', 25), 1), 100);
 
         // 1. Comptes bancaires des marchands et livreurs
-        $comptesQuery = CompteBancaire::query()
+        // Data Isolation : un titulaire ne voit que ses propres comptes.
+        $comptesQuery = CompteBancaire::query()->visibleTo($user)
             ->with([
                 'bank:id,name,code_etablissement,swift_code,status',
                 'owner:id,nom_complet,email,telephone,role',
@@ -64,11 +72,14 @@ class BankController extends Controller
 
         // Statistiques réelles MariaDB
         $totalBanks = Bank::count();
-        $totalComptes = CompteBancaire::count();
-        $linkedComptes = CompteBancaire::whereNotNull('bank_id')->count();
+        $totalComptes = CompteBancaire::query()->visibleTo($user)->count();
+        $linkedComptes = CompteBancaire::query()->visibleTo($user)->whereNotNull('bank_id')->count();
 
         // Liste des acteurs pour le formulaire d'ajout
-        $ownersList = \App\Models\User::whereIn('role', ['client', 'livreur'])->select('id', 'nom_complet', 'role')->orderBy('nom_complet')->get();
+        $ownersList = $canManage
+            ? User::query()->where(fn ($q) => $q->clients())->orWhere(fn ($q) => $q->drivers())
+                ->select('id', 'nom_complet', 'role')->orderBy('nom_complet')->get()
+            : User::whereKey($user->id)->select('id', 'nom_complet', 'role')->get();
 
         return Inertia::render('Banks/Index', [
             'comptes' => $comptes,
@@ -94,6 +105,13 @@ class BankController extends Controller
      */
     public function storeCompte(Request $request)
     {
+        Gate::authorize('create', CompteBancaire::class);
+
+        // Hors gestion des comptes, le titulaire est forcé à l'utilisateur connecté.
+        if (! $request->user()->can(PermissionEnum::MANAGE_USERS->value)) {
+            $request->merge(['owner_id' => $request->user()->id]);
+        }
+
         $validated = $request->validate([
             'owner_id' => ['required', 'exists:users,id'],
             'owner_type' => ['nullable', 'in:client,livreur,agence'],
@@ -136,6 +154,8 @@ class BankController extends Controller
      */
     public function updateCompte(Request $request, CompteBancaire $compte)
     {
+        Gate::authorize('update', $compte);
+
         $validated = $request->validate([
             'titulaire_nom' => ['required', 'string', 'max:255'],
             'bank_id' => ['required', 'exists:banks,id'],
@@ -170,6 +190,7 @@ class BankController extends Controller
      */
     public function destroyCompte(CompteBancaire $compte)
     {
+        Gate::authorize('delete', $compte);
         $compte->delete();
 
         return back()->with('success', 'Compte bancaire supprimé.');

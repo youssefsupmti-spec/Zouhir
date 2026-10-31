@@ -169,12 +169,15 @@ export function LivreurFormDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="password">
-              {isEditing ? "Mot de passe (Laisser vide pour ne pas changer)" : "Mot de passe initial (Défaut: livreur@2026)"}
+              {isEditing ? "Mot de passe (Laisser vide pour ne pas changer)" : "Mot de passe initial (obligatoire, 8 caractères minimum)"}
             </Label>
             <Input
               id="password"
               type="password"
               placeholder="••••••••"
+              required={!isEditing}
+              minLength={8}
+              autoComplete="new-password"
               value={data.password}
               onChange={(e) => setData('password', e.target.value)}
             />

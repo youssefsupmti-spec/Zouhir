@@ -57,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // ou l'état « Bientôt » ({ kind: "soon" }). Aucun compteur fictif.
   const SOON = { kind: "soon" } as const
 
-  const navMain: NavItem[] = [
+  const navAll: NavItem[] = [
     {
       title: "Tableau de bord",
       url: "/dashboard",
@@ -104,6 +104,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ],
     },
   ]
+
+  // Filtrage par capacités serveur (auth.can, calculées par les Policies Laravel).
+  // Aucun nom de rôle côté React. Ce masquage est un confort : la sécurité reste serveur.
+  const can: Record<string, boolean> = auth?.can || {}
+  const ABILITY_BY_URL: Record<string, string> = {
+    "/colis": "colis",
+    "/businesses": "businesses",
+    "/clients": "users",
+    "/livreurs": "users",
+    "/villes": "villes",
+    "/banks": "banks",
+  }
+  const isAllowed = (url?: string) => !url || !ABILITY_BY_URL[url] || can[ABILITY_BY_URL[url]] === true
+  const hasLink = (i: { url?: string; disabled?: boolean }) => Boolean(i.url) && !i.disabled
+
+  const navMain: NavItem[] = navAll.flatMap((item) => {
+    if (!item.items) return isAllowed(item.url) ? [item] : []
+    const items = item.items.filter((sub) => isAllowed(sub.url))
+    // Une rubrique qui avait des liens mais n'en conserve aucun est masquée.
+    if (item.items.some(hasLink) && !items.some(hasLink)) return []
+    return [{ ...item, items }]
+  })
 
   const quickLinks = [
     {

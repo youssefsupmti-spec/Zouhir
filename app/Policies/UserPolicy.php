@@ -12,6 +12,11 @@ class UserPolicy
         return $user->can(PermissionEnum::MANAGE_USERS->value);
     }
 
+    public function create(User $user): bool
+    {
+        return $user->can(PermissionEnum::MANAGE_USERS->value);
+    }
+
     public function view(User $user, User $model): bool
     {
         return $user->id === $model->id || $user->can(PermissionEnum::MANAGE_USERS->value);
