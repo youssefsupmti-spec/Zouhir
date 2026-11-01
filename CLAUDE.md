@@ -12,7 +12,7 @@ Ce projet utilise **WinningExpress** et **Zakaria2** uniquement comme référenc
 1. **Fondation technique & Architecture DDD pragmatique** (Domain, Application, Infrastructure, Presentation).
 2. **Landing Page Premium Internationale** : Vitrine corporate, simulateur interactif de tarifs, widget de suivi de colis par satellite en temps réel, garanties 24/48h & CRBT à J+2.
 3. **Authentification & Inscription Fonctionnelles** : Login et Register complets avec React Hook Form, Zod, validation Laravel stricte, CSRF, rate limiting, protection contre l'escalade de privilèges (rôle forcé côté serveur).
-4. **Design System Original OUAISS EXPRESS** : Couleurs officielles `#004c68` (Deep Ocean Blue) et `#ff8806` (Vibrant Delivery Orange), typographies *Outfit* & *Plus Jakarta Sans*.
+4. **Design System Original OUAISS EXPRESS** : Couleurs officielles `#004c68` (Deep Ocean Blue) et `#ff8806` (Vibrant Delivery Orange), typographie *Inter* (français) et *Droid Arabic Kufi* (arabe), auto-hébergées.
 5. **Préparation Déploiement Hostinger Shared** : Document root `public/`, assets précompilés (aucun daemon Node en production), `.env` sécurisé, migrations Phase 1 non destructives.
 
 ### ⛔ INTERDICTIONS FORMELLES (Règles permanentes) :
@@ -75,8 +75,11 @@ app/
 - **Couleur Primaire** : `#004c68` (Bleu Océan Profond — Stabilité, confiance institutionnelle)
 - **Couleur Secondaire** : `#ff8806` (Orange Livraison Vif — Vitesse, dynamisme logistique)
 - **Surfaces Sombres** : `#05161f` (Fond footer & cartes premium), `#0a2533` (Surfaces de contraste)
-- **Typographie Titres** : *Outfit* (Bold & Black)
-- **Typographie Texte** : *Plus Jakarta Sans*
+- **Typographie (règle du propriétaire, 01/11/2026, commune aux trois projets)** : *Inter* pour tout le texte français
+  (titres compris, classe `font-sans`), *Droid Arabic Kufi* pour tout texte arabe — automatique, même sans `lang="ar"`
+  (`resources/css/app.css` prête ses glyphes arabes à « Inter Variable »). Auto-hébergées : Inter par
+  `@fontsource-variable/inter`, Droid Arabic Kufi dans `resources/fonts/`. Aucun Google Fonts, aucune autre famille
+  (Outfit, Plus Jakarta Sans…) sans décision du propriétaire.
 
 ---
 
