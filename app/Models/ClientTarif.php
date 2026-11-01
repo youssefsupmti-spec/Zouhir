@@ -35,6 +35,7 @@ class ClientTarif extends Model
         'frais_livraison',
         'frais_refus',
         'frais_retour',
+        'legacy_ids',
     ];
 
     protected $casts = [
@@ -43,16 +44,20 @@ class ClientTarif extends Model
         'frais_livraison' => 'decimal:2',
         'frais_refus' => 'decimal:2',
         'frais_retour' => 'decimal:2',
+        // Identifiants legacy d'origine (clientfees / gshippingfees) ; null = créé dans Zouhir.
+        'legacy_ids' => 'array',
     ];
 
+    /** Relation HISTORIQUE : un client archivé reste rattaché à ses tarifs (rapport #35, décision 3). */
     public function client(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'client_id');
+        return $this->belongsTo(User::class, 'client_id')->withTrashed();
     }
 
+    /** Relation HISTORIQUE : une ville archivée reste rattachée à ses tarifs (rapport #35, décision 2). */
     public function ville(): BelongsTo
     {
-        return $this->belongsTo(Ville::class, 'ville_id');
+        return $this->belongsTo(Ville::class, 'ville_id')->withTrashed();
     }
 
     /** Le barème d'un couple (client, ville) désigné par identifiants. */

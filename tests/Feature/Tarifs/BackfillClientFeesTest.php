@@ -96,7 +96,7 @@ class BackfillClientFeesTest extends TestCase
 
         $this->artisan('tarifs:backfill-client-fees', ['--connection' => 'legacy_test', '--details' => true])
             ->expectsOutputToContain('MODE SIMULATION')
-            ->expectsOutputToContain('Total qui serait écrit : 3 ligne(s).')
+            ->expectsOutputToContain('Total qui serait écrit : 4 ligne(s).')
             ->assertSuccessful();
 
         $this->assertSame(1, ClientTarif::withTrashed()->count(), 'Aucune écriture en simulation.');
@@ -106,14 +106,14 @@ class BackfillClientFeesTest extends TestCase
 
         $this->assertSame('a_creer', $statuts[1]);
         $this->assertSame('a_creer', $statuts[2]);
-        $this->assertSame('ville_ambigue', $statuts[3]);
+        $this->assertSame('a_creer', $statuts[3], 'Homonymes : plus petit id (règle WinningExpress).');
         $this->assertSame('ville_introuvable', $statuts[4]);
         $this->assertSame('identite_conflit', $statuts[5]);
         $this->assertSame('client_introuvable', $statuts[6]);
         $this->assertSame('a_creer', $statuts[7]);
         $this->assertSame('doublon_identique', $statuts[8]);
         $this->assertSame('conflit_valeur', $statuts[9]);
-        $this->assertSame('archivee_legacy', $statuts[10]);
+        $this->assertSame('doublon_corbeille', $statuts[10], 'Règle active retenue sur la règle en corbeille.');
         $this->assertSame('client_introuvable', $statuts[11]);
     }
 
@@ -123,14 +123,14 @@ class BackfillClientFeesTest extends TestCase
 
         $this->artisan('tarifs:backfill-client-fees', ['--connection' => 'legacy_test', '--apply' => true])->assertSuccessful();
 
-        $this->assertSame(4, ClientTarif::count()); // 3 créées + 1 existante
+        $this->assertSame(5, ClientTarif::count()); // 4 créées + 1 existante
         $this->assertSame('40.00', ClientTarif::pour($this->clientA->id, $this->casablanca->id)->first()->frais_livraison, 'Conflit jamais écrasé.');
         $this->assertSame('0.00', ClientTarif::pour($this->clientA->id, $this->temara->id)->first()->frais_refus, 'Refus repris tel quel du legacy.');
 
         $this->artisan('tarifs:backfill-client-fees', ['--connection' => 'legacy_test', '--apply' => true])
             ->expectsOutputToContain('Total qui serait écrit : 0 ligne(s).')
             ->assertSuccessful();
-        $this->assertSame(4, ClientTarif::count(), 'Réexécution sans doublon.');
+        $this->assertSame(5, ClientTarif::count(), 'Réexécution sans doublon.');
     }
 
     public function test_doublon_legacy_conflictuel_n_est_pas_migre(): void

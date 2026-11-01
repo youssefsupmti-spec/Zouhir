@@ -187,19 +187,38 @@ class FeeResolutionServiceTest extends TestCase
         $this->assertSame(VilleResolution::INTROUVABLE, $ref->resoudre('Ville Inconnue')->methode);
     }
 
-    public function test_ville_ambigue_n_est_jamais_choisie(): void
+    public function test_homonymes_ville_active_au_plus_petit_id_regle_winningexpress(): void
     {
-        Ville::create(['name_fr' => 'Casablanca', 'zone_id' => $this->zoneRabat->id]); // homonyme
+        $homonyme = Ville::create(['name_fr' => 'CASABLANCA', 'zone_id' => $this->zoneRabat->id]); // id plus grand
         app(VilleRef::class)->oublier();
         $this->tarif($this->clientA, $this->casablanca, '30');
 
         $res = app(VilleRef::class)->resoudre('Casablanca');
-        $this->assertSame(VilleResolution::AMBIGUE, $res->methode);
-        $this->assertCount(2, $res->candidats);
+        $this->assertSame(VilleResolution::HOMONYMES, $res->methode);
+        $this->assertSame($this->casablanca->id, $res->villeId, 'Plus petit id retenu.');
+        $this->assertSame([$this->casablanca->id, $homonyme->id], $res->candidats);
+        $this->assertSame(TypeTarif::Client, $this->fees()->clientFees($this->clientA->id, 'Casablanca')->type);
 
-        $this->assertSame(TypeTarif::Missing, $this->fees()->clientFees($this->clientA->id, 'Casablanca')->type);
-        // Par identifiant, aucune ambiguïté.
-        $this->assertSame(TypeTarif::Client, $this->fees()->clientFees($this->clientA->id, $this->casablanca->id)->type);
+        // Une ville ACTIVE l'emporte sur une archivée plus ancienne.
+        $this->casablanca->delete();
+        app(VilleRef::class)->oublier();
+        $this->assertSame($homonyme->id, app(VilleRef::class)->resoudre('Casablanca', historique: true)->villeId);
+    }
+
+    public function test_ville_archivee_seulement_en_mode_historique(): void
+    {
+        $zagora = Ville::create(['name_fr' => 'ZAGORA', 'zone_id' => $this->zoneRabat->id]);
+        $zagora->delete();
+        $ref = app(VilleRef::class);
+        $ref->oublier();
+
+        // Sélection opérationnelle : jamais une ville archivée.
+        $this->assertNull($ref->resoudre('Zagora')->villeId);
+        $this->assertNull($ref->resoudre($zagora->id)->villeId);
+        // Reprise historique : seule correspondance → acceptée.
+        $r = $ref->resoudre('Zagora', historique: true);
+        $this->assertSame($zagora->id, $r->villeId);
+        $this->assertSame(VilleResolution::ARCHIVEE, $r->methode);
     }
 
     /* ─────────────── Performance ─────────────── */

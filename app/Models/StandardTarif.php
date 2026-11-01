@@ -24,6 +24,7 @@ class StandardTarif extends Model
         'frais_livraison',
         'frais_refus',
         'frais_retour',
+        'legacy_ids',
     ];
 
     protected $casts = [
@@ -31,10 +32,12 @@ class StandardTarif extends Model
         'frais_livraison' => 'decimal:2',
         'frais_refus' => 'decimal:2',
         'frais_retour' => 'decimal:2',
+        // Identifiants legacy d'origine (clientfees / gshippingfees) ; null = créé dans Zouhir.
+        'legacy_ids' => 'array',
     ];
 
     public function ville(): BelongsTo
     {
-        return $this->belongsTo(Ville::class, 'ville_id');
+        return $this->belongsTo(Ville::class, 'ville_id')->withTrashed();
     }
 }

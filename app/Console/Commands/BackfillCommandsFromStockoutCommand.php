@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Domain\Villes\Support\VilleRef;
 use App\Models\Business;
 use App\Models\Command as ColisModel;
 use App\Models\User;
@@ -76,14 +77,11 @@ class BackfillCommandsFromStockoutCommand extends Command
             $businessNames[$b->user_id] = $b->name;
         }
 
-        $villesRaw = Ville::withTrashed()->get(['id', 'name_fr', 'code_zone']);
-        $villesMap = [];
-        $villesZoneMap = [];
-        foreach ($villesRaw as $v) {
-            $cleanName = strtoupper(trim($v->name_fr));
-            $villesMap[$cleanName] = $v->id;
-            $villesZoneMap[$cleanName] = $v->code_zone;
-        }
+        // Politique UNIQUE de rattachement des villes (rapport #35, décision 1) : VilleRef en mode
+        // historique — ville active d'abord, homonymes → plus petit id, ville archivée si seule
+        // correspondance. Identique au rattachement des tarifs clients (tarifs:backfill-client-fees).
+        $villeRef = app(VilleRef::class);
+        $villesZoneMap = Ville::withTrashed()->pluck('code_zone', 'id')->all();
 
         // 3. Extraction paginée des colis depuis stockout.commands
         $sqlCount = "SELECT COUNT(*) FROM `commands`";
@@ -129,9 +127,8 @@ class BackfillCommandsFromStockoutCommand extends Command
                 $livreurNom = $livreurId ? ($usersMap[$livreurId] ?? null) : null;
 
                 $cityStr = trim($row['city'] ?? '');
-                $cityUpper = strtoupper($cityStr);
-                $villeId = $villesMap[$cityUpper] ?? null;
-                $zoneCode = $villesZoneMap[$cityUpper] ?? null;
+                $villeId = self::villePourLibelle($villeRef, $cityStr);
+                $zoneCode = $villeId === null ? null : ($villesZoneMap[$villeId] ?? null);
 
                 $state = trim($row['state'] ?? 'Nouveau');
                 $stateGroup = $this->classifyStateGroup($state);
@@ -199,6 +196,15 @@ class BackfillCommandsFromStockoutCommand extends Command
         $this->info("Total colis insérés / mis à jour : {$insertedTotal}");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Ville d'un libellé legacy de colis — même politique que les tarifs clients (VilleRef, historique).
+     * Public et statique pour être testé sans base legacy.
+     */
+    public static function villePourLibelle(VilleRef $villeRef, string $libelle): ?int
+    {
+        return $villeRef->resoudre(trim($libelle), historique: true)->villeId;
     }
 
     private function classifyStateGroup(string $state): string

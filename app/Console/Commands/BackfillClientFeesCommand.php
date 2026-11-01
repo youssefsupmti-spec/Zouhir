@@ -20,7 +20,7 @@ class BackfillClientFeesCommand extends Command
 {
     protected $signature = 'tarifs:backfill-client-fees
         {--connection=legacy_stockout : Connexion Laravel de la base legacy (lecture seule)}
-        {--standard : Analyser aussi le barème général legacy (gshippingfees → standard_tarifs)}
+        {--standard : Analyser aussi le barème général legacy (gshippingfees vers standard_tarifs)}
         {--apply : Écrire réellement (sinon simulation)}
         {--restaurer : Avec --apply, restaurer les tarifs supprimés dans Zouhir}
         {--details : Lister chaque ligne non migrable ou en conflit}
@@ -57,14 +57,23 @@ class BackfillClientFeesCommand extends Command
             $analyse['colonnes_frais']['refus'] ? 'présente' : 'ABSENTE',
             $analyse['colonnes_frais']['retour'] ? 'présente' : 'ABSENTE'));
 
-        $actives = array_filter($lignes, fn ($l) => $l['statut'] !== 'archivee_legacy');
-        $this->table(['Indicateur', 'Valeur'], [
-            ['Lignes legacy lues', count($lignes)],
-            ['Règles actives (trash = 1)', count($actives)],
-            ['Clients legacy distincts (actifs)', count(array_unique(array_column($actives, 'legacy_client')))],
-            ['Clients identifiés', count(array_unique(array_filter(array_column($actives, 'client_id'))))],
-            ['Villes legacy distinctes (actives)', count(array_unique(array_column($actives, 'legacy_ville')))],
-            ['Villes identifiées', count(array_unique(array_filter(array_column($actives, 'ville_id'))))],
+        $sy = $analyse['synthese'];
+        $cat = $sy['categories'];
+        $fmt = fn (array $d) => collect($d)->map(fn ($n, $m) => "{$n} à {$m}")->implode(', ') ?: '—';
+
+        $this->line('Contrôles (rapport #35, décision 8) :');
+        $this->table(['Contrôle', 'Valeur'], [
+            ['Lignes legacy examinées', $sy['lignes_examinees']],
+            ['Règles uniques attendues', $sy['regles_uniques']],
+            ['  · simples', $cat['simples']],
+            ['  · villes homonymes (plus petit id)', $cat['homonymes']],
+            ['  · villes archivées', $cat['villes_archivees']],
+            ['  · clients archivés', $cat['clients_archives']],
+            ['Doublons identiques neutralisés', $sy['neutralisees']],
+            ['Clients legacy / identifiés / dont archivés', "{$sy['clients_legacy']} / {$sy['clients_identifies']} / {$sy['clients_archives']}"],
+            ['Refus (lignes legacy)', $fmt($sy['refus_lignes_legacy'])],
+            ['Retours (lignes legacy)', $fmt($sy['retour_lignes_legacy'])],
+            ['Conflits avec Zouhir (jamais écrasés)', $sy['conflits']],
         ]);
 
         $this->line('Statuts :');
@@ -74,20 +83,29 @@ class BackfillClientFeesCommand extends Command
         $this->line('Rapprochement ville (méthode) :');
         $this->table(['Méthode', 'Lignes'], collect($analyse['villes'])->map(fn ($n, $s) => [$s, $n])->values()->all());
 
-        $aEcrire = count(array_filter($lignes, fn ($l) => $l['statut'] === 'a_creer'))
+        $aEcrire = count(array_filter($lignes, fn ($l) => in_array($l['statut'], ['a_creer', 'a_creer_corbeille'], true)))
             + ($this->option('restaurer') ? count(array_filter($lignes, fn ($l) => $l['statut'] === 'a_restaurer')) : 0);
         $this->info("Total qui serait écrit : {$aEcrire} ligne(s).");
 
         if ($standards !== null) {
-            $this->line('Barème général (gshippingfees → standard_tarifs) :');
+            $this->line('Barème général (gshippingfees vers standard_tarifs) :');
             $this->table(['Statut', 'Lignes'], collect($standards['compte'])->map(fn ($n, $s) => [$s, $n])->values()->all());
         }
 
         if ($this->option('details')) {
-            $problemes = array_filter($lignes, fn ($l) => ! in_array($l['statut'], ['a_creer', 'identique', 'doublon_identique'], true));
+            // Lignes non migrées, en conflit, neutralisées, ou migrées avec une note (homonymes, archives).
+            $notables = array_filter($lignes, fn ($l) => $l['statut'] !== 'identique'
+                && ($l['statut'] !== 'a_creer' || ! empty($l['detail']) || $l['client_archive'] || count($l['legacy_ids']) > 1));
             $this->table(
-                ['Legacy #', 'Client', 'Ville legacy', 'Statut', 'Détail'],
-                array_map(fn ($l) => [$l['legacy_id'], $l['legacy_client'], $l['legacy_ville'], $l['statut'], $l['detail'] ?? ''], $problemes),
+                ['Legacy #', 'Client', 'Ville legacy', 'Ville Zouhir', 'Statut', 'Détail'],
+                array_map(fn ($l) => [
+                    implode('+', $l['legacy_ids']),
+                    $l['legacy_client'].($l['client_archive'] ? ' (archivé)' : ''),
+                    $l['legacy_ville'],
+                    $l['ville_id'] ?? '—',
+                    $l['statut'],
+                    $l['detail'] ?? '',
+                ], $notables),
             );
         }
 
@@ -98,7 +116,7 @@ class BackfillClientFeesCommand extends Command
         }
 
         $r = $rapprochement->appliquer($lignes, (bool) $this->option('restaurer'), $standards['lignes'] ?? []);
-        $this->info(sprintf('Écrit : %d créé(s), %d restauré(s), %d standard(s) créé(s).', $r['crees'], $r['restaurees'], $r['standards_crees']));
+        $this->info(sprintf('Écrit : %d créé(s) actifs, %d créé(s) en corbeille, %d restauré(s), %d standard(s) créé(s).', $r['crees'], $r['crees_corbeille'], $r['restaurees'], $r['standards_crees']));
 
         return self::SUCCESS;
     }

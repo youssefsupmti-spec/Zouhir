@@ -103,10 +103,13 @@ final class ClientTarifQuery
      */
     public function statistiques(): array
     {
+        // Vue opérationnelle : ni villes ni clients archivés (leurs règles restent conservées en base).
         $s = DB::table('client_tarifs')
             ->join('villes', 'villes.id', '=', 'client_tarifs.ville_id')
+            ->join('users', 'users.id', '=', 'client_tarifs.client_id')
             ->whereNull('client_tarifs.deleted_at')
             ->whereNull('villes.deleted_at')
+            ->whereNull('users.deleted_at')
             ->selectRaw('COUNT(DISTINCT client_tarifs.client_id) as clients')
             ->selectRaw('COUNT(*) as tarifs')
             ->selectRaw('COUNT(DISTINCT client_tarifs.ville_id) as villes')

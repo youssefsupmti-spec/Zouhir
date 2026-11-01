@@ -9,6 +9,7 @@ namespace App\Domain\Villes\Support;
  *
  * `methode` dit COMMENT la ville a été trouvée : c'est ce qui permet à un
  * backfill d'afficher le niveau de confiance de chaque rapprochement.
+ * `candidats` liste les homonymes départagés (plus petit id retenu).
  */
 final readonly class VilleResolution
 {
@@ -16,11 +17,14 @@ final readonly class VilleResolution
     public const EXACTE = 'exacte';
     public const NORMALISEE = 'normalisee';
     public const ALIAS = 'alias';
-    public const AMBIGUE = 'ambigue';
+    /** Plusieurs villes ACTIVES portent ce nom : plus petit id retenu (règle WinningExpress). */
+    public const HOMONYMES = 'homonymes';
+    /** Seule correspondance : une ville archivée (mode historique uniquement). */
+    public const ARCHIVEE = 'archivee';
     public const INTROUVABLE = 'introuvable';
 
     /**
-     * @param  list<int>  $candidats  identifiants concurrents en cas d'ambiguïté
+     * @param  list<int>  $candidats  homonymes départagés (vide si correspondance unique)
      */
     public function __construct(
         public ?int $villeId,

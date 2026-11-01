@@ -7,20 +7,23 @@ namespace App\Domain\Villes\Support;
 use App\Models\Ville;
 
 /**
- * Traduit un libellé de ville (ou un id) en `villes.id` — de façon DÉTERMINISTE.
+ * Traduit un libellé de ville (ou un id) en `villes.id` — POLITIQUE UNIQUE du projet.
  *
- * Adapté de WinningExpress (App\Domain\Villes\Support\VilleRef) avec trois
- * différences voulues :
- *  1. instance « scoped » (une par requête / commande) au lieu d'un état statique ;
- *  2. un dictionnaire EXPLICITE des variantes historiques connues ;
- *  3. la détection des HOMONYMES : si plusieurs villes actives partagent la même
- *     clé, la résolution est déclarée ambiguë et ne choisit JAMAIS au hasard.
+ * Règle de WinningExpress (BackfillTarifCles::rattacherVille, VilleRef::chercher),
+ * validée par le propriétaire (rapport #35, décision 1) :
+ *   ① ville ACTIVE d'abord ;
+ *   ② parmi plusieurs correspondances actives (homonymes), le PLUS PETIT id ;
+ *   ③ ville archivée : acceptée UNIQUEMENT en mode historique (`$historique = true`, backfills)
+ *      et seulement si aucune ville active ne correspond — même départage par le plus petit id.
  *
- * Ordre des tentatives : id → libellé exact (casse/espaces ignorés) → libellé
- * normalisé (accents, tirets, apostrophes) → alias du dictionnaire. Aucun
- * rapprochement approximatif (distance d'édition, LIKE) n'est fait.
+ * Ordre des tentatives de libellé : exact (casse/espaces ignorés) → normalisé (accents, tirets,
+ * apostrophes) → dictionnaire explicite des variantes historiques. Aucun rapprochement approximatif.
  *
- * Le référentiel actif (≈ 1 350 villes) est chargé en UNE requête, au premier besoin.
+ * Utilisée par : FeeResolutionService (libellés), RapprochementClientFees (tarifs legacy) et
+ * app:backfill-commands-from-stockout (colis legacy) — les trois rattachent donc un même libellé
+ * au MÊME identifiant.
+ *
+ * Le référentiel (≈ 1 350 villes, corbeille comprise) est chargé en UNE requête, au premier besoin.
  */
 final class VilleRef
 {
@@ -39,19 +42,31 @@ final class VilleRef
         'mers lkhir' => 'Mers el kheir',
     ];
 
-    /** @var array<string, list<int>>|null clé exacte → ids */
-    private ?array $exact = null;
+    private bool $charge = false;
 
-    /** @var array<string, list<int>> clé normalisée → ids */
+    /** @var array<string, list<int>> clé exacte → ids actifs */
+    private array $exact = [];
+
+    /** @var array<string, list<int>> clé normalisée → ids actifs */
     private array $normalise = [];
 
-    /** @var array<int, string> id → nom */
+    /** @var array<string, list<int>> clé exacte → ids archivés */
+    private array $exactArchivees = [];
+
+    /** @var array<string, list<int>> clé normalisée → ids archivés */
+    private array $normaliseArchivees = [];
+
+    /** @var array<int, string> id → nom (corbeille comprise) */
     private array $noms = [];
 
-    /** @var array<int, true> */
-    private array $actives = [];
+    /** @var array<int, bool> id → archivée ? */
+    private array $archivee = [];
 
-    public function resoudre(int|string|null $ville): VilleResolution
+    /**
+     * @param  bool  $historique  autoriser une ville archivée si aucune ville active ne correspond
+     *                            (reprises de données historiques uniquement).
+     */
+    public function resoudre(int|string|null $ville, bool $historique = false): VilleResolution
     {
         if ($ville === null || $ville === '') {
             return new VilleResolution(null, VilleResolution::INTROUVABLE);
@@ -61,37 +76,49 @@ final class VilleRef
 
         if (is_int($ville) || ctype_digit((string) $ville)) {
             $id = (int) $ville;
+            $existe = array_key_exists($id, $this->archivee);
 
-            return isset($this->actives[$id])
-                ? new VilleResolution($id, VilleResolution::ID)
-                : new VilleResolution(null, VilleResolution::INTROUVABLE);
+            if ($existe && (! $this->archivee[$id] || $historique)) {
+                return new VilleResolution($id, $this->archivee[$id] ? VilleResolution::ARCHIVEE : VilleResolution::ID);
+            }
+
+            return new VilleResolution(null, VilleResolution::INTROUVABLE);
         }
 
         $libelle = (string) $ville;
+        $cleExacte = self::cleExacte($libelle);
+        $cleNormalisee = self::cleNormalisee($libelle);
+        $alias = self::ALIAS[$cleNormalisee] ?? null;
+        $cleAlias = $alias === null ? null : self::cleNormalisee($alias);
 
-        $parExact = $this->exact[self::cleExacte($libelle)] ?? [];
-        if ($parExact !== []) {
-            return $this->depuisCandidats($parExact, VilleResolution::EXACTE);
+        // ① Villes actives : exact → normalisé → alias.
+        foreach ([
+            [$this->exact[$cleExacte] ?? [], VilleResolution::EXACTE],
+            [$this->normalise[$cleNormalisee] ?? [], VilleResolution::NORMALISEE],
+            [$cleAlias === null ? [] : ($this->normalise[$cleAlias] ?? []), VilleResolution::ALIAS],
+        ] as [$ids, $methode]) {
+            if ($ids !== []) {
+                return $this->retenir($ids, $methode);
+            }
         }
 
-        $cle = self::cleNormalisee($libelle);
-        $parNormalise = $this->normalise[$cle] ?? [];
-        if ($parNormalise !== []) {
-            return $this->depuisCandidats($parNormalise, VilleResolution::NORMALISEE);
-        }
-
-        $cible = self::ALIAS[$cle] ?? null;
-        if ($cible !== null) {
-            $parAlias = $this->normalise[self::cleNormalisee($cible)] ?? [];
-            if ($parAlias !== []) {
-                return $this->depuisCandidats($parAlias, VilleResolution::ALIAS);
+        // ③ Villes archivées : historique seulement, même ordre de tentatives.
+        if ($historique) {
+            foreach ([
+                $this->exactArchivees[$cleExacte] ?? [],
+                $this->normaliseArchivees[$cleNormalisee] ?? [],
+                $cleAlias === null ? [] : ($this->normaliseArchivees[$cleAlias] ?? []),
+            ] as $ids) {
+                if ($ids !== []) {
+                    return $this->retenir($ids, VilleResolution::ARCHIVEE);
+                }
             }
         }
 
         return new VilleResolution(null, VilleResolution::INTROUVABLE);
     }
 
-    /** `villes.id` d'un libellé ou d'un id — `null` si introuvable OU ambigu. */
+    /** `villes.id` d'un libellé ou d'un id (villes actives) — `null` si introuvable. */
     public function id(int|string|null $ville): ?int
     {
         return $this->resoudre($ville)->villeId;
@@ -111,10 +138,13 @@ final class VilleRef
     /** Vide le référentiel mémorisé (après une écriture sur `villes`, ou entre deux tests). */
     public function oublier(): void
     {
-        $this->exact = null;
+        $this->charge = false;
+        $this->exact = [];
         $this->normalise = [];
+        $this->exactArchivees = [];
+        $this->normaliseArchivees = [];
         $this->noms = [];
-        $this->actives = [];
+        $this->archivee = [];
     }
 
     /** Casse et espaces ignorés, rien d'autre. */
@@ -140,32 +170,51 @@ final class VilleRef
         return trim(preg_replace('/\s+/u', ' ', $s) ?? $s);
     }
 
-    /** @param  list<int>  $ids */
-    private function depuisCandidats(array $ids, string $methode): VilleResolution
+    /**
+     * ② Départage déterministe : le plus petit id. Les homonymes sont signalés
+     * (méthode `homonymes`, candidats conservés) mais jamais laissés sans réponse.
+     *
+     * @param  list<int>  $ids
+     */
+    private function retenir(array $ids, string $methode): VilleResolution
     {
         $ids = array_values(array_unique($ids));
+        sort($ids);
 
-        return count($ids) === 1
-            ? new VilleResolution($ids[0], $methode)
-            : new VilleResolution(null, VilleResolution::AMBIGUE, $ids);
+        if (count($ids) > 1) {
+            return new VilleResolution(
+                $ids[0],
+                $methode === VilleResolution::ARCHIVEE ? VilleResolution::ARCHIVEE : VilleResolution::HOMONYMES,
+                $ids,
+            );
+        }
+
+        return new VilleResolution($ids[0], $methode);
     }
 
     private function charger(): void
     {
-        if ($this->exact !== null) {
+        if ($this->charge) {
             return;
         }
 
-        $this->exact = [];
+        $this->charge = true;
 
-        foreach (Ville::query()->orderBy('id')->get(['id', 'name_fr']) as $ville) {
+        foreach (Ville::withTrashed()->orderBy('id')->get(['id', 'name_fr', 'deleted_at']) as $ville) {
             $id = (int) $ville->id;
             $nom = (string) $ville->name_fr;
+            $archivee = $ville->deleted_at !== null;
 
-            $this->actives[$id] = true;
             $this->noms[$id] = $nom;
-            $this->exact[self::cleExacte($nom)][] = $id;
-            $this->normalise[self::cleNormalisee($nom)][] = $id;
+            $this->archivee[$id] = $archivee;
+
+            if ($archivee) {
+                $this->exactArchivees[self::cleExacte($nom)][] = $id;
+                $this->normaliseArchivees[self::cleNormalisee($nom)][] = $id;
+            } else {
+                $this->exact[self::cleExacte($nom)][] = $id;
+                $this->normalise[self::cleNormalisee($nom)][] = $id;
+            }
         }
     }
 }
