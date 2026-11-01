@@ -151,25 +151,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
-            <SidebarHeader className="h-20 justify-center items-center border-b border-sidebar-border px-3 py-2">
-        {/* Mode déplié : Logo officiel centré en h-15 (image seule, sans bouton ni lien) */}
-        <div className="flex items-center justify-center w-full group-data-[collapsible=icon]:hidden">
+                  <SidebarHeader className="h-16 justify-center items-center border-b border-sidebar-border px-3 py-0">
+        {/* Mode déplié : Logo officiel en h-16 aligné sur la topbar (image seule, sans lien ni bouton) */}
+        <div className="flex items-center justify-center w-full h-full group-data-[collapsible=icon]:hidden">
           {/* Version pour fond sombre (par défaut sur sidebar OUAISS EXPRESS) */}
           <img 
             src="/images/logo-full-dark.png" 
             alt="OUAISS EXPRESS" 
-            className="h-15 w-auto max-w-[215px] object-contain mx-auto block [.sidebar-light_&]:hidden"
+            className="h-16 w-auto max-w-[215px] object-contain mx-auto block [.sidebar-light_&]:hidden"
           />
           {/* Version pour fond clair (si la sidebar passe en mode clair) */}
           <img 
             src="/images/logo.png" 
             alt="OUAISS EXPRESS" 
-            className="h-15 w-auto max-w-[215px] object-contain mx-auto hidden [.sidebar-light_&]:block"
+            className="h-16 w-auto max-w-[215px] object-contain mx-auto hidden [.sidebar-light_&]:block"
           />
         </div>
 
         {/* Mode replié (collapsible="icon") : Emblème squircle officiel (image seule) */}
-        <div className="hidden group-data-[collapsible=icon]:flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#004c68]/30 border border-white/10 overflow-hidden shadow-sm mx-auto">
+        <div className="hidden group-data-[collapsible=icon]:flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#004c68]/30 border border-white/10 overflow-hidden shadow-sm mx-auto">
           <img 
             src="/images/logo-icon-rounded.png" 
             alt="OUAISS EXPRESS" 
