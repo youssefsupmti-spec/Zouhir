@@ -60,7 +60,7 @@ export function PageToolbar({
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-card border border-border rounded-md shadow-2xs">
-      <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+      <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5">
         {/* Champ de recherche */}
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

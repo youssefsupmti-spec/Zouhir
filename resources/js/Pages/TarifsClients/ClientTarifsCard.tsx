@@ -76,7 +76,7 @@ export function ClientTarifsCard({ client, can, version, onAjouter, onModifier, 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="group/client rounded-md border border-border bg-card shadow-2xs">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-        <CollapsibleTrigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left">
+        <CollapsibleTrigger className="flex min-w-0 flex-1 basis-56 cursor-pointer items-center gap-3 text-left">
           <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-open/client:rotate-90" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-foreground">{client.nom}</p>
@@ -85,7 +85,7 @@ export function ClientTarifsCard({ client, can, version, onAjouter, onModifier, 
             </p>
           </div>
         </CollapsibleTrigger>
-        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           <Badge variant="secondary" className="rounded-md text-[10px]">{client.nb_tarifs} ville(s) négociée(s)</Badge>
           <Badge variant="outline" className="hidden rounded-md text-[10px] sm:inline-flex">{client.nb_zones} zone(s)</Badge>
           <Badge variant="outline" className="rounded-md font-mono text-[10px]">
@@ -154,11 +154,21 @@ export function ClientTarifsCard({ client, can, version, onAjouter, onModifier, 
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="overflow-x-auto">
-                        <Table className="text-xs">
+                        <Table className="min-w-[780px] table-fixed text-xs">
+                          <colgroup>
+                            {peutSelectionner && <col className="w-10" />}
+                            <col />
+                            <col className="w-24" />
+                            <col className="w-36" />
+                            <col className="w-20" />
+                            <col className="w-20" />
+                            <col className="hidden w-44 md:table-column" />
+                            {can.update && <col className="w-12" />}
+                          </colgroup>
                           <TableHeader>
                             <TableRow className="hover:bg-transparent">
                               {peutSelectionner && (
-                                <TableHead className="w-8 pl-4">
+                                <TableHead className="pl-4">
                                   <Checkbox
                                     aria-label={`Sélectionner toute la zone ${zone.zone_nom}`}
                                     checked={cochees === ids.length && ids.length > 0}
@@ -173,7 +183,7 @@ export function ClientTarifsCard({ client, can, version, onAjouter, onModifier, 
                               <TableHead className="text-right">Refus</TableHead>
                               <TableHead className="text-right">Retour</TableHead>
                               <TableHead className="hidden md:table-cell">Repère</TableHead>
-                              {can.update && <TableHead className="w-10 pr-4 text-right"><span className="sr-only">Actions</span></TableHead>}
+                              {can.update && <TableHead className="pr-4 text-right"><span className="sr-only">Actions</span></TableHead>}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -185,7 +195,7 @@ export function ClientTarifsCard({ client, can, version, onAjouter, onModifier, 
                                       onCheckedChange={(c) => basculer([l.id], Boolean(c))} />
                                   </TableCell>
                                 )}
-                                <TableCell className={`font-medium ${peutSelectionner ? '' : 'pl-4'}`}>{l.ville_nom}</TableCell>
+                                <TableCell className={`truncate font-medium ${peutSelectionner ? '' : 'pl-4'}`} title={l.ville_nom}>{l.ville_nom}</TableCell>
                                 <TableCell className="text-right font-mono text-muted-foreground">{l.standard === null ? '—' : l.standard}</TableCell>
                                 <TableCell className="text-right font-mono font-semibold text-[#004c68] dark:text-[#ff8806]">{l.livraison}</TableCell>
                                 <TableCell className="text-right font-mono">{l.refus}</TableCell>
