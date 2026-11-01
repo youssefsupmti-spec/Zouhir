@@ -6,7 +6,6 @@ namespace App\Domain\Tarifs\Livreurs\Services;
 
 use App\Domain\Tarifs\Commun\Services\FeeResolutionService;
 use App\Domain\Tarifs\Commun\Support\Montants;
-use App\Models\LivreurStandardTarif;
 use App\Models\LivreurTarif;
 use App\Models\User;
 use App\Models\Ville;
@@ -32,8 +31,8 @@ final class LivreurTarifEcriture
     public function __construct(private readonly FeeResolutionService $fees) {}
 
     /**
-     * État de chaque ville visée pour ce livreur, sans écrire : nouveau / actif / supprimé,
-     * montants actuels et commission standard en regard.
+     * État de chaque ville visée pour ce livreur, sans écrire : nouveau / actif / supprimé
+     * et montants actuels.
      *
      * @param  list<int>  $villeIds
      * @return list<array<string, mixed>>
@@ -42,12 +41,10 @@ final class LivreurTarifEcriture
     {
         $cibles = $this->cibles($villeIds, $zoneId);
         $lignes = LivreurTarif::withTrashed()->where('livreur_id', $livreurId)->whereIn('ville_id', $cibles)->get()->keyBy('ville_id');
-        $standards = LivreurStandardTarif::query()->whereIn('ville_id', $cibles)->get()->keyBy('ville_id');
         $noms = Ville::query()->whereKey($cibles)->pluck('name_fr', 'id');
 
-        return array_map(function (int $villeId) use ($lignes, $standards, $noms): array {
+        return array_map(function (int $villeId) use ($lignes, $noms): array {
             $l = $lignes->get($villeId);
-            $s = $standards->get($villeId);
 
             return [
                 'ville_id' => $villeId,
@@ -55,7 +52,6 @@ final class LivreurTarifEcriture
                 'statut' => $l === null ? 'nouveau' : ($l->trashed() ? 'supprime' : 'actif'),
                 'livraison' => $l?->commission_livraison,
                 'refus' => $l?->commission_refus,
-                'standard' => $s?->commission_livraison,
             ];
         }, $cibles);
     }
@@ -160,7 +156,7 @@ final class LivreurTarifEcriture
         return $n;
     }
 
-    /** Suppression LOGIQUE : la ville repasse au standard livreur pour les FUTURS colis. */
+    /** Suppression LOGIQUE : les FUTURS colis de la ville n'ont plus de commission pour ce livreur (« manquante »). */
     public function supprimerLot(int $livreurId, array $ids): int
     {
         return $this->basculer($livreurId, $ids, supprimer: true);

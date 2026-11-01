@@ -6,7 +6,6 @@ use App\Domain\Auth\Enums\UserRole;
 use App\Domain\Tarifs\Commun\Services\FeeResolutionService;
 use App\Domain\Tarifs\Livreurs\Enums\TypeCommission;
 use App\Models\Command;
-use App\Models\LivreurStandardTarif;
 use App\Models\LivreurTarif;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,11 +41,6 @@ class CommissionLivreurTest extends TestCase
         return LivreurTarif::create(['livreur_id' => $l->id, 'ville_id' => $ville->id, 'commission_livraison' => $liv, 'commission_refus' => $refus]);
     }
 
-    private function standardLivreur($ville, string $liv): LivreurStandardTarif
-    {
-        return LivreurStandardTarif::create(['ville_id' => $ville->id, 'commission_livraison' => $liv, 'commission_refus' => '0']);
-    }
-
     private function creerColis(array $extra = []): Command
     {
         $this->actingAs($this->admin)->post('/colis', $extra + [
@@ -59,16 +53,16 @@ class CommissionLivreurTest extends TestCase
 
     /* ─────────── Résolution ─────────── */
 
-    public function test_specifique_prioritaire_puis_standard_puis_missing(): void
+    public function test_specifique_sinon_missing_sans_bareme_standard(): void
     {
-        $this->standardLivreur($this->temara, '10');
         $this->specifique($this->hamza, $this->temara, '12', '2');
 
         $r = $this->fees()->driverFees($this->hamza->id, $this->temara->id);
         $this->assertSame([TypeCommission::Specifique, '12.00', '2.00'], [$r->type, $r->livraison, $r->refus]);
+        $this->assertSame('12.00', $this->fees()->driverFees($this->hamza->id, 'temara')->livraison, 'Ville par libellé (VilleRef).');
 
-        $this->assertSame(TypeCommission::Standard, $this->fees()->driverFees($this->jalal->id, $this->temara->id)->type);
-        $this->assertSame('10.00', $this->fees()->driverFees($this->jalal->id, 'temara')->livraison, 'Ville par libellé (VilleRef).');
+        // Un autre livreur sans commission dans cette ville : manquante (comme WinningExpress), jamais un standard.
+        $this->assertTrue($this->fees()->driverFees($this->jalal->id, $this->temara->id)->estManquante());
 
         $m = $this->fees()->driverFees($this->hamza->id, $this->casablanca->id);
         $this->assertTrue($m->estManquante());
@@ -76,9 +70,8 @@ class CommissionLivreurTest extends TestCase
         $this->assertTrue($this->fees()->driverFees(null, $this->temara->id)->estManquante());
     }
 
-    public function test_commission_zero_est_valide_et_prioritaire(): void
+    public function test_commission_zero_est_valide(): void
     {
-        $this->standardLivreur($this->temara, '10');
         $this->specifique($this->hamza, $this->temara, '0');
 
         $r = $this->fees()->driverFees($this->hamza->id, $this->temara->id);
@@ -86,12 +79,11 @@ class CommissionLivreurTest extends TestCase
         $this->assertSame('0.00', $r->livraison);
     }
 
-    public function test_commission_supprimee_retombe_sur_le_standard(): void
+    public function test_commission_supprimee_devient_manquante(): void
     {
-        $this->standardLivreur($this->temara, '10');
         $this->specifique($this->hamza, $this->temara, '12')->delete();
 
-        $this->assertSame(TypeCommission::Standard, $this->fees()->driverFees($this->hamza->id, $this->temara->id)->type);
+        $this->assertTrue($this->fees()->driverFees($this->hamza->id, $this->temara->id)->estManquante());
     }
 
     public function test_domaines_separes_le_standard_client_n_est_jamais_une_commission(): void
@@ -177,7 +169,7 @@ class CommissionLivreurTest extends TestCase
     public function test_changement_de_ville_avant_finalisation(): void
     {
         $this->specifique($this->hamza, $this->temara, '11');
-        $this->standardLivreur($this->skhirate, '9');
+        $this->specifique($this->hamza, $this->skhirate, '9');
         $c = $this->creerColis();
 
         $this->actingAs($this->admin)->put("/colis/{$c->id}", [
@@ -185,6 +177,6 @@ class CommissionLivreurTest extends TestCase
             'prix_brut' => 200, 'livreur_id' => $this->hamza->id,
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame(['9.00', 'standard'], [$c->fresh()->frais_livraison_livreur, $c->fresh()->type_commission_livreur]);
+        $this->assertSame(['9.00', 'specifique'], [$c->fresh()->frais_livraison_livreur, $c->fresh()->type_commission_livreur]);
     }
 }

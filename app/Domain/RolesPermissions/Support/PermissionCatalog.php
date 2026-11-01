@@ -110,7 +110,7 @@ final class PermissionCatalog
             ],
             PermissionEnum::TARIFS_LIVREUR_VOIR->value => [
                 'module' => 'tarifs',
-                'description' => 'Consulter les commissions livreurs (spécifiques et barème standard).',
+                'description' => 'Consulter les commissions spécifiques des livreurs.',
                 'enforced_by' => ['LivreurTarifPolicy::viewAny'],
             ],
             PermissionEnum::TARIFS_LIVREUR_CREER->value => [
@@ -120,8 +120,8 @@ final class PermissionCatalog
             ],
             PermissionEnum::TARIFS_LIVREUR_MODIFIER->value => [
                 'module' => 'tarifs',
-                'description' => 'Modifier les commissions spécifiques et le barème standard livreur.',
-                'enforced_by' => ['LivreurTarifPolicy::update', 'LivreurStandardTarifPolicy::update'],
+                'description' => 'Modifier les commissions spécifiques des livreurs.',
+                'enforced_by' => ['LivreurTarifPolicy::update'],
             ],
             PermissionEnum::TARIFS_LIVREUR_SUPPRIMER->value => [
                 'module' => 'tarifs',

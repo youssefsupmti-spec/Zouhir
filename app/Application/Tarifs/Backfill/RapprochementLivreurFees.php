@@ -6,7 +6,6 @@ namespace App\Application\Tarifs\Backfill;
 
 use App\Domain\Villes\Support\VilleRef;
 use App\Domain\Villes\Support\VilleResolution;
-use App\Models\LivreurStandardTarif;
 use App\Models\LivreurTarif;
 use App\Models\User;
 use Illuminate\Database\ConnectionInterface;
@@ -17,8 +16,10 @@ use RuntimeException;
  * Rapprochement des commissions livreurs legacy (`stockout.shippingfees`) avec Zouhir.
  *
  *  PASS 1 — règles SPÉCIFIQUES (dlm > 0)  → `livreur_tarifs` (actives ET corbeille, comme le legacy) ;
- *  PASS 2 — règles STANDARD (dlm = 0)     → `livreur_standard_tarifs` (une ligne par ville) ;
- *  PASS 3 — règles ARCHIVÉES (trash ≠ 1)  : spécifiques reprises EN CORBEILLE, standards non repris.
+ *  PASS 2 — règles dlm = 0               : ANALYSÉES uniquement (villes, montants, doublons, conflits),
+ *                                           JAMAIS écrites : Zouhir n'a pas de barème standard des
+ *                                           commissions (décision du propriétaire, comme WinningExpress) ;
+ *  PASS 3 — règles ARCHIVÉES (trash ≠ 1)  : spécifiques reprises EN CORBEILLE, dlm = 0 non repris.
  *
  * Même politique que le backfill des tarifs clients et des colis : villes via {@see VilleRef}
  * (mode historique, active d'abord puis plus petit id), identité = même id ET (même email OU
@@ -142,7 +143,7 @@ final class RapprochementLivreurFees
         return $lignes;
     }
 
-    /** PASS 2 (+ PASS 3 pour les standards archivés, non repris). */
+    /** PASS 2 (+ PASS 3) : analyse des règles dlm = 0, sans aucune écriture. */
     private function passeStandards(iterable $rows, bool $aRefus): array
     {
         $lignes = [];
@@ -190,19 +191,12 @@ final class RapprochementLivreurFees
             }
         }
 
-        $existants = LivreurStandardTarif::query()->whereIn('ville_id', array_keys($parVille))->get()->keyBy('ville_id');
+        // Aucun barème standard des commissions (décision du propriétaire, 01/11/2026, comme
+        // WinningExpress) : les règles dlm = 0 sont ANALYSÉES et rapportées, jamais écrites.
         foreach ($lignes as &$l) {
-            if ($l['statut'] !== null) {
-                continue;
-            }
-            $e = $existants->get($l['ville_id']);
-            $l['statut'] = match (true) {
-                $e === null => 'a_creer',
-                (string) $e->commission_livraison === $l['livraison'] && (string) $e->commission_refus === $l['refus'] => 'identique',
-                default => 'conflit_valeur',
-            };
-            if ($l['statut'] === 'conflit_valeur') {
-                $l['detail'] = sprintf('Zouhir : %s / %s', $e->commission_livraison, $e->commission_refus);
+            if ($l['statut'] === null) {
+                $l['statut'] = 'non_repris_sans_bareme';
+                $l['detail'] ??= 'dlm = 0 : pas de barème standard livreur dans Zouhir';
             }
         }
         unset($l);
@@ -213,12 +207,12 @@ final class RapprochementLivreurFees
     /**
      * Écrit UNIQUEMENT les lignes migrables, en une transaction. Ne touche jamais `commands`.
      *
-     * @return array{crees: int, crees_corbeille: int, restaurees: int, standards_crees: int}
+     * @return array{crees: int, crees_corbeille: int, restaurees: int}
      */
-    public function appliquer(array $specifiques, array $standards, bool $restaurer): array
+    public function appliquer(array $specifiques, bool $restaurer): array
     {
-        return DB::transaction(function () use ($specifiques, $standards, $restaurer): array {
-            $r = ['crees' => 0, 'crees_corbeille' => 0, 'restaurees' => 0, 'standards_crees' => 0];
+        return DB::transaction(function () use ($specifiques, $restaurer): array {
+            $r = ['crees' => 0, 'crees_corbeille' => 0, 'restaurees' => 0];
 
             foreach ($specifiques as $l) {
                 $valeurs = ['commission_livraison' => $l['livraison'], 'commission_refus' => $l['refus'], 'legacy_ids' => $l['legacy_ids']];
@@ -234,18 +228,6 @@ final class RapprochementLivreurFees
                     $t->restore();
                     $t->update($valeurs);
                     $r['restaurees']++;
-                }
-            }
-
-            foreach ($standards as $s) {
-                if ($s['statut'] === 'a_creer') {
-                    LivreurStandardTarif::create([
-                        'ville_id' => $s['ville_id'],
-                        'commission_livraison' => $s['livraison'],
-                        'commission_refus' => $s['refus'],
-                        'legacy_ids' => $s['legacy_ids'],
-                    ]);
-                    $r['standards_crees']++;
                 }
             }
 
@@ -384,7 +366,7 @@ final class RapprochementLivreurFees
         $stdActives = array_filter($rows, fn ($r) => (int) $r->dlm <= 0 && (int) $r->trash === 1);
 
         $porteuses = array_filter($specifiques, fn ($l) => in_array($l['statut'], self::PORTEURS, true));
-        $stdRetenus = array_filter($standards, fn ($l) => in_array($l['statut'], ['a_creer', 'identique', 'conflit_valeur'], true));
+        $stdRetenus = array_filter($standards, fn ($l) => $l['statut'] === 'non_repris_sans_bareme');
         $ok = array_filter($identites, fn ($i) => $i['statut'] === 'ok');
 
         $montantsSpec = array_map(fn ($r) => (float) $r->deliveredfees, $specActives);

@@ -70,8 +70,8 @@ export interface AppliquerTarifDialogProps {
   apercuUrl: string;
   storeUrl: string;
   champs: ChampMontant[];
-  /** Libellé de la valeur actuelle affichée en regard de chaque ville (référentiel). */
-  libelleActuel: string;
+  /** Libellé de la valeur actuelle affichée en regard de chaque ville (référentiel) ; absent = rien. */
+  libelleActuel?: string;
   avecDelai?: boolean;
   /** Sélection d'un livreur (commissions spécifiques). */
   avecLivreur?: boolean;
@@ -261,7 +261,7 @@ export function AppliquerTarifDialog(p: AppliquerTarifDialogProps) {
                           ? basculer(villes, setVilles, v.id, Boolean(c))
                           : basculer(exclusions, setExclusions, v.id, !c)} />
                       <span className="flex-1 truncate">{v.nom}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground">{p.libelleActuel} : {v.actuel ?? '—'}</span>
+                      {p.libelleActuel && <span className="font-mono text-[10px] text-muted-foreground">{p.libelleActuel} : {v.actuel ?? '—'}</span>}
                     </label>
                   );
                 })}

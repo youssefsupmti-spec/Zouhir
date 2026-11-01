@@ -6,7 +6,6 @@ use App\Application\Tarifs\Backfill\RapprochementLivreurFees;
 use App\Domain\Auth\Enums\UserRole;
 use App\Domain\Villes\Support\VilleRef;
 use App\Models\Command;
-use App\Models\LivreurStandardTarif;
 use App\Models\LivreurTarif;
 use App\Models\User;
 use App\Models\Ville;
@@ -104,10 +103,10 @@ class BackfillLivreurFeesTest extends TestCase
 
         $this->artisan('tarifs:backfill-livreur-fees', ['--connection' => 'legacy_test', '--details' => true])
             ->expectsOutputToContain('MODE SIMULATION')
-            ->expectsOutputToContain('Total qui serait écrit : 4 commission(s) spécifique(s), 1 standard(s).')
+            ->expectsOutputToContain('Total qui serait écrit : 4 commission(s) spécifique(s).')
             ->assertSuccessful();
 
-        $this->assertSame(0, LivreurTarif::withTrashed()->count() + LivreurStandardTarif::count(), 'Aucune écriture.');
+        $this->assertSame(0, LivreurTarif::withTrashed()->count(), 'Aucune écriture.');
 
         $a = app(RapprochementLivreurFees::class)->analyser($this->legacy());
         $spec = collect($a['specifiques'])->pluck('statut', 'legacy_id')->all();
@@ -124,7 +123,7 @@ class BackfillLivreurFeesTest extends TestCase
         $this->assertSame('livreur_introuvable', $spec[10]);
         $this->assertSame('ville_introuvable', $spec[11]);
         $this->assertSame('doublon_corbeille', $spec[25]);
-        $this->assertSame(['a_creer', 'doublon_identique', 'conflit_montants', 'conflit_montants', 'archive_legacy_non_repris'], [$std[20], $std[21], $std[22], $std[23], $std[24]]);
+        $this->assertSame(['non_repris_sans_bareme', 'doublon_identique', 'conflit_montants', 'conflit_montants', 'archive_legacy_non_repris'], [$std[20], $std[21], $std[22], $std[23], $std[24]]);
 
         $s = $a['synthese'];
         $this->assertSame([18, 15, 3], [$s['lignes'], $s['actives'], $s['archivees']]);
@@ -145,11 +144,10 @@ class BackfillLivreurFeesTest extends TestCase
         $this->assertSame($this->zagora->id, LivreurTarif::pour($this->hamza->id, $this->zagora->id)->value('ville_id'));
         $this->assertSame(0, LivreurTarif::pour($this->hamza->id, $this->skhirate->id)->count(), 'Montants divergents : non migrés.');
         $this->assertSame(4, LivreurTarif::count());
-        $this->assertSame(['10.00'], LivreurStandardTarif::pluck('commission_livraison')->all());
-        $this->assertSame([20, 21], LivreurStandardTarif::firstOrFail()->legacy_ids);
+        $this->assertSame(0, DB::table('livreur_standard_tarifs')->count(), 'dlm = 0 : jamais écrit (pas de barème standard).');
 
         $this->artisan('tarifs:backfill-livreur-fees', ['--connection' => 'legacy_test', '--apply' => true])
-            ->expectsOutputToContain('Total qui serait écrit : 0 commission(s) spécifique(s), 0 standard(s).')
+            ->expectsOutputToContain('Total qui serait écrit : 0 commission(s) spécifique(s).')
             ->assertSuccessful();
         $this->assertSame(4, LivreurTarif::withTrashed()->count());
     }

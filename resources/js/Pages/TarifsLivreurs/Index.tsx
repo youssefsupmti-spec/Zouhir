@@ -1,19 +1,16 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { Bike, Coins, Loader2, MapPin, MapPinOff, MapPinned, Plus, RotateCcw, Save, Search, Trash2, Undo2, Users, X } from 'lucide-react';
+import { Bike, CircleOff, Coins, Loader2, MapPin, MapPinned, Plus, RotateCcw, Save, Search, Trash2, Undo2, Users, X } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatsCard } from '@/components/common/StatsCard';
-import { PageToolbar } from '@/components/common/PageToolbar';
 import { FilterDropdown } from '@/components/common/FilterDropdown';
-import { DataTablePagination, type LaravelPaginationMeta } from '@/components/common/DataTablePagination';
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BaremeVillesTable, type BaremeLigne } from '@/components/tarifs/BaremeVillesTable';
 import { erreurMontant, normaliserMontant } from '@/Pages/TarifsClients/types';
 import { AjouterTarifLivreurDialog } from './AjouterTarifLivreurDialog';
 
@@ -32,9 +29,6 @@ interface Commission {
   zone_nom: string;
   livraison: string;
   refus: string;
-  standard: string | null;
-  ecart: string | null;
-  comparaison: 'superieur' | 'inferieur' | 'egal' | 'indisponible';
   zero: boolean;
 }
 
@@ -44,41 +38,26 @@ interface Grille {
 }
 
 interface Filters {
-  onglet: 'specifiques' | 'standard';
   livreur_id: string;
   zone_id: string;
-  search: string;
-  statut: string;
-  per_page: number;
 }
 
 interface Props {
   livreurs: LivreurResume[];
-  stats: { livreurs: number; regles: number; villes: number; moyenne: string | null; villes_sans_standard: number };
+  stats: { livreurs: number; regles: number; villes: number; moyenne: string | null; zero: number };
   zones: { id: number; name: string; code: string | null }[];
   livreur: { id: number; nom: string; telephone: string | null } | null;
   grille: Grille | null;
-  bareme: (LaravelPaginationMeta & { data: BaremeLigne[] }) | null;
-  baremeStats: { villes: number; tarifees: number; sans_tarif: number; moyenne: string | null };
   filters: Filters;
-  can: { create: boolean; update: boolean; delete: boolean; standard: boolean };
+  can: { create: boolean; update: boolean; delete: boolean };
 }
 
 const initiales = (nom: string) => nom.split(/\s+/).filter(Boolean).slice(0, 2).map((m) => m[0]?.toUpperCase()).join('');
 
-/** Badge de statut d'une commission spécifique, comparée au barème standard livreur (calculé serveur). */
+/** Statut d'une commission spécifique (pas de barème standard : aucune comparaison). */
 function BadgeCommission({ c }: { c: Commission }) {
   if (c.zero) return <Badge variant="outline" className="rounded-md border-sky-500/30 text-[10px] text-sky-700 dark:text-sky-300">Commission à zéro</Badge>;
-  switch (c.comparaison) {
-    case 'superieur':
-      return <Badge variant="outline" className="rounded-md border-[#ff8806]/40 text-[10px] text-[#b45f00] dark:text-[#ffb366]">Au-dessus du standard</Badge>;
-    case 'inferieur':
-      return <Badge variant="outline" className="rounded-md border-emerald-500/30 text-[10px] text-emerald-700 dark:text-emerald-400">En dessous du standard</Badge>;
-    case 'egal':
-      return <Badge variant="outline" className="rounded-md text-[10px] text-muted-foreground">= standard</Badge>;
-    default:
-      return <Badge variant="outline" className="rounded-md border-dashed text-[10px] text-muted-foreground">Standard manquant</Badge>;
-  }
+  return <Badge variant="outline" className="rounded-md border-emerald-500/30 text-[10px] text-emerald-700 dark:text-emerald-400">Commission spécifique</Badge>;
 }
 
 /** Sélecteur de livreur avec recherche (nom, téléphone). Livreurs actifs uniquement (serveur). */
@@ -215,26 +194,22 @@ function GrilleSpecifique({ livreurId, grille, can, onZone }: { livreurId: numbe
 
       <div className="rounded-md border border-border bg-card shadow-2xs">
         <div className="overflow-x-auto">
-          <Table className="min-w-[860px] table-fixed text-xs">
+          <Table className="min-w-[700px] table-fixed text-xs">
             <colgroup>
               <col className="w-10" />
               <col />
-              <col className="w-36" />
-              <col className="w-28" />
-              <col className="w-32" />
-              <col className="w-28" />
-              <col className="w-24" />
               <col className="w-44" />
+              <col className="w-36" />
+              <col className="w-32" />
+              <col className="w-40" />
             </colgroup>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="pl-4"><span className="sr-only">Sélection</span></TableHead>
                 <TableHead>Ville</TableHead>
                 <TableHead>Zone</TableHead>
-                <TableHead className="text-right">Standard livreur</TableHead>
-                <TableHead className="text-right">Commission spécifique</TableHead>
-                <TableHead className="text-right">Refus</TableHead>
-                <TableHead className="text-right">Écart</TableHead>
+                <TableHead className="text-right">Commission livraison</TableHead>
+                <TableHead className="text-right">Commission refus</TableHead>
                 <TableHead className="pr-4">Statut</TableHead>
               </TableRow>
             </TableHeader>
@@ -249,7 +224,7 @@ function GrilleSpecifique({ livreurId, grille, can, onZone }: { livreurId: numbe
                         <Checkbox aria-label={`Sélectionner toute la zone ${z.zone_nom}`} checked={cochees === ids.length && ids.length > 0}
                           indeterminate={cochees > 0 && cochees < ids.length} onCheckedChange={(c) => basculer(ids, Boolean(c))} />
                       </TableCell>
-                      <TableCell colSpan={6}>
+                      <TableCell colSpan={4}>
                         <span className="flex items-center gap-2 font-semibold">
                           <MapPinned className="size-3.5 text-[#004c68] dark:text-[#ff8806]" /> {z.zone_nom}
                           {z.zone_code && <code className="rounded bg-muted px-1 font-mono text-[10px]">{z.zone_code}</code>}
@@ -271,7 +246,6 @@ function GrilleSpecifique({ livreurId, grille, can, onZone }: { livreurId: numbe
                         </TableCell>
                         <TableCell className="truncate font-medium" title={c.ville_nom}>{c.ville_nom}</TableCell>
                         <TableCell className="truncate text-muted-foreground">{c.zone_nom}</TableCell>
-                        <TableCell className="text-right font-mono text-muted-foreground">{c.standard ?? '—'}</TableCell>
                         {(['livraison', 'refus'] as const).map((k) => (
                           <TableCell key={k} className="text-right">
                             {can.update ? (
@@ -285,7 +259,6 @@ function GrilleSpecifique({ livreurId, grille, can, onZone }: { livreurId: numbe
                             ) : <span className="font-mono">{c[k]}</span>}
                           </TableCell>
                         ))}
-                        <TableCell className="text-right font-mono">{c.ecart ?? '—'}</TableCell>
                         <TableCell className="pr-4">{modifiee(c)
                           ? <Badge variant="outline" className="rounded-md border-[#ff8806]/40 text-[10px] text-[#b45f00] dark:text-[#ffb366]">Modifiée</Badge>
                           : <BadgeCommission c={c} />}</TableCell>
@@ -296,8 +269,8 @@ function GrilleSpecifique({ livreurId, grille, can, onZone }: { livreurId: numbe
               })}
               {grille.zones.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                    Aucune commission spécifique : ce livreur est payé au barème standard livreur de chaque ville (ou « manquant » s'il n'existe pas).
+                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                    Aucune commission pour ce livreur : ses colis auront une commission « manquante » tant qu'aucune ville ne lui est affectée.
                   </TableCell>
                 </TableRow>
               )}
@@ -329,7 +302,7 @@ function GrilleSpecifique({ livreurId, grille, can, onZone }: { livreurId: numbe
         open={suppression}
         onOpenChange={(o) => !o && !busy && setSuppression(false)}
         title={`Supprimer ${selectionnees.length} commission(s)`}
-        description={`${selectionnees.map((c) => c.ville_nom).slice(0, 8).join(', ')}${selectionnees.length > 8 ? '…' : ''}. Ces villes repasseront au barème standard livreur pour les prochains colis. Les colis existants ne sont pas modifiés ; la commission reste restaurable.`}
+        description={`${selectionnees.map((c) => c.ville_nom).slice(0, 8).join(', ')}${selectionnees.length > 8 ? '…' : ''}. Les prochains colis de ces villes n'auront plus de commission pour ce livreur (« manquante »). Les colis existants ne sont pas modifiés ; la commission reste restaurable.`}
         isLoading={busy}
         onConfirm={() => router.delete('/tarifs-livreurs', {
           data: { livreur_id: livreurId, ids: selectionnees.map((c) => c.id) },
@@ -344,12 +317,11 @@ function GrilleSpecifique({ livreurId, grille, can, onZone }: { livreurId: numbe
   );
 }
 
-export default function TarifsLivreursIndex({ livreurs, stats, zones, livreur, grille, bareme, baremeStats, filters, can }: Props) {
-  const [dialog, setDialog] = useState<{ open: boolean; type: 'specifique' | 'standard'; zoneId: number | null }>({ open: false, type: 'specifique', zoneId: null });
+export default function TarifsLivreursIndex({ livreurs, stats, zones, livreur, grille, filters, can }: Props) {
+  const [dialog, setDialog] = useState<{ open: boolean; zoneId: number | null }>({ open: false, zoneId: null });
   const params = { ...filters };
   const naviguer = (changes: Partial<Record<keyof Filters, string | undefined>>) =>
-    router.get('/tarifs-livreurs', { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true });
-  const standard = filters.onglet === 'standard';
+    router.get('/tarifs-livreurs', { ...params, ...changes }, { preserveState: true, preserveScroll: true, replace: true });
 
   return (
     <AuthenticatedLayout title="Tarifs livreurs">
@@ -360,10 +332,9 @@ export default function TarifsLivreursIndex({ livreurs, stats, zones, livreur, g
           title="Tarifs livreurs"
           description="Gérez les commissions de livraison par livreur, ville et zone."
           icon={Bike}
-          actions={(standard ? can.standard : can.create) ? (
-            <Button size="sm" className="h-8 rounded-md bg-[#004c68] text-xs text-white hover:bg-[#00384d]"
-              onClick={() => setDialog({ open: true, type: standard ? 'standard' : 'specifique', zoneId: null })}>
-              <Plus className="size-3.5" /> {standard ? 'Appliquer le barème standard' : 'Affecter des villes'}
+          actions={can.create ? (
+            <Button size="sm" className="h-8 rounded-md bg-[#004c68] text-xs text-white hover:bg-[#00384d]" onClick={() => setDialog({ open: true, zoneId: null })}>
+              <Plus className="size-3.5" /> Affecter des villes
             </Button>
           ) : undefined}
         />
@@ -373,27 +344,20 @@ export default function TarifsLivreursIndex({ livreurs, stats, zones, livreur, g
           <StatsCard title="Règles spécifiques" value={stats.regles} description="Couples livreur × ville actifs" icon={Bike} />
           <StatsCard title="Villes couvertes" value={stats.villes} description="Par une commission spécifique" icon={MapPin} />
           <StatsCard title="Commission moyenne" value={stats.moyenne ?? '—'} description="MAD, règles spécifiques" icon={Coins} iconColor="text-[#ff8806]" />
-          <StatsCard title="Sans standard livreur" value={stats.villes_sans_standard} description="Villes actives sans commission par défaut" icon={MapPinOff} iconColor="text-[#ff8806]" />
+          <StatsCard title="Commissions à zéro" value={stats.zero} description="Règles spécifiques à 0.00 MAD" icon={CircleOff} />
         </div>
 
-        <div role="tablist" aria-label="Type de commission" className="inline-flex rounded-md border border-border bg-card p-0.5">
-          {([['specifiques', 'Commissions spécifiques'], ['standard', 'Barème standard livreur']] as const).map(([o, t]) => (
-            <button key={o} role="tab" type="button" aria-selected={filters.onglet === o}
-              onClick={() => naviguer({ onglet: o, search: undefined, statut: undefined })}
-              className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${filters.onglet === o ? 'bg-[#004c68] text-white' : 'text-muted-foreground hover:text-foreground'}`}>
-              {t}
-            </button>
-          ))}
-        </div>
+        <p className="rounded-md border border-[#ff8806]/30 bg-[#ff8806]/5 px-4 py-2 text-[11px] text-[#7a3f00] dark:text-[#ffb366]">
+          Commission <strong>versée au livreur</strong>, définie par livreur et par ville. Il n'existe pas de barème standard des commissions :
+          sans commission affectée, la commission d'un colis est « manquante ». Distincte du tarif de livraison <strong>facturé au client</strong>.
+        </p>
 
-        {!standard && (
-          <>
             <div className="flex flex-col gap-3 rounded-md border border-border bg-card p-3 shadow-2xs sm:flex-row sm:flex-wrap sm:items-center">
               <SelecteurLivreur livreurs={livreurs} actuel={livreur?.id ?? null} onChoisir={(id) => naviguer({ livreur_id: id === null ? undefined : String(id) })} />
               <FilterDropdown label="Zone" value={filters.zone_id} onChange={(v) => naviguer({ zone_id: v === 'all' ? undefined : v })}
                 options={[{ value: 'all', label: 'Toutes' }, ...zones.map((z) => ({ value: String(z.id), label: z.name }))]} />
               {livreur && can.create && (
-                <Button size="sm" variant="outline" className="h-8 rounded-md text-xs sm:ml-auto" onClick={() => setDialog({ open: true, type: 'specifique', zoneId: null })}>
+                <Button size="sm" variant="outline" className="h-8 rounded-md text-xs sm:ml-auto" onClick={() => setDialog({ open: true, zoneId: null })}>
                   <Plus className="size-3.5" /> Affecter des villes à {livreur.nom}
                 </Button>
               )}
@@ -404,58 +368,16 @@ export default function TarifsLivreursIndex({ livreurs, stats, zones, livreur, g
                 Sélectionnez un livreur pour afficher ses commissions par zone et ville.
               </div>
             ) : (
-              <GrilleSpecifique livreurId={livreur.id} grille={grille} can={can} onZone={(z) => setDialog({ open: true, type: 'specifique', zoneId: z })} />
+              <GrilleSpecifique livreurId={livreur.id} grille={grille} can={can} onZone={(z) => setDialog({ open: true, zoneId: z })} />
             )}
-          </>
-        )}
 
-        {standard && bareme && (
-          <>
-            <p className="rounded-md border border-[#ff8806]/30 bg-[#ff8806]/5 px-4 py-2 text-[11px] text-[#7a3f00] dark:text-[#ffb366]">
-              Commission <strong>versée au livreur</strong> par défaut. Elle est distincte du tarif de livraison <strong>facturé au client</strong> (page « Tarifs de livraison »).
-              {' '}{baremeStats.tarifees} ville(s) dotée(s) d'un barème, {baremeStats.sans_tarif} sans.
-            </p>
-            <PageToolbar
-              searchPlaceholder="Ville (français ou arabe)…"
-              initialSearch={filters.search}
-              currentParams={params}
-              rightActions={(filters.search || filters.zone_id !== 'all' || (filters.statut && filters.statut !== 'tous')) && (
-                <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs" onClick={() => router.get('/tarifs-livreurs', { onglet: 'standard' }, { replace: true })}>
-                  <RotateCcw className="size-3.5" /> Réinitialiser
-                </Button>
-              )}
-            >
-              <FilterDropdown label="Zone" value={filters.zone_id} onChange={(v) => naviguer({ zone_id: v === 'all' ? undefined : v })}
-                options={[{ value: 'all', label: 'Toutes' }, ...zones.map((z) => ({ value: String(z.id), label: z.name }))]} />
-              <FilterDropdown label="Statut" value={!filters.statut || filters.statut === 'tous' ? 'all' : filters.statut} onChange={(v) => naviguer({ statut: v === 'all' ? undefined : v })}
-                options={[{ value: 'all', label: 'Toutes les villes' }, { value: 'tarifees', label: 'Avec barème' }, { value: 'sans', label: 'Sans barème' }]} />
-            </PageToolbar>
-
-            <BaremeVillesTable
-              lignes={bareme.data}
-              saveUrl="/tarifs-livreurs/standard"
-              peutModifier={can.standard}
-              libelleActif="Standard livreur"
-              onAppliquerZone={can.standard ? (zoneId) => setDialog({ open: true, type: 'standard', zoneId }) : undefined}
-              champs={[{ cle: 'livraison', label: 'Commission livraison' }, { cle: 'refus', label: 'Commission refus' }]}
-              colonneExtra={{
-                titre: 'Spécifiques',
-                rendu: (l) => (l.nb_specifiques ?? 0) > 0
-                  ? <Badge variant="secondary" className="rounded-md text-[10px]">{l.nb_specifiques} livreur(s)</Badge>
-                  : <span className="text-muted-foreground">—</span>,
-              }}
-            />
-            {bareme.total > 0 && <DataTablePagination meta={bareme} currentParams={params} pageSizeOptions={[25, 50, 100, 200]} />}
-          </>
-        )}
       </div>
 
       <AjouterTarifLivreurDialog
         open={dialog.open}
-        type={dialog.type}
         livreurId={livreur?.id ?? null}
         zoneId={dialog.zoneId}
-        onClose={() => setDialog((d) => ({ ...d, open: false, zoneId: null }))}
+        onClose={() => setDialog({ open: false, zoneId: null })}
       />
     </AuthenticatedLayout>
   );

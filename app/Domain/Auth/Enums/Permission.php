@@ -56,7 +56,7 @@ enum Permission: string
             self::TARIFS_STANDARD_GERER => 'Créer et modifier les tarifs de livraison standards',
             self::TARIFS_LIVREUR_VOIR => 'Consulter les commissions livreurs',
             self::TARIFS_LIVREUR_CREER => 'Affecter des commissions livreurs',
-            self::TARIFS_LIVREUR_MODIFIER => 'Modifier les commissions livreurs et leur barème standard',
+            self::TARIFS_LIVREUR_MODIFIER => 'Modifier les commissions livreurs',
             self::TARIFS_LIVREUR_SUPPRIMER => 'Supprimer / restaurer des commissions livreurs',
         };
     }

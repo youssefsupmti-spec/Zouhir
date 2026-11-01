@@ -4,14 +4,13 @@ namespace Tests\Feature\Tarifs;
 
 use App\Domain\Auth\Enums\Permission;
 use App\Domain\Auth\Enums\UserRole;
-use App\Models\LivreurStandardTarif;
 use App\Models\LivreurTarif;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
-/** Page « Tarifs livreurs » (/tarifs-livreurs) : commissions spécifiques et barème standard livreur. */
+/** Page « Tarifs livreurs » (/tarifs-livreurs) : commissions spécifiques (pas de barème standard, comme WinningExpress). */
 class LivreurTarifHttpTest extends TestCase
 {
     use RefreshDatabase;
@@ -33,9 +32,8 @@ class LivreurTarifHttpTest extends TestCase
         return LivreurTarif::create(['livreur_id' => $l->id, 'ville_id' => $ville->id, 'commission_livraison' => $liv, 'commission_refus' => $refus]);
     }
 
-    public function test_selecteur_kpi_et_grille_du_livreur_avec_comparaison(): void
+    public function test_selecteur_kpi_et_grille_du_livreur(): void
     {
-        LivreurStandardTarif::create(['ville_id' => $this->temara->id, 'commission_livraison' => '10', 'commission_refus' => '0']);
         $this->commission($this->hamza, $this->temara, '12');
         $this->commission($this->hamza, $this->casablanca, '0');
 
@@ -49,13 +47,13 @@ class LivreurTarifHttpTest extends TestCase
                 ->where('stats.regles', 2)
                 ->where('stats.villes', 2)
                 ->where('stats.moyenne', '6.00')
-                ->where('stats.villes_sans_standard', 2)
+                ->where('stats.zero', 1)
                 ->has('grille.zones', 2)
                 ->where('grille.zones.0.lignes.0.ville_nom', 'Casablanca')
                 ->where('grille.zones.0.lignes.0.zero', true)
-                ->where('grille.zones.0.lignes.0.comparaison', 'indisponible')
-                ->where('grille.zones.1.lignes.0.ecart', '+2.00')
-                ->where('grille.zones.1.lignes.0.comparaison', 'superieur'));
+                ->where('grille.zones.1.lignes.0.livraison', '12.00')
+                ->missing('grille.zones.1.lignes.0.standard')
+                ->missing('bareme'));
     }
 
     public function test_filtre_zone_sur_la_grille(): void
@@ -128,22 +126,13 @@ class LivreurTarifHttpTest extends TestCase
         $this->assertSame(0, LivreurTarif::count());
     }
 
-    public function test_bareme_standard_livreur_onglet_lot_et_zone(): void
+    public function test_aucun_bareme_standard_livreur(): void
     {
-        $this->commission($this->hamza, $this->temara, '12');
-
-        $this->actingAs($this->admin)->put('/tarifs-livreurs/standard', ['lignes' => [['ville_id' => $this->temara->id, 'livraison' => '10', 'refus' => '0']]])->assertSessionHasNoErrors();
-        $this->actingAs($this->admin)->post('/tarifs-livreurs/standard', ['zone_id' => $this->zoneRabat->id, 'livraison' => '11', 'refus' => '0', 'existants' => 'ignorer'])->assertSessionHasNoErrors();
-
-        $this->assertSame('10.00', LivreurStandardTarif::where('ville_id', $this->temara->id)->value('commission_livraison'), 'Existant non écrasé.');
-        $this->assertSame('11.00', LivreurStandardTarif::where('ville_id', $this->skhirate->id)->value('commission_livraison'));
+        $this->actingAs($this->admin)->put('/tarifs-livreurs/standard', ['lignes' => [['ville_id' => $this->temara->id, 'livraison' => '10', 'refus' => '0']]])
+            ->assertNotFound();
+        $this->actingAs($this->admin)->post('/tarifs-livreurs/standard', ['zone_id' => $this->zoneRabat->id, 'livraison' => '11', 'refus' => '0', 'existants' => 'ignorer'])
+            ->assertNotFound();
         $this->assertSame(0, \App\Models\StandardTarif::count(), 'Le barème client n\'est jamais touché.');
-
-        $this->actingAs($this->admin)->get('/tarifs-livreurs?onglet=standard&statut=tarifees')->assertInertia(fn (Assert $p) => $p
-            ->has('bareme.data', 2)
-            ->where('bareme.data.0.ville_nom', 'Skhirate')
-            ->where('bareme.data.1.nb_specifiques', 1)
-            ->where('baremeStats.tarifees', 2));
     }
 
     public function test_permissions_livreur_client_et_delegation(): void
@@ -157,8 +146,8 @@ class LivreurTarifHttpTest extends TestCase
             ->assertForbidden();
 
         $lecteur = $this->delegue([Permission::TARIFS_LIVREUR_VOIR->value]);
-        $this->actingAs($lecteur)->get('/tarifs-livreurs')->assertOk()->assertInertia(fn (Assert $p) => $p->where('can.create', false)->where('can.standard', false));
-        $this->actingAs($lecteur)->put('/tarifs-livreurs/standard', ['lignes' => [['ville_id' => $this->temara->id, 'livraison' => '1', 'refus' => '0']]])->assertForbidden();
-        $this->assertSame(0, LivreurTarif::count() + LivreurStandardTarif::count());
+        $this->actingAs($lecteur)->get('/tarifs-livreurs')->assertOk()->assertInertia(fn (Assert $p) => $p->where('can.create', false)->where('can.update', false));
+        $this->actingAs($lecteur)->post('/tarifs-livreurs', ['livreur_id' => $this->hamza->id, 'ville_ids' => [$this->temara->id], 'livraison' => '5', 'refus' => '0', 'existants' => 'ignorer', 'restaurer' => true])->assertForbidden();
+        $this->assertSame(0, LivreurTarif::count());
     }
 }

@@ -46,7 +46,7 @@ final class LivreurTarifQuery
     /**
      * Indicateurs (livreurs et villes ACTIFS uniquement).
      *
-     * @return array{livreurs: int, regles: int, villes: int, moyenne: ?string, villes_sans_standard: int}
+     * @return array{livreurs: int, regles: int, villes: int, moyenne: ?string, zero: int}
      */
     public function statistiques(): array
     {
@@ -60,13 +60,8 @@ final class LivreurTarifQuery
             ->selectRaw('COUNT(*) as regles')
             ->selectRaw('COUNT(DISTINCT livreur_tarifs.ville_id) as villes')
             ->selectRaw('AVG(livreur_tarifs.commission_livraison) as moy')
+            ->selectRaw('SUM(CASE WHEN livreur_tarifs.commission_livraison = 0 THEN 1 ELSE 0 END) as zero')
             ->first();
-
-        $sansStandard = DB::table('villes')
-            ->leftJoin('livreur_standard_tarifs', 'livreur_standard_tarifs.ville_id', '=', 'villes.id')
-            ->whereNull('villes.deleted_at')
-            ->whereNull('livreur_standard_tarifs.id')
-            ->count();
 
         $regles = (int) ($s->regles ?? 0);
 
@@ -75,13 +70,13 @@ final class LivreurTarifQuery
             'regles' => $regles,
             'villes' => (int) ($s->villes ?? 0),
             'moyenne' => $regles > 0 ? number_format((float) $s->moy, 2, '.', '') : null,
-            'villes_sans_standard' => $sansStandard,
+            'zero' => (int) ($s->zero ?? 0),
         ];
     }
 
     /**
-     * Grille d'UN livreur : commissions spécifiques (actives et supprimées) groupées par zone,
-     * standard livreur en regard. Une seule requête. La comparaison est calculée ICI.
+     * Grille d'UN livreur : commissions spécifiques (actives et supprimées) groupées par zone.
+     * Une seule requête.
      *
      * @return array{zones: list<array<string, mixed>>, supprimees: list<array<string, mixed>>}
      */
@@ -90,7 +85,6 @@ final class LivreurTarifQuery
         $lignes = DB::table('livreur_tarifs')
             ->join('villes', 'villes.id', '=', 'livreur_tarifs.ville_id')
             ->leftJoin('zones', 'zones.id', '=', 'villes.zone_id')
-            ->leftJoin('livreur_standard_tarifs', 'livreur_standard_tarifs.ville_id', '=', 'villes.id')
             ->where('livreur_tarifs.livreur_id', $livreurId)
             ->whereNull('villes.deleted_at')
             ->when($zoneId !== null, fn ($q) => $q->where('villes.zone_id', $zoneId))
@@ -102,8 +96,6 @@ final class LivreurTarifQuery
                 'villes.id as ville_id', 'villes.name_fr as ville_nom',
                 'livreur_tarifs.id', 'livreur_tarifs.commission_livraison', 'livreur_tarifs.commission_refus',
                 'livreur_tarifs.deleted_at', 'livreur_tarifs.updated_at',
-                'livreur_standard_tarifs.commission_livraison as standard_livraison',
-                'livreur_standard_tarifs.commission_refus as standard_refus',
             ]);
 
         $zones = [];
@@ -111,7 +103,6 @@ final class LivreurTarifQuery
 
         foreach ($lignes as $l) {
             $livraison = Montants::lire(['v' => $l->commission_livraison], ['v' => 'v'])['v'];
-            $standard = $l->standard_livraison === null ? null : Montants::lire(['v' => $l->standard_livraison], ['v' => 'v'])['v'];
             $ligne = [
                 'id' => (int) $l->id,
                 'ville_id' => (int) $l->ville_id,
@@ -119,9 +110,6 @@ final class LivreurTarifQuery
                 'zone_nom' => (string) ($l->zone_nom ?? 'Villes sans zone'),
                 'livraison' => $livraison,
                 'refus' => Montants::lire(['v' => $l->commission_refus], ['v' => 'v'])['v'],
-                'standard' => $standard,
-                'ecart' => Montants::ecart($livraison, $standard),
-                'comparaison' => Montants::comparer($livraison, $standard),
                 'zero' => (float) $livraison === 0.0,
                 'updated_at' => $l->updated_at,
             ];

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Tarifs;
 
-use App\Models\LivreurStandardTarif;
 use App\Models\LivreurTarif;
 use App\Models\User;
 use Closure;
@@ -13,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Requêtes d'écriture de l'écran « Tarifs livreurs ». L'action est déduite du nom de route ;
- * l'autorisation passe TOUJOURS par LivreurTarifPolicy / LivreurStandardTarifPolicy.
+ * l'autorisation passe TOUJOURS par LivreurTarifPolicy.
  */
 class LivreurTarifRequest extends FormRequest
 {
@@ -25,7 +24,6 @@ class LivreurTarifRequest extends FormRequest
             'tarifs-livreurs.apercu', 'tarifs-livreurs.store' => $u->can('create', LivreurTarif::class),
             'tarifs-livreurs.update' => $u->can('update', LivreurTarif::class),
             'tarifs-livreurs.destroy', 'tarifs-livreurs.restaurer' => $u->can('delete', LivreurTarif::class),
-            'tarifs-livreurs.standard.apercu', 'tarifs-livreurs.standard.appliquer', 'tarifs-livreurs.standard.lot' => $u->can('update', LivreurStandardTarif::class),
             default => false,
         };
     }
@@ -62,13 +60,6 @@ class LivreurTarifRequest extends FormRequest
                 'ids' => ['required', 'array', 'min:1', 'max:1000'],
                 'ids.*' => ['integer', 'distinct'],
             ],
-            'tarifs-livreurs.standard.apercu' => BaremeRules::ciblage(),
-            'tarifs-livreurs.standard.appliquer' => BaremeRules::ciblage() + [
-                'livraison' => BaremeRules::montant(),
-                'refus' => BaremeRules::montant(),
-                'existants' => BaremeRules::existants(),
-            ],
-            'tarifs-livreurs.standard.lot' => ['lignes' => ['required', 'array', 'min:1', 'max:500']],
             default => [],
         };
     }

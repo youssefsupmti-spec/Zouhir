@@ -7,7 +7,8 @@ namespace App\Domain\Tarifs\Livreurs\Enums;
 /**
  * PROVENANCE de la commission livreur figée sur un colis (`commands.type_commission_livreur`).
  *
- * Ordre de la cascade : manuel → spécifique livreur → standard livreur → missing.
+ * Ordre de la cascade : manuel → spécifique livreur → missing.
+ * Il n'existe PAS de barème standard des commissions (décision du propriétaire, 01/11/2026).
  * Vocabulaire DISTINCT de TypeTarif (frais client) : les deux domaines ne se mélangent pas.
  */
 enum TypeCommission: string
@@ -18,7 +19,10 @@ enum TypeCommission: string
     /** Commission propre au livreur pour la ville (`livreur_tarifs`). */
     case Specifique = 'specifique';
 
-    /** Barème standard livreur de la ville (`livreur_standard_tarifs`). */
+    /**
+     * Valeur HISTORIQUE uniquement : posée par la première version du Sprint 29 (barème standard
+     * livreur retiré le 01/11/2026). Plus jamais produite ; conservée pour relire les colis concernés.
+     */
     case Standard = 'standard';
 
     /** Aucune commission fiable : anomalie à traiter (jamais assimilée à 0). */
@@ -29,7 +33,7 @@ enum TypeCommission: string
         return match ($this) {
             self::Manuel => 'Manuelle',
             self::Specifique => 'Spécifique livreur',
-            self::Standard => 'Standard livreur',
+            self::Standard => 'Standard livreur (historique)',
             self::Missing => 'Manquante',
         };
     }

@@ -88,9 +88,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/tarifs-livreurs', [\App\Http\Controllers\LivreurTarifController::class, 'update'])->name('tarifs-livreurs.update');
     Route::delete('/tarifs-livreurs', [\App\Http\Controllers\LivreurTarifController::class, 'destroy'])->name('tarifs-livreurs.destroy');
     Route::post('/tarifs-livreurs/restaurer', [\App\Http\Controllers\LivreurTarifController::class, 'restaurer'])->name('tarifs-livreurs.restaurer');
-    Route::post('/tarifs-livreurs/standard/apercu', [\App\Http\Controllers\LivreurTarifController::class, 'standardApercu'])->name('tarifs-livreurs.standard.apercu');
-    Route::post('/tarifs-livreurs/standard', [\App\Http\Controllers\LivreurTarifController::class, 'standardAppliquer'])->name('tarifs-livreurs.standard.appliquer');
-    Route::put('/tarifs-livreurs/standard', [\App\Http\Controllers\LivreurTarifController::class, 'standardLot'])->name('tarifs-livreurs.standard.lot');
 
     // Administration & Sécurité : rôles et permissions Spatie (Sprint 25).
     // Autorisation dans les contrôleurs / FormRequests (RolePolicy, PermissionPolicy).
