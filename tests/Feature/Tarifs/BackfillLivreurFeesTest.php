@@ -144,7 +144,7 @@ class BackfillLivreurFeesTest extends TestCase
         $this->assertSame($this->zagora->id, LivreurTarif::pour($this->hamza->id, $this->zagora->id)->value('ville_id'));
         $this->assertSame(0, LivreurTarif::pour($this->hamza->id, $this->skhirate->id)->count(), 'Montants divergents : non migrés.');
         $this->assertSame(4, LivreurTarif::count());
-        $this->assertSame(0, DB::table('livreur_standard_tarifs')->count(), 'dlm = 0 : jamais écrit (pas de barème standard).');
+        $this->assertFalse(Schema::hasTable('livreur_standard_tarifs'), 'dlm = 0 : jamais écrit, pas de table de barème standard livreur.');
 
         $this->artisan('tarifs:backfill-livreur-fees', ['--connection' => 'legacy_test', '--apply' => true])
             ->expectsOutputToContain('Total qui serait écrit : 0 commission(s) spécifique(s).')
