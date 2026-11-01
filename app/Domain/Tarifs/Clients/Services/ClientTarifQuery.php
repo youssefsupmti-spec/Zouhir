@@ -99,7 +99,7 @@ final class ClientTarifQuery
      * « Tarif moyen » = moyenne arithmétique des frais de livraison des règles actives
      * (chaque règle client × ville pèse 1, sans pondération par volume de colis).
      *
-     * @return array{clients: int, tarifs: int, villes: int, livraison_min: ?string, livraison_max: ?string, livraison_moyenne: ?string, gratuits: int}
+     * @return array{clients: int, tarifs: int, villes: int, livraison_min: ?string, livraison_max: ?string, livraison_moyenne: ?string, gratuits: int, corbeille: int}
      */
     public function statistiques(): array
     {
@@ -129,7 +129,46 @@ final class ClientTarifQuery
             'livraison_max' => $tarifs > 0 ? TarifResolu::montant($s->mx) : null,
             'livraison_moyenne' => $tarifs > 0 ? TarifResolu::montant($s->moy) : null,
             'gratuits' => (int) ($s->gratuits ?? 0),
+            'corbeille' => DB::table('client_tarifs')->whereNotNull('deleted_at')->count(),
         ];
+    }
+
+    /**
+     * Corbeille : tarifs négociés supprimés (soft delete), tous clients, à plat. Une requête.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function corbeille(string $search = ''): array
+    {
+        return DB::table('client_tarifs')
+            ->join('villes', 'villes.id', '=', 'client_tarifs.ville_id')
+            ->join('users', 'users.id', '=', 'client_tarifs.client_id')
+            ->leftJoin('zones', 'zones.id', '=', 'villes.zone_id')
+            ->whereNotNull('client_tarifs.deleted_at')
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('users.nom_complet', 'like', '%'.$search.'%')
+                ->orWhere('villes.name_fr', 'like', '%'.$search.'%')))
+            ->orderByDesc('client_tarifs.deleted_at')
+            ->orderByDesc('client_tarifs.id')
+            ->get([
+                'client_tarifs.id', 'users.nom_complet', 'users.deleted_at as client_archive', 'villes.name_fr', 'zones.name as zone_nom',
+                'client_tarifs.frais_livraison', 'client_tarifs.frais_refus', 'client_tarifs.frais_retour', 'client_tarifs.deleted_at',
+            ])
+            ->map(fn ($l) => [
+                'id' => (int) $l->id,
+                'titulaire' => (string) $l->nom_complet,
+                'titulaire_archive' => $l->client_archive !== null,
+                'ville_nom' => (string) $l->name_fr,
+                'zone_nom' => (string) ($l->zone_nom ?? 'Villes sans zone'),
+                'montants' => [
+                    TarifResolu::montant($l->frais_livraison),
+                    TarifResolu::montant($l->frais_refus),
+                    TarifResolu::montant($l->frais_retour),
+                ],
+                'deleted_at' => $l->deleted_at,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

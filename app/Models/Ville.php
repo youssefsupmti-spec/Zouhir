@@ -39,6 +39,12 @@ class Ville extends Model
         return $this->hasMany(ClientTarif::class, 'ville_id');
     }
 
+    /** Commissions spécifiques des livreurs sur cette ville (actives ; corbeille via withTrashed()). */
+    public function livreurTarifs(): HasMany
+    {
+        return $this->hasMany(LivreurTarif::class, 'ville_id');
+    }
+
     public function commands(): HasMany
     {
         return $this->hasMany(Command::class, 'destinataire_ville_id');

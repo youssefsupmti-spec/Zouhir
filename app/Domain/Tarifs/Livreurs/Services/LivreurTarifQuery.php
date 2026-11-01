@@ -201,15 +201,23 @@ final class LivreurTarifQuery
                 ->where('users.nom_complet', 'like', '%'.$search.'%')
                 ->orWhere('villes.name_fr', 'like', '%'.$search.'%')))
             ->orderByDesc('livreur_tarifs.deleted_at')
+            ->orderByDesc('livreur_tarifs.id')
             ->get([
                 'livreur_tarifs.id', 'livreur_tarifs.livreur_id', 'users.nom_complet as livreur_nom', 'users.deleted_at as livreur_archive',
                 'villes.id as ville_id', 'villes.name_fr as ville_nom', 'zones.name as zone_nom',
                 'livreur_tarifs.commission_livraison', 'livreur_tarifs.commission_refus', 'livreur_tarifs.deleted_at', 'livreur_tarifs.updated_at',
             ])
-            ->map(fn ($l) => $this->ligne($l) + [
+            ->map(fn ($l) => [
+                'id' => (int) $l->id,
                 'livreur_id' => (int) $l->livreur_id,
-                'livreur_nom' => (string) $l->livreur_nom,
-                'livreur_archive' => $l->livreur_archive !== null,
+                'titulaire' => (string) $l->livreur_nom,
+                'titulaire_archive' => $l->livreur_archive !== null,
+                'ville_nom' => (string) $l->ville_nom,
+                'zone_nom' => (string) ($l->zone_nom ?? 'Villes sans zone'),
+                'montants' => [
+                    Montants::lire(['v' => $l->commission_livraison], ['v' => 'v'])['v'],
+                    Montants::lire(['v' => $l->commission_refus], ['v' => 'v'])['v'],
+                ],
                 'deleted_at' => $l->deleted_at,
             ])
             ->values()

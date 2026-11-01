@@ -9,6 +9,7 @@ import { FilterDropdown } from '@/components/common/FilterDropdown';
 import { DataTablePagination, type LaravelPaginationMeta } from '@/components/common/DataTablePagination';
 import { Button } from '@/components/ui/button';
 import { BaremeVillesTable, type BaremeLigne } from '@/components/tarifs/BaremeVillesTable';
+import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
 import { AjouterTarifStandardDialog } from './AjouterTarifStandardDialog';
 
 interface Filters {
@@ -31,7 +32,7 @@ export default function TarifsStandardIndex({ villes, stats, zones, filters, can
   const params = { ...filters };
   const appliquer = (name: keyof Filters, value: string) =>
     router.get('/tarifs-standard', { ...params, [name]: value === 'all' ? undefined : value, page: 1 }, { preserveState: true, preserveScroll: true, replace: true });
-  const filtre = Boolean(filters.search) || filters.zone_id !== 'all' || filters.statut !== 'tous';
+  const filtre = Boolean(filters.search) || filters.zone_id !== 'all';
 
   return (
     <AuthenticatedLayout title="Tarifs de livraison">
@@ -44,9 +45,6 @@ export default function TarifsStandardIndex({ villes, stats, zones, filters, can
           icon={Truck}
           actions={can.create ? (
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" className="h-8 rounded-md text-xs" onClick={() => appliquer('statut', filters.statut === 'sans' ? 'tous' : 'sans')}>
-                <MapPinOff className="size-3.5" /> {filters.statut === 'sans' ? 'Toutes les villes' : 'Villes sans tarif'}
-              </Button>
               <Button size="sm" variant="outline" className="h-8 rounded-md text-xs" onClick={() => setDialog({ open: true, zoneId: null })}>
                 <Layers className="size-3.5" /> Appliquer à plusieurs villes
               </Button>
@@ -64,20 +62,29 @@ export default function TarifsStandardIndex({ villes, stats, zones, filters, can
           <StatsCard title="Tarif moyen (MAD)" value={stats.moyenne ?? '—'} description={stats.gratuites > 0 ? `dont ${stats.gratuites} à 0.00 MAD` : 'Moyenne des villes tarifées'} icon={Coins} />
         </div>
 
+        <TarifsTabs
+          label="Statut des villes"
+          value={filters.statut}
+          onValueChange={(v) => appliquer('statut', v)}
+          onglets={[
+            { value: 'tous', label: 'Toutes les villes', count: stats.villes, icon: <MapPin className="size-3.5" /> },
+            { value: 'tarifees', label: 'Tarifées', count: stats.tarifees, icon: <CheckCircle2 className="size-3.5" /> },
+            { value: 'sans', label: 'Sans tarif', count: stats.sans_tarif, icon: <MapPinOff className="size-3.5" />, tone: 'danger' },
+          ]}
+        />
+
         <PageToolbar
           searchPlaceholder="Ville (français ou arabe)…"
           initialSearch={filters.search}
           currentParams={params}
           rightActions={filtre && (
-            <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs" onClick={() => router.get('/tarifs-standard', {}, { replace: true })}>
+            <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs" onClick={() => router.get('/tarifs-standard', filters.statut === 'tous' ? {} : { statut: filters.statut }, { replace: true })}>
               <RotateCcw className="size-3.5" /> Réinitialiser
             </Button>
           )}
         >
           <FilterDropdown label="Zone" value={filters.zone_id} onChange={(v) => appliquer('zone_id', v)}
             options={[{ value: 'all', label: 'Toutes' }, ...zones.map((z) => ({ value: String(z.id), label: z.name }))]} />
-          <FilterDropdown label="Statut" value={filters.statut === 'tous' ? 'all' : filters.statut} onChange={(v) => appliquer('statut', v === 'all' ? 'tous' : v)}
-            options={[{ value: 'all', label: 'Toutes les villes' }, { value: 'tarifees', label: 'Villes tarifées' }, { value: 'sans', label: 'Villes sans tarif' }]} />
         </PageToolbar>
 
         <BaremeVillesTable

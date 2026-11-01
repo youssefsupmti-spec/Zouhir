@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { BadgePercent, Coins, MapPin, Plus, RotateCcw, Search, Store, Users } from 'lucide-react';
+import { BadgePercent, Coins, MapPin, Plus, RotateCcw, Search, Store, Trash2, Users } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatsCard } from '@/components/common/StatsCard';
@@ -10,12 +10,15 @@ import { DataTablePagination, type LaravelPaginationMeta } from '@/components/co
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
+import { CorbeilleTarifs, type LigneCorbeille } from '@/components/tarifs/CorbeilleTarifs';
 import { ClientTarifsCard } from './ClientTarifsCard';
 import { AjouterTarifsDialog } from './AjouterTarifsDialog';
 import { ModifierTarifsDialog } from './ModifierTarifsDialog';
 import type { Capacites, ClientResume, LigneTarif, ZoneRef } from './types';
 
 interface Filters {
+  onglet: 'actifs' | 'corbeille';
   search: string;
   ville: string;
   zone_id: string;
@@ -24,7 +27,8 @@ interface Filters {
 }
 
 interface Props {
-  clients: LaravelPaginationMeta & { data: ClientResume[] };
+  clients: (LaravelPaginationMeta & { data: ClientResume[] }) | null;
+  corbeille: LigneCorbeille[] | null;
   stats: {
     clients: number;
     tarifs: number;
@@ -33,13 +37,14 @@ interface Props {
     livraison_max: string | null;
     livraison_moyenne: string | null;
     gratuits: number;
+    corbeille: number;
   };
   zones: ZoneRef[];
   filters: Filters;
   can: Capacites;
 }
 
-export default function TarifsClientsIndex({ clients, stats, zones, filters, can }: Props) {
+export default function TarifsClientsIndex({ clients, corbeille, stats, zones, filters, can }: Props) {
   const [version, setVersion] = useState(0);
   const [ajout, setAjout] = useState<{ open: boolean; clientId: number | null }>({ open: false, clientId: null });
   const [edition, setEdition] = useState<{ client: ClientResume | null; lignes: LigneTarif[] }>({ client: null, lignes: [] });
@@ -60,6 +65,7 @@ export default function TarifsClientsIndex({ clients, stats, zones, filters, can
   }, [ville]);
 
   const filtre = Boolean(filters.search || filters.ville) || filters.zone_id !== 'all' || filters.client_id !== 'all';
+  const enCorbeille = filters.onglet === 'corbeille';
   const rafraichir = () => setVersion((v) => v + 1);
 
   const confirmerSuppression = () => {
@@ -118,20 +124,31 @@ export default function TarifsClientsIndex({ clients, stats, zones, filters, can
           </div>
         )}
 
+        <TarifsTabs
+          label="Tarifs clients"
+          value={filters.onglet}
+          onValueChange={(v) => router.get('/tarifs-clients', v === 'corbeille' ? { onglet: v } : {}, { preserveScroll: true, replace: true })}
+          onglets={[
+            { value: 'actifs', label: 'Tarifs négociés', count: stats.tarifs, icon: <Store className="size-3.5" /> },
+            { value: 'corbeille', label: 'Corbeille', count: stats.corbeille, icon: <Trash2 className="size-3.5" />, tone: 'danger' },
+          ]}
+        />
+
         <PageToolbar
-          searchPlaceholder="Client, email ou enseigne…"
+          searchPlaceholder={enCorbeille ? 'Client ou ville…' : 'Client, email ou enseigne…'}
           initialSearch={filters.search}
           currentParams={params}
           rightActions={
             filtre && (
               <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs"
-                onClick={() => { setVille(''); router.get('/tarifs-clients', {}, { replace: true }); }}>
+                onClick={() => { setVille(''); router.get('/tarifs-clients', enCorbeille ? { onglet: 'corbeille' } : {}, { replace: true }); }}>
                 <RotateCcw className="size-3.5" />
                 Réinitialiser
               </Button>
             )
           }
         >
+          {!enCorbeille && (<>
           <div className="relative w-full sm:w-48">
             <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input value={ville} onChange={(e) => setVille(e.target.value)} placeholder="Ville (ex. Temara)" className="h-8 rounded-md bg-background pl-8 text-xs" aria-label="Rechercher par ville" />
@@ -147,9 +164,16 @@ export default function TarifsClientsIndex({ clients, stats, zones, filters, can
               Client #{filters.client_id} ✕
             </Button>
           )}
+          </>)}
         </PageToolbar>
 
-        {clients.data.length === 0 ? (
+        {corbeille !== null && (
+          <CorbeilleTarifs lignes={corbeille} peutAgir={can.delete} titulaire="Client"
+            montants={['Livraison', 'Refus', 'Retour']}
+            restaurerUrl="/tarifs-clients/corbeille/restaurer" purgerUrl="/tarifs-clients/corbeille" />
+        )}
+
+        {clients !== null && (clients.data.length === 0 ? (
           <div className="rounded-md border border-dashed border-border bg-card p-10 text-center text-xs text-muted-foreground">
             {filtre ? 'Aucun client ne correspond à ces filtres.' : 'Aucun tarif négocié pour le moment. Les colis utilisent le tarif standard de leur ville.'}
           </div>
@@ -167,9 +191,9 @@ export default function TarifsClientsIndex({ clients, stats, zones, filters, can
               />
             ))}
           </div>
-        )}
+        ))}
 
-        {clients.total > 0 && (
+        {clients !== null && clients.total > 0 && (
           <DataTablePagination meta={clients} currentParams={params} pageSizeOptions={[10, 15, 25, 50]} />
         )}
       </div>

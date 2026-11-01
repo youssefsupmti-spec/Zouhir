@@ -72,6 +72,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'store'])->name('tarifs-clients.store');
     Route::put('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'update'])->name('tarifs-clients.update');
     Route::delete('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'destroy'])->name('tarifs-clients.destroy');
+    Route::post('/tarifs-clients/corbeille/restaurer', [\App\Http\Controllers\ClientTarifController::class, 'restaurerCorbeille'])->name('tarifs-clients.corbeille.restaurer');
+    Route::delete('/tarifs-clients/corbeille', [\App\Http\Controllers\ClientTarifController::class, 'purgerCorbeille'])->name('tarifs-clients.corbeille.purger');
 
     // Tarifs de livraison — barème standard facturé aux marchands (Sprint 29) : StandardTarifPolicy.
     Route::get('/tarifs-standard', [\App\Http\Controllers\StandardTarifController::class, 'index'])->name('tarifs-standard.index');

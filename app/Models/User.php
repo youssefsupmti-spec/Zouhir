@@ -191,6 +191,12 @@ class User extends Authenticatable
         return $this->hasMany(ClientTarif::class, 'client_id');
     }
 
+    /** Commissions spécifiques de ce livreur (actives ; corbeille via withTrashed()). */
+    public function livreurTarifs(): HasMany
+    {
+        return $this->hasMany(LivreurTarif::class, 'livreur_id');
+    }
+
     /**
      * Enseignes marchandes associées à ce compte (Businesses).
      */

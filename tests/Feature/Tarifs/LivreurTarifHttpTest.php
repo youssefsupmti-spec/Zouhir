@@ -68,7 +68,7 @@ class LivreurTarifHttpTest extends TestCase
         $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=archives')
             ->assertInertia(fn (Assert $p) => $p->has('livreurs.data', 1)->where('livreurs.data.0.archive', true));
         $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=corbeille')
-            ->assertInertia(fn (Assert $p) => $p->where('livreurs', null)->has('corbeille', 1)->where('corbeille.0.livreur_nom', 'Jalal livreur'));
+            ->assertInertia(fn (Assert $p) => $p->where('livreurs', null)->has('corbeille', 1)->where('corbeille.0.titulaire', 'Jalal livreur')->where('corbeille.0.montants', ['9.00', '0.00']));
 
         $this->actingAs($this->admin)->getJson('/tarifs-livreurs/'.$this->hamza->id.'/grille')->assertOk()
             ->assertJsonCount(2, 'zones')

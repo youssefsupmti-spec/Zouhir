@@ -236,6 +236,42 @@ final class ClientTarifEcriture
         return $supprimes;
     }
 
+    /** Corbeille : restauration (tous clients). */
+    public function restaurerCorbeille(array $ids): int
+    {
+        return $this->corbeille($ids, purger: false);
+    }
+
+    /** Corbeille : suppression DÉFINITIVE de tarifs déjà supprimés (jamais d'un tarif actif). */
+    public function purgerCorbeille(array $ids): int
+    {
+        return $this->corbeille($ids, purger: true);
+    }
+
+    private function corbeille(array $ids, bool $purger): int
+    {
+        $ids = $this->idsUniques($ids);
+        if ($ids === []) {
+            throw ValidationException::withMessages(['ids' => 'Aucun tarif sélectionné.']);
+        }
+
+        $n = DB::transaction(function () use ($ids, $purger): int {
+            $tarifs = ClientTarif::onlyTrashed()->whereKey($ids)->lockForUpdate()->get();
+
+            if ($tarifs->count() !== count($ids)) {
+                throw ValidationException::withMessages(['ids' => 'Certains tarifs ne sont plus dans la corbeille. Rechargez la page.']);
+            }
+
+            $purger ? $tarifs->each->forceDelete() : $tarifs->each->restore();
+
+            return $tarifs->count();
+        });
+
+        $this->fees->oublier();
+
+        return $n;
+    }
+
     /**
      * Normalise et valide trois montants : obligatoires, numériques, ≥ 0, 2 décimales max.
      *

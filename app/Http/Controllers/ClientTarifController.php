@@ -45,6 +45,7 @@ class ClientTarifController extends Controller
             'client_id' => $this->idOuNull($request->input('client_id')),
         ];
         $parPage = min(max((int) $request->input('per_page', 15), 5), 50);
+        $onglet = $request->input('onglet') === 'corbeille' ? 'corbeille' : 'actifs';
 
         // Un compte marchand (permission déléguée par erreur) reste limité à sa propre grille.
         if ($user->isClient() && ! $user->isAdmin()) {
@@ -52,10 +53,12 @@ class ClientTarifController extends Controller
         }
 
         return Inertia::render('TarifsClients/Index', [
-            'clients' => $this->query->clients($filtres, $parPage),
+            'clients' => $onglet === 'corbeille' ? null : $this->query->clients($filtres, $parPage),
+            'corbeille' => $onglet === 'corbeille' ? $this->query->corbeille($filtres['search']) : null,
             'stats' => $this->query->statistiques(),
             'zones' => Zone::query()->orderBy('name')->get(['id', 'name', 'code']),
             'filters' => [
+                'onglet' => $onglet,
                 'search' => $filtres['search'],
                 'ville' => $filtres['ville'],
                 'zone_id' => $filtres['zone_id'] === null ? 'all' : (string) $filtres['zone_id'],
@@ -173,6 +176,24 @@ class ClientTarifController extends Controller
         $n = $this->ecriture->supprimerLot((int) $data['client_id'], $data['ids']);
 
         return back()->with('success', "{$n} tarif(s) supprimé(s) : ces villes repassent au tarif standard pour les prochains colis.");
+    }
+
+    public function restaurerCorbeille(Request $request): RedirectResponse
+    {
+        Gate::authorize('delete', ClientTarif::class);
+        $ids = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:1000'], 'ids.*' => ['integer', 'distinct']])['ids'];
+        $n = $this->ecriture->restaurerCorbeille($ids);
+
+        return back()->with('success', "{$n} tarif(s) restauré(s) avec leurs montants d'origine.");
+    }
+
+    public function purgerCorbeille(Request $request): RedirectResponse
+    {
+        Gate::authorize('delete', ClientTarif::class);
+        $ids = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:1000'], 'ids.*' => ['integer', 'distinct']])['ids'];
+        $n = $this->ecriture->purgerCorbeille($ids);
+
+        return back()->with('success', "{$n} tarif(s) supprimé(s) définitivement. Aucun colis n'est modifié.");
     }
 
     private function idOuNull(mixed $valeur): ?int
