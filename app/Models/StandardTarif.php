@@ -24,6 +24,7 @@ class StandardTarif extends Model
         'frais_livraison',
         'frais_refus',
         'frais_retour',
+        'delai',
         'legacy_ids',
     ];
 

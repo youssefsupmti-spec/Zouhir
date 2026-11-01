@@ -35,6 +35,7 @@ class Command extends Model
         'prix_brut',
         'frais_livraison_client',
         'type_tarif_client',
+        'type_commission_livreur',
         'frais_livraison_livreur',
         'state',
         'state_group',

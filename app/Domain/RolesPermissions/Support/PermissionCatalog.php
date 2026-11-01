@@ -31,8 +31,8 @@ final class PermissionCatalog
             'description' => 'Coordonnées bancaires et données financières.',
         ],
         'tarifs' => [
-            'label' => 'Tarifs Clients',
-            'description' => 'Grilles tarifaires négociées par client et par ville.',
+            'label' => 'Tarifs',
+            'description' => 'Tarifs de livraison standards, tarifs négociés clients et commissions livreurs.',
         ],
         'pilotage' => [
             'label' => 'Pilotage & Exports',
@@ -97,6 +97,36 @@ final class PermissionCatalog
                 'module' => 'tarifs',
                 'description' => 'Supprimer un tarif négocié (la ville repasse au tarif standard).',
                 'enforced_by' => ['ClientTarifPolicy::delete'],
+            ],
+            PermissionEnum::TARIFS_STANDARD_VOIR->value => [
+                'module' => 'tarifs',
+                'description' => 'Consulter le barème standard de livraison facturé aux marchands.',
+                'enforced_by' => ['StandardTarifPolicy::viewAny'],
+            ],
+            PermissionEnum::TARIFS_STANDARD_GERER->value => [
+                'module' => 'tarifs',
+                'description' => 'Créer et modifier les tarifs standards (inline, par lot ou par zone).',
+                'enforced_by' => ['StandardTarifPolicy::create', 'StandardTarifPolicy::update'],
+            ],
+            PermissionEnum::TARIFS_LIVREUR_VOIR->value => [
+                'module' => 'tarifs',
+                'description' => 'Consulter les commissions livreurs (spécifiques et barème standard).',
+                'enforced_by' => ['LivreurTarifPolicy::viewAny'],
+            ],
+            PermissionEnum::TARIFS_LIVREUR_CREER->value => [
+                'module' => 'tarifs',
+                'description' => 'Affecter une commission spécifique à un livreur sur des villes.',
+                'enforced_by' => ['LivreurTarifPolicy::create'],
+            ],
+            PermissionEnum::TARIFS_LIVREUR_MODIFIER->value => [
+                'module' => 'tarifs',
+                'description' => 'Modifier les commissions spécifiques et le barème standard livreur.',
+                'enforced_by' => ['LivreurTarifPolicy::update', 'LivreurStandardTarifPolicy::update'],
+            ],
+            PermissionEnum::TARIFS_LIVREUR_SUPPRIMER->value => [
+                'module' => 'tarifs',
+                'description' => 'Supprimer (logiquement) ou restaurer une commission spécifique.',
+                'enforced_by' => ['LivreurTarifPolicy::delete', 'LivreurTarifPolicy::restore'],
             ],
             PermissionEnum::VIEW_DASHBOARD->value => [
                 'module' => 'pilotage',

@@ -73,6 +73,25 @@ Route::middleware('auth')->group(function () {
     Route::put('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'update'])->name('tarifs-clients.update');
     Route::delete('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'destroy'])->name('tarifs-clients.destroy');
 
+    // Tarifs de livraison — barème standard facturé aux marchands (Sprint 29) : StandardTarifPolicy.
+    Route::get('/tarifs-standard', [\App\Http\Controllers\StandardTarifController::class, 'index'])->name('tarifs-standard.index');
+    Route::get('/tarifs-standard/referentiel', [\App\Http\Controllers\StandardTarifController::class, 'referentiel'])->name('tarifs-standard.referentiel');
+    Route::post('/tarifs-standard/apercu', [\App\Http\Controllers\StandardTarifController::class, 'apercu'])->name('tarifs-standard.apercu');
+    Route::post('/tarifs-standard', [\App\Http\Controllers\StandardTarifController::class, 'store'])->name('tarifs-standard.store');
+    Route::put('/tarifs-standard', [\App\Http\Controllers\StandardTarifController::class, 'lot'])->name('tarifs-standard.lot');
+
+    // Tarifs livreurs — commissions versées aux livreurs (Sprint 29) : LivreurTarifPolicy.
+    Route::get('/tarifs-livreurs', [\App\Http\Controllers\LivreurTarifController::class, 'index'])->name('tarifs-livreurs.index');
+    Route::get('/tarifs-livreurs/referentiel', [\App\Http\Controllers\LivreurTarifController::class, 'referentiel'])->name('tarifs-livreurs.referentiel');
+    Route::post('/tarifs-livreurs/apercu', [\App\Http\Controllers\LivreurTarifController::class, 'apercu'])->name('tarifs-livreurs.apercu');
+    Route::post('/tarifs-livreurs', [\App\Http\Controllers\LivreurTarifController::class, 'store'])->name('tarifs-livreurs.store');
+    Route::put('/tarifs-livreurs', [\App\Http\Controllers\LivreurTarifController::class, 'update'])->name('tarifs-livreurs.update');
+    Route::delete('/tarifs-livreurs', [\App\Http\Controllers\LivreurTarifController::class, 'destroy'])->name('tarifs-livreurs.destroy');
+    Route::post('/tarifs-livreurs/restaurer', [\App\Http\Controllers\LivreurTarifController::class, 'restaurer'])->name('tarifs-livreurs.restaurer');
+    Route::post('/tarifs-livreurs/standard/apercu', [\App\Http\Controllers\LivreurTarifController::class, 'standardApercu'])->name('tarifs-livreurs.standard.apercu');
+    Route::post('/tarifs-livreurs/standard', [\App\Http\Controllers\LivreurTarifController::class, 'standardAppliquer'])->name('tarifs-livreurs.standard.appliquer');
+    Route::put('/tarifs-livreurs/standard', [\App\Http\Controllers\LivreurTarifController::class, 'standardLot'])->name('tarifs-livreurs.standard.lot');
+
     // Administration & Sécurité : rôles et permissions Spatie (Sprint 25).
     // Autorisation dans les contrôleurs / FormRequests (RolePolicy, PermissionPolicy).
     Route::get('/roles', [\App\Http\Controllers\RoleController::class, 'index'])->name('roles.index');

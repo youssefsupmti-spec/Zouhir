@@ -25,6 +25,14 @@ enum Permission: string
     case TARIFS_CLIENT_MODIFIER = 'tarifs_client:modifier';
     case TARIFS_CLIENT_SUPPRIMER = 'tarifs_client:supprimer';
 
+    // Domaine Tarifs (Sprint 29) — StandardTarifPolicy / LivreurTarifPolicy.
+    case TARIFS_STANDARD_VOIR = 'tarifs_standard:voir';
+    case TARIFS_STANDARD_GERER = 'tarifs_standard:gerer';
+    case TARIFS_LIVREUR_VOIR = 'tarifs_livreur:voir';
+    case TARIFS_LIVREUR_CREER = 'tarifs_livreur:creer';
+    case TARIFS_LIVREUR_MODIFIER = 'tarifs_livreur:modifier';
+    case TARIFS_LIVREUR_SUPPRIMER = 'tarifs_livreur:supprimer';
+
     public function label(): string
     {
         return match ($this) {
@@ -44,6 +52,12 @@ enum Permission: string
             self::TARIFS_CLIENT_CREER => 'Négocier de nouveaux tarifs clients',
             self::TARIFS_CLIENT_MODIFIER => 'Modifier les tarifs clients',
             self::TARIFS_CLIENT_SUPPRIMER => 'Supprimer les tarifs clients',
+            self::TARIFS_STANDARD_VOIR => 'Consulter les tarifs de livraison standards',
+            self::TARIFS_STANDARD_GERER => 'Créer et modifier les tarifs de livraison standards',
+            self::TARIFS_LIVREUR_VOIR => 'Consulter les commissions livreurs',
+            self::TARIFS_LIVREUR_CREER => 'Affecter des commissions livreurs',
+            self::TARIFS_LIVREUR_MODIFIER => 'Modifier les commissions livreurs et leur barème standard',
+            self::TARIFS_LIVREUR_SUPPRIMER => 'Supprimer / restaurer des commissions livreurs',
         };
     }
 
@@ -55,6 +69,19 @@ enum Permission: string
             self::TARIFS_CLIENT_CREER,
             self::TARIFS_CLIENT_MODIFIER,
             self::TARIFS_CLIENT_SUPPRIMER,
+        ];
+    }
+
+    /** @return list<self> Permissions du domaine Tarifs ajoutées au Sprint 29. */
+    public static function tarifsSprint29(): array
+    {
+        return [
+            self::TARIFS_STANDARD_VOIR,
+            self::TARIFS_STANDARD_GERER,
+            self::TARIFS_LIVREUR_VOIR,
+            self::TARIFS_LIVREUR_CREER,
+            self::TARIFS_LIVREUR_MODIFIER,
+            self::TARIFS_LIVREUR_SUPPRIMER,
         ];
     }
 }

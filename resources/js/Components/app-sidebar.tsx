@@ -26,6 +26,7 @@ import {
   StoreIcon,
   ShieldCheckIcon,
   KeyRoundIcon,
+  TagsIcon,
 } from "lucide-react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -101,9 +102,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         // Entrée unique pour /banks (doublon supprimé de « Référentiels Métier »).
         { title: "Banques & RIBs", url: "/banks" },
-        { title: "Tarifs Clients", url: "/tarifs-clients" },
         { title: "Relevés de paiement (CRBT)", badge: SOON, disabled: true },
         { title: "Historique des virements", badge: SOON, disabled: true },
+      ],
+    },
+    {
+      // Domaine Tarifs (Sprint 29) : le parent est un déclencheur d'accordéon, les enfants sont les liens.
+      title: "Tarifs",
+      icon: <TagsIcon />,
+      items: [
+        { title: "Tarifs de livraison", url: "/tarifs-standard" },
+        { title: "Tarifs clients", url: "/tarifs-clients" },
+        { title: "Tarifs livreurs", url: "/tarifs-livreurs" },
       ],
     },
   ]
@@ -121,6 +131,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/roles": "roles",
     "/permissions": "permissions",
     "/tarifs-clients": "tarifsClients",
+    "/tarifs-standard": "tarifsStandard",
+    "/tarifs-livreurs": "tarifsLivreurs",
   }
   const isAllowed = (url?: string) => !url || !ABILITY_BY_URL[url] || can[ABILITY_BY_URL[url]] === true
   const hasLink = (i: { url?: string; disabled?: boolean }) => Boolean(i.url) && !i.disabled

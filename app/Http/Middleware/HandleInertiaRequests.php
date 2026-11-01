@@ -89,6 +89,8 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $user->can('viewAny', \Spatie\Permission\Models\Role::class),
                     'permissions' => $user->can('viewAny', \Spatie\Permission\Models\Permission::class),
                     'tarifsClients' => $user->can('viewAny', \App\Models\ClientTarif::class),
+                    'tarifsStandard' => $user->can('viewAny', \App\Models\StandardTarif::class),
+                    'tarifsLivreurs' => $user->can('viewAny', \App\Models\LivreurTarif::class),
                 ] : [],
             ],
             'flash' => [

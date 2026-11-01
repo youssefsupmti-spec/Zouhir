@@ -6,8 +6,12 @@ namespace App\Domain\Tarifs\Commun\Services;
 
 use App\Domain\Tarifs\Commun\Enums\TypeTarif;
 use App\Domain\Tarifs\Commun\Support\TarifResolu;
+use App\Domain\Tarifs\Livreurs\Enums\TypeCommission;
+use App\Domain\Tarifs\Livreurs\Support\CommissionResolue;
 use App\Domain\Villes\Support\VilleRef;
 use App\Models\ClientTarif;
+use App\Models\LivreurStandardTarif;
+use App\Models\LivreurTarif;
 use App\Models\StandardTarif;
 
 /**
@@ -26,6 +30,10 @@ use App\Models\StandardTarif;
  * elle renvoie un résultat `missing`. Les appelants qui doivent bloquer (facturation)
  * utilisent {@see exiger()}.
  *
+ * COMMISSIONS LIVREURS ({@see driverFees()}, comme WinningExpress) : domaine SÉPARÉ, caches
+ * séparés, objet de résultat séparé ({@see CommissionResolue}). Les deux cascades ne se
+ * croisent jamais : aucun montant client n'alimente une commission, et inversement.
+ *
  * Service lié en « scoped » (AppServiceProvider) : les caches vivent le temps d'une
  * requête ou d'une commande ; l'ABSENCE est mémorisée aussi (clés = identifiants).
  */
@@ -36,6 +44,12 @@ final class FeeResolutionService
 
     /** @var array<int, StandardTarif|null> villeId */
     private array $standardRows = [];
+
+    /** @var array<string, LivreurTarif|null> "livreurId|villeId" */
+    private array $livreurRows = [];
+
+    /** @var array<int, LivreurStandardTarif|null> villeId */
+    private array $livreurStandardRows = [];
 
     public function __construct(private readonly VilleRef $villes) {}
 
@@ -187,11 +201,107 @@ final class FeeResolutionService
         }
     }
 
+    /* ══════════════════════ Commissions livreurs ══════════════════════ */
+
+    /**
+     * Commission due au livreur d'un couple (livreur, ville).
+     *
+     * Cascade :
+     *   1. SPÉCIFIQUE — ligne ACTIVE `livreur_tarifs` (livreur, ville) ; prioritaire même à 0.00
+     *      (= `driverFees()` de WinningExpress, seule étape qui y existe) ;
+     *   2. STANDARD   — `livreur_standard_tarifs` de la ville (legacy `shippingfees` dlm = 0) ;
+     *   3. MISSING    — aucune commission fiable : montants `null`, jamais 0.
+     * Le court-circuit MANUEL est porté par {@see commissionPourColis()}.
+     */
+    public function driverFees(?int $livreurId, int|string|null $ville): CommissionResolue
+    {
+        $villeId = $ville === null || $ville === '' ? null : (is_int($ville) ? $ville : $this->villes->id($ville));
+
+        if ($livreurId === null || $villeId === null) {
+            return CommissionResolue::manquante($livreurId, $villeId);
+        }
+
+        $specifique = $this->livreurRow($livreurId, $villeId);
+        if ($specifique !== null) {
+            return new CommissionResolue(
+                TypeCommission::Specifique,
+                CommissionResolue::montant($specifique->commission_livraison),
+                CommissionResolue::montant($specifique->commission_refus),
+                (int) $specifique->getKey(),
+                $livreurId,
+                $villeId,
+            );
+        }
+
+        $standard = $this->livreurStandardRow($villeId);
+        if ($standard !== null) {
+            return new CommissionResolue(
+                TypeCommission::Standard,
+                CommissionResolue::montant($standard->commission_livraison),
+                CommissionResolue::montant($standard->commission_refus),
+                (int) $standard->getKey(),
+                $livreurId,
+                $villeId,
+            );
+        }
+
+        return CommissionResolue::manquante($livreurId, $villeId);
+    }
+
+    /** Commission d'un COLIS : une commission MANUELLE figée est rendue telle quelle. */
+    public function commissionPourColis(object $colis): CommissionResolue
+    {
+        $livreurId = ((int) ($colis->livreur_id ?? 0)) ?: null;
+        $villeId = $this->villeDuColis($colis);
+
+        if (TypeCommission::depuis($colis->type_commission_livreur ?? null) === TypeCommission::Manuel) {
+            return new CommissionResolue(
+                TypeCommission::Manuel,
+                CommissionResolue::montant($colis->frais_livraison_livreur ?? 0),
+                null,
+                null,
+                $livreurId,
+                $villeId,
+            );
+        }
+
+        return $this->driverFees($livreurId, $villeId);
+    }
+
+    /** Barème standard livreur seul d'une ville (null = aucun). */
+    public function standardLivreurDe(int $villeId): ?LivreurStandardTarif
+    {
+        return $this->livreurStandardRow($villeId);
+    }
+
     /** Vide les caches : à appeler après toute écriture de barème dans la même requête. */
     public function oublier(): void
     {
         $this->clientRows = [];
         $this->standardRows = [];
+        $this->livreurRows = [];
+        $this->livreurStandardRows = [];
+    }
+
+    private function livreurRow(int $livreurId, int $villeId): ?LivreurTarif
+    {
+        $cle = $livreurId.'|'.$villeId;
+
+        if (array_key_exists($cle, $this->livreurRows)) {
+            return $this->livreurRows[$cle];
+        }
+
+        // SoftDeletes : une commission supprimée n'est jamais retenue (scope global).
+        return $this->livreurRows[$cle] = LivreurTarif::query()->pour($livreurId, $villeId)->first();
+    }
+
+    private function livreurStandardRow(int $villeId): ?LivreurStandardTarif
+    {
+        if (array_key_exists($villeId, $this->livreurStandardRows)) {
+            return $this->livreurStandardRows[$villeId];
+        }
+
+        return $this->livreurStandardRows[$villeId] = LivreurStandardTarif::query()->where('ville_id', $villeId)->first();
     }
 
     private function villeDuColis(object $colis): ?int

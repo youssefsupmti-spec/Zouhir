@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Application\Tarifs\Actions\FigerCommissionLivreurColis;
 use App\Application\Tarifs\Actions\FigerTarifClientColis;
 use App\Models\Business;
 use App\Models\Command;
@@ -203,7 +204,6 @@ class ColisController extends Controller
             'destinataire_ville_id' => $ville->id,
             'destinataire_zone_code' => $ville->code_zone,
             'prix_brut' => $validated['prix_brut'],
-            'frais_livraison_livreur' => $validated['frais_livraison_livreur'] ?? 15.00,
             'state' => 'Nouveau Colis',
             'state_group' => 'nouveau',
             'ouverture_autorisee' => (bool) ($validated['ouverture_autorisee'] ?? false),
@@ -215,6 +215,8 @@ class ColisController extends Controller
         // Seule l'administration peut imposer un montant manuel ; aucune valeur par défaut inventée.
         $colis = new Command($data);
         $tarif = app(FigerTarifClientColis::class)->aLaCreation($colis, $this->montantManuel($request, $validated));
+        // Commission livreur (Sprint 29) : snapshot séparé, aucune valeur par défaut inventée.
+        app(FigerCommissionLivreurColis::class)->aLaCreation($colis, $this->commissionManuelle($request, $validated));
         $colis->save();
 
         $message = "Colis #{$code} créé avec succès.";
@@ -243,6 +245,7 @@ class ColisController extends Controller
             'destinataire_ville_id' => ['required', 'exists:villes,id'],
             'prix_brut' => ['required', 'numeric', 'min:0'],
             'frais_livraison_client' => ['nullable', 'numeric', 'min:0'],
+            'frais_livraison_livreur' => ['nullable', 'numeric', 'min:0'],
             'livreur_id' => ['nullable', 'exists:users,id'],
             'ouverture_autorisee' => ['nullable', 'boolean'],
             'echange' => ['nullable', 'boolean'],
@@ -275,6 +278,7 @@ class ColisController extends Controller
 
         // Snapshot : recalcul uniquement si la ville change sur un colis non finalisé et non manuel.
         app(FigerTarifClientColis::class)->aLaModification($coli, $this->montantManuel($request, $validated));
+        app(FigerCommissionLivreurColis::class)->aLaModification($coli, $this->commissionManuelle($request, $validated));
         $coli->save();
 
         return back()->with('success', "Colis #{$coli->code} mis à jour.");
@@ -325,6 +329,8 @@ class ColisController extends Controller
             $coli->note = $validated['note'];
         }
 
+        // Changement de livreur avant finalisation : commission réalignée sur le nouveau livreur.
+        app(FigerCommissionLivreurColis::class)->aLaModification($coli);
         $coli->save();
 
         return back()->with('success', "Statut du colis #{$coli->code} mis à jour : {$coli->state}.");
@@ -352,6 +358,18 @@ class ColisController extends Controller
         }
 
         $valeur = $validated['frais_livraison_client'] ?? null;
+
+        return ($valeur === null || $valeur === '') ? null : (string) $valeur;
+    }
+
+    /** Commission livreur saisie : prise en compte UNIQUEMENT pour l'administration (vide = résolution). */
+    private function commissionManuelle(Request $request, array $validated): ?string
+    {
+        if (! $request->user()->isAdmin()) {
+            return null;
+        }
+
+        $valeur = $validated['frais_livraison_livreur'] ?? null;
 
         return ($valeur === null || $valeur === '') ? null : (string) $valeur;
     }
