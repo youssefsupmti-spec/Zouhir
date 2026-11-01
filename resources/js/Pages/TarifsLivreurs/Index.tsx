@@ -29,7 +29,6 @@ interface LivreurResume {
   nom: string;
   telephone: string | null;
   email: string | null;
-  avatar: string | null;
   archive: boolean;
   nb_villes: number;
   nb_zones: number;
@@ -75,8 +74,6 @@ interface Props {
   filters: { statut: Statut; search: string; zone_id: string; per_page: number };
   can: Capacites;
 }
-
-const initiales = (nom: string) => nom.split(/\s+/).filter(Boolean).slice(0, 2).map((m) => m[0]?.toUpperCase()).join('');
 
 /** Carte-onglet de compteur (comme les `card-tabs` de WinningExpress). */
 function CarteOnglet({ actif, onClick, titre, valeur, description, icone: Icone, ton }: {
@@ -293,9 +290,6 @@ function CarteLivreur({ livreur, zoneId, can, onAjouter }: { livreur: LivreurRes
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
         <CollapsibleTrigger className="flex min-w-0 flex-1 basis-56 cursor-pointer items-center gap-3 text-left">
           <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-open/livreur:rotate-90" />
-          {livreur.avatar
-            ? <img src={livreur.avatar} alt="" className="size-8 shrink-0 rounded-full object-cover" />
-            : <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#004c68]/10 text-[11px] font-bold text-[#004c68] dark:text-[#ff8806]">{initiales(livreur.nom)}</span>}
           <span className="min-w-0">
             <span className="block truncate text-sm font-semibold text-foreground">{livreur.nom}</span>
             <span className="block truncate text-[11px] text-muted-foreground">{livreur.telephone ?? livreur.email ?? 'Livreur'}</span>
