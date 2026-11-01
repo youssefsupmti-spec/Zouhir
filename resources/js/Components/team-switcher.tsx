@@ -46,7 +46,7 @@ export function TeamSwitcher({
               />
             }
           >
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold shadow-md shadow-sidebar-primary/20 overflow-hidden">
+            <div className="flex aspect-square size-9 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm bg-[#004c68]/20 border border-white/10">
               {activeTeam.logo}
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
@@ -81,7 +81,7 @@ export function TeamSwitcher({
                         : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
                     }`}
                   >
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-border/40 overflow-hidden">
+                    <div className="flex size-7 items-center justify-center rounded-lg bg-[#004c68]/30 text-sidebar-foreground border border-white/10 overflow-hidden">
                       {team.logo}
                     </div>
                     <div className="flex-1 min-w-0">

@@ -39,13 +39,13 @@ export default function Login({ status }) {
 
             {/* Left Column: Visual Brand Storytelling */}
             <div className="hidden lg:flex lg:col-span-5 bg-gradient-to-br from-[#004c68] via-[#072432] to-[#05161f] text-white p-12 flex-col justify-between relative overflow-hidden">
-                {/* Background Image Texture */}
-                <div className="absolute inset-0 z-0 opacity-20 mix-blend-overlay pointer-events-none">
+                {/* Background Image Texture (HD Logistics Network Map) */}
+                <div className="absolute inset-0 z-0 opacity-45 mix-blend-screen pointer-events-none">
                     <img 
-                        src="/images/login-bg.webp" 
-                        alt="Logistique OUAISS EXPRESS" 
+                        src="/images/login-bg-dark.webp" 
+                        alt="Réseau Logistique OUAISS EXPRESS Maroc" 
                         className="w-full h-full object-cover" 
-                        onError={(e) => { e.target.src = '/images/login-bg.jpg'; }}
+                        onError={(e) => { e.target.src = '/images/login-bg-dark.jpg'; }}
                     />
                 </div>
 
@@ -63,8 +63,17 @@ export default function Login({ status }) {
                         <span>Retour au site principal</span>
                     </Link>
 
-                    <div>
-                        <Logo isWhite={true} showTagline={true} />
+                    <div className="space-y-1.5">
+                        <Link href="/" className="inline-block group transition-transform duration-200 hover:scale-[1.02]">
+                            <img 
+                                src="/images/logo-full-dark.png" 
+                                alt="OUAISS EXPRESS" 
+                                className="h-12 sm:h-14 w-auto object-contain drop-shadow-lg"
+                            />
+                        </Link>
+                        <p className="text-[10.5px] font-semibold tracking-wider text-slate-300 uppercase select-none">
+                            Logistique & Livraison Express Maroc
+                        </p>
                     </div>
                 </div>
 
@@ -112,7 +121,18 @@ export default function Login({ status }) {
             <div className="lg:col-span-7 flex flex-col justify-between p-6 sm:p-12 lg:p-16">
                 <div className="flex items-center justify-between lg:justify-end pb-8">
                     <div className="lg:hidden">
-                        <Logo />
+                        <Link href="/" className="inline-block">
+                            <img 
+                                src="/images/logo-full-light.png" 
+                                alt="OUAISS EXPRESS" 
+                                className="h-9 w-auto object-contain dark:hidden"
+                            />
+                            <img 
+                                src="/images/logo-full-dark.png" 
+                                alt="OUAISS EXPRESS" 
+                                className="h-9 w-auto object-contain hidden dark:block"
+                            />
+                        </Link>
                     </div>
                     <div className="text-xs text-slate-500">
                         Nouveau marchand ?{' '}
