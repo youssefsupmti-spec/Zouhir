@@ -28,7 +28,6 @@ final class ClientTarifQuery
         return DB::table('client_tarifs')
             ->join('villes', 'villes.id', '=', 'client_tarifs.ville_id')
             ->whereNull('client_tarifs.deleted_at')
-            ->whereNull('villes.deleted_at')
             ->groupBy('client_tarifs.client_id')
             ->selectRaw('client_tarifs.client_id as client_id')
             ->selectRaw('COUNT(*) as nb_tarifs')
@@ -55,12 +54,11 @@ final class ClientTarifQuery
                 ->join('villes', 'villes.id', '=', 'client_tarifs.ville_id')
                 ->whereColumn('client_tarifs.client_id', 'users.id')
                 ->whereNull('client_tarifs.deleted_at')
-                ->whereNull('villes.deleted_at')
                 ->when($ville !== '', fn ($q) => $q->where('villes.name_fr', 'like', '%'.$ville.'%'))
                 ->when($zoneId !== null, fn ($q) => $q->where('villes.zone_id', $zoneId));
         };
 
-        return User::query()
+        return User::withTrashed()
             ->joinSub($this->agregatParClient(), 'agg', 'agg.client_id', '=', 'users.id')
             ->when($ville !== '' || $zoneId !== null, fn ($q) => $q->whereExists($ligneFiltree))
             ->when($clientId !== null, fn ($q) => $q->whereKey($clientId))
@@ -103,13 +101,11 @@ final class ClientTarifQuery
      */
     public function statistiques(): array
     {
-        // Vue opérationnelle : ni villes ni clients archivés (leurs règles restent conservées en base).
+        // Deux états seulement, comme le legacy (trash 1 / 0) : active ou en corbeille.
         $s = DB::table('client_tarifs')
             ->join('villes', 'villes.id', '=', 'client_tarifs.ville_id')
             ->join('users', 'users.id', '=', 'client_tarifs.client_id')
             ->whereNull('client_tarifs.deleted_at')
-            ->whereNull('villes.deleted_at')
-            ->whereNull('users.deleted_at')
             ->selectRaw('COUNT(DISTINCT client_tarifs.client_id) as clients')
             ->selectRaw('COUNT(*) as tarifs')
             ->selectRaw('COUNT(DISTINCT client_tarifs.ville_id) as villes')
@@ -157,7 +153,7 @@ final class ClientTarifQuery
             ->map(fn ($l) => [
                 'id' => (int) $l->id,
                 'titulaire' => (string) $l->nom_complet,
-                'titulaire_archive' => $l->client_archive !== null,
+                'titulaire_archive' => false,
                 'ville_nom' => (string) $l->name_fr,
                 'zone_nom' => (string) ($l->zone_nom ?? 'Villes sans zone'),
                 'montants' => [
@@ -187,7 +183,6 @@ final class ClientTarifQuery
             ->leftJoin('standard_tarifs', 'standard_tarifs.ville_id', '=', 'villes.id')
             ->where('client_tarifs.client_id', $clientId)
             ->whereNull('client_tarifs.deleted_at')
-            ->whereNull('villes.deleted_at')
             ->orderByRaw('CASE WHEN zones.name IS NULL THEN 1 ELSE 0 END')
             ->orderBy('zones.name')
             ->orderBy('villes.name_fr')

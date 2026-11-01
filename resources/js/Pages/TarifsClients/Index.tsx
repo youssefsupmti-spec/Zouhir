@@ -129,7 +129,7 @@ export default function TarifsClientsIndex({ clients, corbeille, stats, zones, f
           value={filters.onglet}
           onValueChange={(v) => router.get('/tarifs-clients', v === 'corbeille' ? { onglet: v } : {}, { preserveScroll: true, replace: true })}
           onglets={[
-            { value: 'actifs', label: 'Tarifs négociés', count: stats.tarifs, icon: <Store className="size-3.5" /> },
+            { value: 'actifs', label: 'Actifs', count: stats.tarifs, icon: <Store className="size-3.5" /> },
             { value: 'corbeille', label: 'Corbeille', count: stats.corbeille, icon: <Trash2 className="size-3.5" />, tone: 'danger' },
           ]}
         />

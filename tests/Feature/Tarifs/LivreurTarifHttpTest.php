@@ -46,27 +46,21 @@ class LivreurTarifHttpTest extends TestCase
         $this->actingAs($this->admin)->get('/tarifs-livreurs')->assertOk()
             ->assertInertia(fn (Assert $p) => $p
                 ->component('TarifsLivreurs/Index')
+                // Deux états seulement (legacy trash 1 / 0) : l'état du compte n'intervient pas.
+                ->where('filters.statut', 'actives')
                 ->where('stats.commissions', 3)
                 ->where('stats.livreurs', 2)
-                ->where('stats.actifs', 1)
-                ->where('stats.archives', 1)
                 ->where('stats.villes', 3)
                 ->where('stats.zero', 1)
                 ->where('stats.corbeille', 1)
-                ->where('stats.sans_commission', 1)
+                ->missing('stats.archives')
                 ->has('livreurs.data', 2)
-                ->where('livreurs.data.0.nom', 'Hamza temara')
-                ->where('livreurs.data.0.nb_villes', 2)
-                ->where('livreurs.data.0.min', '0.00')
-                ->where('livreurs.data.0.max', '12.00')
-                ->where('livreurs.data.1.nom', 'Ancien livreur')
-                ->where('livreurs.data.1.archive', true)
+                ->where('livreurs.data.0.nom', 'Ancien livreur')
+                ->where('livreurs.data.1.nom', 'Hamza temara')
+                ->where('livreurs.data.1.nb_villes', 2)
+                ->where('livreurs.data.1.min', '0.00')
+                ->where('livreurs.data.1.max', '12.00')
                 ->where('corbeille', null));
-
-        $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=actifs')
-            ->assertInertia(fn (Assert $p) => $p->has('livreurs.data', 2)->where('livreurs.data.1.nom', 'Jalal livreur')->where('livreurs.data.1.nb_villes', 0));
-        $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=archives')
-            ->assertInertia(fn (Assert $p) => $p->has('livreurs.data', 1)->where('livreurs.data.0.archive', true));
         $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=corbeille')
             ->assertInertia(fn (Assert $p) => $p->where('livreurs', null)->has('corbeille', 1)->where('corbeille.0.titulaire', 'Jalal livreur')->where('corbeille.0.montants', ['9.00', '0.00']));
 

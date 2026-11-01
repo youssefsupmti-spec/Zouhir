@@ -38,13 +38,13 @@ class LivreurTarifController extends Controller
 
         $zoneId = $this->idOuNull($request->input('zone_id'));
         $search = trim((string) $request->input('search', ''));
-        $statut = in_array($request->input('statut'), LivreurTarifQuery::STATUTS, true) ? (string) $request->input('statut') : 'tous';
+        $statut = $request->input('statut') === 'corbeille' ? 'corbeille' : 'actives';
         $parPage = min(max((int) $request->input('per_page', 15), 5), 50);
 
         return Inertia::render('TarifsLivreurs/Index', [
             'stats' => $this->query->statistiques(),
             'zones' => Zone::query()->orderBy('name')->get(['id', 'name', 'code']),
-            'livreurs' => $statut === 'corbeille' ? null : $this->query->resumes(['search' => $search, 'zone_id' => $zoneId, 'statut' => $statut], $parPage),
+            'livreurs' => $statut === 'corbeille' ? null : $this->query->resumes(['search' => $search, 'zone_id' => $zoneId], $parPage),
             'corbeille' => $statut === 'corbeille' ? $this->query->corbeille($search) : null,
             'filters' => [
                 'statut' => $statut,

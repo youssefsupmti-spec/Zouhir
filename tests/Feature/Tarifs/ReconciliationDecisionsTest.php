@@ -135,7 +135,7 @@ class ReconciliationDecisionsTest extends TestCase
 
     /* ─────────── Décision 2 : villes archivées ─────────── */
 
-    public function test_tarif_d_une_ville_archivee_conserve_masque_puis_retrouve_a_la_restauration(): void
+    public function test_tarif_d_une_ville_archivee_reste_actif_comme_dans_le_legacy(): void
     {
         $this->fee(1, $this->clientA->id, 'Zagora', 40);
         $this->appliquer();
@@ -144,16 +144,16 @@ class ReconciliationDecisionsTest extends TestCase
         $this->assertSame($this->zagora->id, $tarif->ville_id);
         $this->assertNotNull($tarif->ville, 'Relation historique conservée (ville soft-deleted).');
 
+        // Décision du 01/11/2026 : une règle n'a que deux états (active / corbeille, comme
+        // trash 1 / 0) ; l'archivage de la ville ne la masque plus.
         $query = app(ClientTarifQuery::class);
-        $this->assertSame([], $query->grilleDuClient($this->clientA->id), 'Grille opérationnelle : ville archivée masquée.');
-
-        $this->zagora->restore();
-        $this->assertSame('40.00', $query->grilleDuClient($this->clientA->id)[0]['lignes'][0]['livraison'], 'Restaurée : la règle réapparaît.');
+        $this->assertSame('40.00', $query->grilleDuClient($this->clientA->id)[0]['lignes'][0]['livraison']);
+        $this->assertSame(1, $query->statistiques()['tarifs']);
     }
 
     /* ─────────── Décision 3 : clients archivés ─────────── */
 
-    public function test_tarifs_d_un_client_archive_conserves_mais_hors_liste_active(): void
+    public function test_tarifs_d_un_client_archive_restent_actifs_comme_dans_le_legacy(): void
     {
         $this->fee(1, $this->archive->id, 'Temara', 15);
         $this->fee(2, $this->clientA->id, 'Temara', 20);
@@ -164,9 +164,9 @@ class ReconciliationDecisionsTest extends TestCase
         $this->assertTrue($tarif->client->trashed());
 
         $this->actingAs($this->admin)->get('/tarifs-clients')->assertInertia(fn (Assert $p) => $p
-            ->has('clients.data', 1)
-            ->where('clients.data.0.id', $this->clientA->id)
-            ->where('stats.tarifs', 1));
+            ->has('clients.data', 2)
+            ->where('stats.tarifs', 2)
+            ->where('stats.corbeille', 0));
     }
 
     /* ─────────── Décision 5 : doublons et traçabilité ─────────── */

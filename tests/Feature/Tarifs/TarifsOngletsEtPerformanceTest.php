@@ -123,7 +123,6 @@ class TarifsOngletsEtPerformanceTest extends TestCase
             ['/tarifs-clients', false],
             ['/tarifs-clients?onglet=corbeille', false],
             ['/tarifs-livreurs', false],
-            ['/tarifs-livreurs?statut=actifs', false],
             ['/tarifs-livreurs?statut=corbeille', false],
             ['/tarifs-livreurs/referentiel', true],
             ['/tarifs-standard/referentiel', true],

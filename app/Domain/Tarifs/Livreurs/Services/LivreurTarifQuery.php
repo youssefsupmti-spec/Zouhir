@@ -13,14 +13,15 @@ use Illuminate\Support\Facades\DB;
 /**
  * Lectures de l'écran « Tarifs livreurs ».
  *
- * Structure reprise de WinningExpress (GrilleTarifsLivreur / LivreurTarifQuery) : cartes de
- * compteurs servant d'onglets, puis Livreur → Zone → Ville. Toutes les commissions ACTIVES
- * sont montrées, y compris celles des comptes livreurs archivés (signalés, jamais masqués :
- * leurs commissions restent dues et lisibles). Agrégats en SQL, une requête par besoin.
+ * Structure reprise de WinningExpress (GrilleTarifsLivreur) : onglets puis Livreur → Zone → Ville.
+ * Une commission n'a que DEUX états, comme `shippingfees.trash` dans le legacy : active
+ * (deleted_at NULL) ou en corbeille. L'état du compte du livreur n'intervient pas.
+ * Agrégats en SQL, une requête par besoin.
  */
 final class LivreurTarifQuery
 {
-    public const STATUTS = ['tous', 'actifs', 'archives', 'corbeille'];
+    /** Deux états, comme le legacy (trash = 1 / trash = 0). */
+    public const STATUTS = ['actives', 'corbeille'];
 
     /**
      * Livreurs ACTIFS proposés au dialog d'affectation (comptes archivés exclus).
@@ -47,62 +48,50 @@ final class LivreurTarifQuery
             ->all();
     }
 
-    /** Commissions ACTIVES sur villes actives (base commune des compteurs). */
+    /** Commissions ACTIVES (base commune des compteurs) : seul l'état de la règle compte. */
     private function actives(): QueryBuilder
     {
         return DB::table('livreur_tarifs')
             ->join('villes', 'villes.id', '=', 'livreur_tarifs.ville_id')
-            ->whereNull('livreur_tarifs.deleted_at')
-            ->whereNull('villes.deleted_at');
+            ->whereNull('livreur_tarifs.deleted_at');
     }
 
     /**
      * Compteurs des cartes (toutes les commissions actives, livreurs archivés compris).
      *
-     * @return array{commissions: int, livreurs: int, actifs: int, archives: int, villes: int, moyenne: ?string, zero: int, corbeille: int, sans_commission: int}
+     * @return array{commissions: int, livreurs: int, villes: int, moyenne: ?string, zero: int, corbeille: int}
      */
     public function statistiques(): array
     {
         $s = $this->actives()
-            ->join('users', 'users.id', '=', 'livreur_tarifs.livreur_id')
             ->selectRaw('COUNT(*) as commissions')
             ->selectRaw('COUNT(DISTINCT livreur_tarifs.livreur_id) as livreurs')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN users.deleted_at IS NULL THEN livreur_tarifs.livreur_id END) as actifs')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN users.deleted_at IS NOT NULL THEN livreur_tarifs.livreur_id END) as archives')
             ->selectRaw('COUNT(DISTINCT livreur_tarifs.ville_id) as villes')
             ->selectRaw('AVG(livreur_tarifs.commission_livraison) as moy')
             ->selectRaw('SUM(CASE WHEN livreur_tarifs.commission_livraison = 0 THEN 1 ELSE 0 END) as zero')
             ->first();
 
         $commissions = (int) ($s->commissions ?? 0);
-        $avecCommission = $this->actives()->distinct()->pluck('livreur_tarifs.livreur_id')->all();
 
         return [
             'commissions' => $commissions,
             'livreurs' => (int) ($s->livreurs ?? 0),
-            'actifs' => (int) ($s->actifs ?? 0),
-            'archives' => (int) ($s->archives ?? 0),
             'villes' => (int) ($s->villes ?? 0),
             'moyenne' => $commissions > 0 ? number_format((float) $s->moy, 2, '.', '') : null,
             'zero' => (int) ($s->zero ?? 0),
             'corbeille' => DB::table('livreur_tarifs')->whereNotNull('deleted_at')->count(),
-            'sans_commission' => User::drivers()->whereKeyNot($avecCommission)->count(),
         ];
     }
 
     /**
-     * Une carte par livreur (Livreur → Zone → Ville), filtrée et paginée côté serveur.
+     * Une carte par livreur portant au moins une commission ACTIVE, filtrée et paginée côté serveur.
      *
-     * statut : tous (livreurs portant des commissions, archivés compris) | actifs (comptes actifs,
-     * y compris sans commission, pour en affecter) | archives (comptes archivés portant des commissions).
-     *
-     * @param  array{search?: string, zone_id?: ?int, statut?: string}  $filtres
+     * @param  array{search?: string, zone_id?: ?int}  $filtres
      */
     public function resumes(array $filtres, int $parPage = 15): LengthAwarePaginator
     {
         $search = trim((string) ($filtres['search'] ?? ''));
         $zoneId = $filtres['zone_id'] ?? null;
-        $statut = (string) ($filtres['statut'] ?? 'tous');
 
         $agregat = $this->actives()
             ->groupBy('livreur_tarifs.livreur_id')
@@ -113,21 +102,16 @@ final class LivreurTarifQuery
             ->selectRaw('MAX(livreur_tarifs.commission_livraison) as mx');
 
         $requete = User::withTrashed()
-            ->leftJoinSub($agregat, 'agg', 'agg.livreur_id', '=', 'users.id')
-            ->when($statut === 'actifs',
-                fn ($q) => $q->whereNull('users.deleted_at')->where(fn ($w) => $w->whereNotNull('agg.livreur_id')->orWhereIn('users.id', User::drivers()->select('users.id'))),
-                fn ($q) => $q->whereNotNull('agg.livreur_id')->when($statut === 'archives', fn ($w) => $w->whereNotNull('users.deleted_at')))
+            ->joinSub($agregat, 'agg', 'agg.livreur_id', '=', 'users.id')
             ->when($zoneId !== null, fn ($q) => $q->whereExists(fn ($sub) => $sub->from('livreur_tarifs')
                 ->join('villes', 'villes.id', '=', 'livreur_tarifs.ville_id')
                 ->whereColumn('livreur_tarifs.livreur_id', 'users.id')
                 ->whereNull('livreur_tarifs.deleted_at')
-                ->whereNull('villes.deleted_at')
                 ->where('villes.zone_id', $zoneId)))
             ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('users.nom_complet', 'like', '%'.$search.'%')
                 ->orWhere('users.telephone', 'like', '%'.$search.'%')
                 ->orWhere('users.email', 'like', '%'.$search.'%')))
-            ->orderByRaw('CASE WHEN users.deleted_at IS NULL THEN 0 ELSE 1 END')
             ->orderBy('users.nom_complet')
             ->select([
                 'users.id', 'users.nom_complet', 'users.telephone', 'users.email', 'users.picture', 'users.deleted_at',
@@ -211,7 +195,7 @@ final class LivreurTarifQuery
                 'id' => (int) $l->id,
                 'livreur_id' => (int) $l->livreur_id,
                 'titulaire' => (string) $l->livreur_nom,
-                'titulaire_archive' => $l->livreur_archive !== null,
+                'titulaire_archive' => false,
                 'ville_nom' => (string) $l->ville_nom,
                 'zone_nom' => (string) ($l->zone_nom ?? 'Villes sans zone'),
                 'montants' => [

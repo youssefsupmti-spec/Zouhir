@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { Archive, Bike, ChevronRightIcon, Coins, Loader2, MapPin, MapPinned, Plus, RotateCcw, Save, Trash2, Users, Wallet } from 'lucide-react';
+import { Bike, CheckCircle2, ChevronRightIcon, Coins, Loader2, MapPin, MapPinned, Plus, RotateCcw, Save, Trash2, Users, Wallet } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageToolbar } from '@/components/common/PageToolbar';
@@ -25,7 +25,8 @@ import { AjouterTarifLivreurDialog } from './AjouterTarifLivreurDialog';
  * la commission est propre à un livreur et une ville ; sinon elle est « manquante ».
  */
 
-type Statut = 'tous' | 'actifs' | 'archives' | 'corbeille';
+/** Deux états, comme le legacy : active (trash = 1) ou corbeille (trash = 0). */
+type Statut = 'actives' | 'corbeille';
 
 interface LivreurResume {
   id: number;
@@ -63,7 +64,7 @@ interface Capacites {
 }
 
 interface Props {
-  stats: { commissions: number; livreurs: number; actifs: number; archives: number; villes: number; moyenne: string | null; zero: number; corbeille: number; sans_commission: number };
+  stats: { commissions: number; livreurs: number; villes: number; moyenne: string | null; zero: number; corbeille: number };
   zones: { id: number; name: string; code: string | null }[];
   livreurs: (LaravelPaginationMeta & { data: LivreurResume[] }) | null;
   corbeille: LigneCorbeille[] | null;
@@ -276,7 +277,6 @@ function CarteLivreur({ livreur, zoneId, can, onAjouter }: { livreur: LivreurRes
           </span>
         </CollapsibleTrigger>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {livreur.archive && <Badge variant="outline" className="rounded-md border-dashed text-[10px] text-muted-foreground">Compte archivé</Badge>}
           <Badge variant="secondary" className="rounded-md text-[10px]">{livreur.nb_villes} ville(s)</Badge>
           {livreur.nb_zones > 0 && <Badge variant="outline" className="hidden rounded-md text-[10px] sm:inline-flex">{livreur.nb_zones} zone(s)</Badge>}
           {fourchette && <Badge variant="outline" className="rounded-md font-mono text-[10px]">{fourchette}</Badge>}
@@ -304,7 +304,7 @@ export default function TarifsLivreursIndex({ stats, zones, livreurs, corbeille,
   const params = { ...filters };
   const naviguer = (changes: Partial<Record<keyof Props['filters'], string | undefined>>) =>
     router.get('/tarifs-livreurs', { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true });
-  const onglet = (s: Statut) => naviguer({ statut: s === 'tous' ? undefined : s });
+  const onglet = (s: Statut) => naviguer({ statut: s === 'actives' ? undefined : s });
   const filtre = Boolean(filters.search) || filters.zone_id !== 'all';
 
   return (
@@ -325,7 +325,7 @@ export default function TarifsLivreursIndex({ stats, zones, livreurs, corbeille,
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard title="Commissions actives" value={stats.commissions} description={stats.zero > 0 ? `dont ${stats.zero} à 0.00 MAD` : 'Couples livreur × ville'} icon={Wallet} />
-          <StatsCard title="Livreurs" value={stats.livreurs} description={`${stats.actifs} actif(s), ${stats.archives} archivé(s)`} icon={Users} />
+          <StatsCard title="Livreurs" value={stats.livreurs} description="Avec au moins une commission active" icon={Users} />
           <StatsCard title="Villes couvertes" value={stats.villes} description="Par au moins une commission" icon={MapPin} />
           <StatsCard title="Commission moyenne (MAD)" value={stats.moyenne ?? '—'} description="Frais livré, par règle" icon={Coins} iconColor="text-[#ff8806]" />
         </div>
@@ -339,9 +339,7 @@ export default function TarifsLivreursIndex({ stats, zones, livreurs, corbeille,
           value={filters.statut}
           onValueChange={(v) => onglet(v as Statut)}
           onglets={[
-            { value: 'tous', label: 'Toutes les commissions', count: stats.commissions, icon: <Wallet className="size-3.5" /> },
-            { value: 'actifs', label: 'Livreurs actifs', count: stats.actifs + stats.sans_commission, icon: <Users className="size-3.5" /> },
-            { value: 'archives', label: 'Comptes archivés', count: stats.archives, icon: <Archive className="size-3.5" />, tone: 'muted' },
+            { value: 'actives', label: 'Actives', count: stats.commissions, icon: <CheckCircle2 className="size-3.5" /> },
             { value: 'corbeille', label: 'Corbeille', count: stats.corbeille, icon: <Trash2 className="size-3.5" />, tone: 'danger' },
           ]}
         />
@@ -351,7 +349,7 @@ export default function TarifsLivreursIndex({ stats, zones, livreurs, corbeille,
           initialSearch={filters.search}
           currentParams={params}
           rightActions={filtre && (
-            <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs" onClick={() => router.get('/tarifs-livreurs', filters.statut === 'tous' ? {} : { statut: filters.statut }, { replace: true })}>
+            <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs" onClick={() => router.get('/tarifs-livreurs', filters.statut === 'actives' ? {} : { statut: filters.statut }, { replace: true })}>
               <RotateCcw className="size-3.5" /> Réinitialiser
             </Button>
           )}
