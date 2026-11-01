@@ -63,7 +63,7 @@ export default function RateCalculatorSection({ cities = [] }) {
                         <Sparkles className="w-3.5 h-3.5 text-[#ff8806]" />
                         <span>Transparence Tarifaire Totale</span>
                     </Badge>
-                    <h2 className="text-3xl sm:text-4xl font-extrabold text-[#004c68] font-['Outfit'] tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-[#004c68] font-sans tracking-tight">
                         Estimez vos frais d'expédition en quelques secondes
                     </h2>
                     <p className="mt-3 text-slate-600 text-sm sm:text-base">
@@ -197,7 +197,7 @@ export default function RateCalculatorSection({ cities = [] }) {
                                     <div>
                                         <span className="text-xs text-slate-400">Frais de livraison total</span>
                                         <div className="flex items-baseline gap-1 mt-1">
-                                            <span className="text-4xl sm:text-5xl font-black text-white font-['Outfit']">
+                                            <span className="text-4xl sm:text-5xl font-black text-white font-sans">
                                                 {rateResult.total_rate}
                                             </span>
                                             <span className="text-lg font-bold text-[#ff8806]">MAD HT</span>

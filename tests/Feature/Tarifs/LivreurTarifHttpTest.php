@@ -37,23 +37,45 @@ class LivreurTarifHttpTest extends TestCase
         $this->commission($this->hamza, $this->temara, '12');
         $this->commission($this->hamza, $this->casablanca, '0');
 
-        $this->actingAs($this->admin)->get('/tarifs-livreurs?livreur_id='.$this->hamza->id)->assertOk()
+        // Compte archivé : ses commissions restent dans le total (comme les 148 du legacy).
+        $archive = $this->compte('livreur', UserRole::LIVREUR, ['nom_complet' => 'Ancien livreur']);
+        $this->commission($archive, $this->skhirate, '10');
+        $archive->delete();
+        $this->commission($this->jalal, $this->temara, '9')->delete();
+
+        $this->actingAs($this->admin)->get('/tarifs-livreurs')->assertOk()
             ->assertInertia(fn (Assert $p) => $p
                 ->component('TarifsLivreurs/Index')
-                ->has('livreurs', 2)
-                ->where('livreurs.0.nom', 'Hamza temara')
-                ->where('livreurs.0.nb_villes', 2)
-                ->where('stats.livreurs', 1)
-                ->where('stats.regles', 2)
-                ->where('stats.villes', 2)
-                ->where('stats.moyenne', '6.00')
+                ->where('stats.commissions', 3)
+                ->where('stats.livreurs', 2)
+                ->where('stats.actifs', 1)
+                ->where('stats.archives', 1)
+                ->where('stats.villes', 3)
                 ->where('stats.zero', 1)
-                ->has('grille.zones', 2)
-                ->where('grille.zones.0.lignes.0.ville_nom', 'Casablanca')
-                ->where('grille.zones.0.lignes.0.zero', true)
-                ->where('grille.zones.1.lignes.0.livraison', '12.00')
-                ->missing('grille.zones.1.lignes.0.standard')
-                ->missing('bareme'));
+                ->where('stats.corbeille', 1)
+                ->where('stats.sans_commission', 1)
+                ->has('livreurs.data', 2)
+                ->where('livreurs.data.0.nom', 'Hamza temara')
+                ->where('livreurs.data.0.nb_villes', 2)
+                ->where('livreurs.data.0.min', '0.00')
+                ->where('livreurs.data.0.max', '12.00')
+                ->where('livreurs.data.1.nom', 'Ancien livreur')
+                ->where('livreurs.data.1.archive', true)
+                ->where('corbeille', null));
+
+        $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=actifs')
+            ->assertInertia(fn (Assert $p) => $p->has('livreurs.data', 2)->where('livreurs.data.1.nom', 'Jalal livreur')->where('livreurs.data.1.nb_villes', 0));
+        $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=archives')
+            ->assertInertia(fn (Assert $p) => $p->has('livreurs.data', 1)->where('livreurs.data.0.archive', true));
+        $this->actingAs($this->admin)->get('/tarifs-livreurs?statut=corbeille')
+            ->assertInertia(fn (Assert $p) => $p->where('livreurs', null)->has('corbeille', 1)->where('corbeille.0.livreur_nom', 'Jalal livreur'));
+
+        $this->actingAs($this->admin)->getJson('/tarifs-livreurs/'.$this->hamza->id.'/grille')->assertOk()
+            ->assertJsonCount(2, 'zones')
+            ->assertJsonPath('zones.0.lignes.0.ville_nom', 'Casablanca')
+            ->assertJsonPath('zones.0.lignes.0.zero', true)
+            ->assertJsonPath('zones.1.lignes.0.livraison', '12.00');
+        $this->actingAs($this->admin)->getJson('/tarifs-livreurs/'.$archive->id.'/grille')->assertOk()->assertJsonCount(1, 'zones');
     }
 
     public function test_filtre_zone_sur_la_grille(): void
@@ -61,8 +83,10 @@ class LivreurTarifHttpTest extends TestCase
         $this->commission($this->hamza, $this->temara, '12');
         $this->commission($this->hamza, $this->casablanca, '15');
 
-        $this->actingAs($this->admin)->get('/tarifs-livreurs?livreur_id='.$this->hamza->id.'&zone_id='.$this->zoneCasa->id)
-            ->assertInertia(fn (Assert $p) => $p->has('grille.zones', 1)->where('grille.zones.0.zone_code', 'CS'));
+        $this->actingAs($this->admin)->getJson('/tarifs-livreurs/'.$this->hamza->id.'/grille?zone_id='.$this->zoneCasa->id)
+            ->assertJsonCount(1, 'zones')->assertJsonPath('zones.0.zone_code', 'CS');
+        $this->actingAs($this->admin)->get('/tarifs-livreurs?zone_id='.$this->zoneRabat->id)
+            ->assertInertia(fn (Assert $p) => $p->has('livreurs.data', 1));
     }
 
     public function test_affectation_sans_ecrasement_puis_mise_a_jour_explicite(): void
@@ -95,8 +119,7 @@ class LivreurTarifHttpTest extends TestCase
 
         $this->actingAs($this->admin)->delete('/tarifs-livreurs', ['livreur_id' => $this->hamza->id, 'ids' => [$b->id]])->assertSessionHasNoErrors();
         $this->assertSoftDeleted('livreur_tarifs', ['id' => $b->id]);
-        $this->actingAs($this->admin)->get('/tarifs-livreurs?livreur_id='.$this->hamza->id)
-            ->assertInertia(fn (Assert $p) => $p->has('grille.supprimees', 1)->where('grille.supprimees.0.id', $b->id));
+        $this->actingAs($this->admin)->getJson('/tarifs-livreurs/'.$this->hamza->id.'/grille')->assertJsonCount(1, 'zones.0.lignes');
 
         $this->actingAs($this->admin)->post('/tarifs-livreurs/restaurer', ['livreur_id' => $this->hamza->id, 'ids' => [$b->id]])->assertSessionHasNoErrors();
         $this->assertNull($b->fresh()->deleted_at);
@@ -106,6 +129,40 @@ class LivreurTarifHttpTest extends TestCase
         $this->actingAs($this->admin)->post('/tarifs-livreurs', ['livreur_id' => $this->hamza->id, 'ville_ids' => [$this->skhirate->id], 'livraison' => '9', 'refus' => '0', 'existants' => 'ignorer', 'restaurer' => true]);
         $this->assertSame('9.00', $b->fresh()->commission_livraison);
         $this->assertSame(2, LivreurTarif::withTrashed()->count());
+    }
+
+    public function test_corbeille_restauration_et_suppression_definitive(): void
+    {
+        $a = $this->commission($this->hamza, $this->temara, '12');
+        $b = $this->commission($this->jalal, $this->skhirate, '10');
+        $actif = $this->commission($this->jalal, $this->temara, '11');
+        $a->delete();
+        $b->delete();
+
+        // Une commission ACTIVE ne peut jamais être supprimée définitivement.
+        $this->actingAs($this->admin)->delete('/tarifs-livreurs/corbeille', ['ids' => [$actif->id]])->assertSessionHasErrors('ids');
+        $this->assertNotNull($actif->fresh());
+
+        $this->actingAs($this->admin)->post('/tarifs-livreurs/corbeille/restaurer', ['ids' => [$a->id]])->assertSessionHasNoErrors();
+        $this->assertNull($a->fresh()->deleted_at);
+
+        $this->actingAs($this->admin)->delete('/tarifs-livreurs/corbeille', ['ids' => [$b->id]])->assertSessionHasNoErrors();
+        $this->assertNull(LivreurTarif::withTrashed()->find($b->id), 'Supprimée définitivement.');
+        $this->assertSame(2, LivreurTarif::count());
+    }
+
+    public function test_commissions_d_un_livreur_archive_restent_modifiables(): void
+    {
+        $t = $this->commission($this->hamza, $this->temara, '12');
+        $this->hamza->delete();
+
+        $this->actingAs($this->admin)->put('/tarifs-livreurs', ['livreur_id' => $this->hamza->id, 'lignes' => [['id' => $t->id, 'livraison' => '14', 'refus' => '0']]])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('14.00', $t->fresh()->commission_livraison);
+
+        // Nouvelle affectation : réservée aux comptes actifs.
+        $this->actingAs($this->admin)->post('/tarifs-livreurs', ['livreur_id' => $this->hamza->id, 'ville_ids' => [$this->skhirate->id], 'livraison' => '9', 'refus' => '0', 'existants' => 'ignorer', 'restaurer' => true])
+            ->assertSessionHasErrors('livreur_id');
     }
 
     public function test_une_commission_d_un_autre_livreur_est_refusee(): void

@@ -39,7 +39,7 @@ export default function WhyUsSection({ statistics = [] }) {
                         <Award className="w-3.5 h-3.5 text-[#ff8806]" />
                         <span>Les Standards Ouais Express</span>
                     </Badge>
-                    <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-['Outfit'] tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-white font-sans tracking-tight">
                         Pourquoi les meilleurs e-commerçants nous confient leur logistique
                     </h2>
                     <p className="mt-4 text-slate-300 text-sm sm:text-base leading-relaxed">
@@ -61,7 +61,7 @@ export default function WhyUsSection({ statistics = [] }) {
                                         <Icon className="w-6 h-6" />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="text-xl font-bold text-white font-['Outfit'] group-hover:text-[#ff8806] transition-colors">
+                                        <h3 className="text-xl font-bold text-white font-sans group-hover:text-[#ff8806] transition-colors">
                                             {pillar.title}
                                         </h3>
                                         <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
@@ -79,7 +79,7 @@ export default function WhyUsSection({ statistics = [] }) {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center divide-y sm:divide-y-0 sm:divide-x divide-slate-700/50">
                         {statistics.map((stat, sIdx) => (
                             <div key={sIdx} className="pt-4 sm:pt-0 sm:px-4 space-y-1">
-                                <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-[#ff8806] font-['Outfit']">
+                                <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-[#ff8806] font-sans">
                                     {stat.value}
                                 </div>
                                 <div className="text-xs sm:text-sm font-bold text-white mt-1">

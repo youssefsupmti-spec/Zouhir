@@ -12,7 +12,7 @@ export default function TestimonialsSection({ testimonials = [] }) {
                     <Badge variant="primary" size="md" className="mb-3">
                         Retours d'Expérience
                     </Badge>
-                    <h2 className="text-3xl sm:text-4xl font-extrabold text-[#004c68] font-['Outfit'] tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-[#004c68] font-sans tracking-tight">
                         Ils développent leur marque avec Ouais Express
                     </h2>
                     <p className="mt-3 text-slate-600 text-sm sm:text-base">
@@ -44,7 +44,7 @@ export default function TestimonialsSection({ testimonials = [] }) {
                             </div>
 
                             <div className="pt-6 mt-6 border-t border-slate-200/80 flex items-center gap-3.5">
-                                <div className="w-11 h-11 rounded-full bg-[#004c68] text-[#ff8806] flex items-center justify-center font-bold text-sm font-['Outfit'] shadow-xs flex-shrink-0">
+                                <div className="w-11 h-11 rounded-full bg-[#004c68] text-[#ff8806] flex items-center justify-center font-bold text-sm font-sans shadow-xs flex-shrink-0">
                                     {item.avatar}
                                 </div>
                                 <div>

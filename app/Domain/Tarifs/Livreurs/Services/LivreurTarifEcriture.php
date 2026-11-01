@@ -168,6 +168,45 @@ final class LivreurTarifEcriture
         return $this->basculer($livreurId, $ids, supprimer: false);
     }
 
+    /** Corbeille : restauration de commissions supprimées, tous livreurs confondus. */
+    public function restaurerCorbeille(array $ids): int
+    {
+        return $this->corbeille($ids, purger: false);
+    }
+
+    /**
+     * Corbeille : suppression DÉFINITIVE de commissions déjà supprimées (jamais d'une active).
+     * Aucun colis n'est touché : la commission figée d'un colis vit sur `commands`.
+     */
+    public function purgerCorbeille(array $ids): int
+    {
+        return $this->corbeille($ids, purger: true);
+    }
+
+    private function corbeille(array $ids, bool $purger): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn (int $id) => $id > 0)));
+        if ($ids === []) {
+            throw ValidationException::withMessages(['ids' => 'Aucune commission sélectionnée.']);
+        }
+
+        $n = DB::transaction(function () use ($ids, $purger): int {
+            $tarifs = LivreurTarif::onlyTrashed()->whereKey($ids)->lockForUpdate()->get();
+
+            if ($tarifs->count() !== count($ids)) {
+                throw ValidationException::withMessages(['ids' => 'Certaines commissions ne sont plus dans la corbeille. Rechargez la page.']);
+            }
+
+            $purger ? $tarifs->each->forceDelete() : $tarifs->each->restore();
+
+            return $tarifs->count();
+        });
+
+        $this->fees->oublier();
+
+        return $n;
+    }
+
     private function basculer(int $livreurId, array $ids, bool $supprimer): int
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn (int $id) => $id > 0)));

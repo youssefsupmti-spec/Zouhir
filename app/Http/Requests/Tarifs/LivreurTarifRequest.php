@@ -23,7 +23,8 @@ class LivreurTarifRequest extends FormRequest
         return match ($this->route()?->getName()) {
             'tarifs-livreurs.apercu', 'tarifs-livreurs.store' => $u->can('create', LivreurTarif::class),
             'tarifs-livreurs.update' => $u->can('update', LivreurTarif::class),
-            'tarifs-livreurs.destroy', 'tarifs-livreurs.restaurer' => $u->can('delete', LivreurTarif::class),
+            'tarifs-livreurs.destroy', 'tarifs-livreurs.restaurer',
+            'tarifs-livreurs.corbeille.restaurer', 'tarifs-livreurs.corbeille.purger' => $u->can('delete', LivreurTarif::class),
             default => false,
         };
     }
@@ -40,6 +41,18 @@ class LivreurTarifRequest extends FormRequest
             },
         ];
 
+        // Modification / suppression : un compte livreur ARCHIVÉ garde ses commissions gérables.
+        $livreurHistorique = [
+            'required', 'integer',
+            Rule::exists('users', 'id'),
+            function (string $attribute, mixed $value, Closure $fail): void {
+                if (! User::withTrashed()->drivers()->whereKey((int) $value)->exists()) {
+                    $fail('Ce compte n\'est pas un livreur.');
+                }
+            },
+        ];
+        $ids = ['ids' => ['required', 'array', 'min:1', 'max:1000'], 'ids.*' => ['integer', 'distinct']];
+
         return match ($this->route()?->getName()) {
             'tarifs-livreurs.apercu' => ['livreur_id' => $livreur] + BaremeRules::ciblage(),
             'tarifs-livreurs.store' => ['livreur_id' => $livreur] + BaremeRules::ciblage() + [
@@ -49,17 +62,14 @@ class LivreurTarifRequest extends FormRequest
                 'restaurer' => ['required', 'boolean'],
             ],
             'tarifs-livreurs.update' => [
-                'livreur_id' => $livreur,
+                'livreur_id' => $livreurHistorique,
                 'lignes' => ['required', 'array', 'min:1', 'max:1000'],
                 'lignes.*.id' => ['required', 'integer', 'distinct'],
                 'lignes.*.livraison' => BaremeRules::montant(),
                 'lignes.*.refus' => BaremeRules::montant(),
             ],
-            'tarifs-livreurs.destroy', 'tarifs-livreurs.restaurer' => [
-                'livreur_id' => $livreur,
-                'ids' => ['required', 'array', 'min:1', 'max:1000'],
-                'ids.*' => ['integer', 'distinct'],
-            ],
+            'tarifs-livreurs.destroy', 'tarifs-livreurs.restaurer' => ['livreur_id' => $livreurHistorique] + $ids,
+            'tarifs-livreurs.corbeille.restaurer', 'tarifs-livreurs.corbeille.purger' => $ids,
             default => [],
         };
     }

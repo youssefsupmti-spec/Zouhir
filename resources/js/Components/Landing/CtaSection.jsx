@@ -18,7 +18,7 @@ export default function CtaSection() {
                             <span>Ouverture de compte instantanée et sans engagement</span>
                         </div>
 
-                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-['Outfit'] tracking-tight leading-tight">
+                        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black font-sans tracking-tight leading-tight">
                             Prêt à offrir à vos clients une expérience de livraison irréprochable ?
                         </h2>
 

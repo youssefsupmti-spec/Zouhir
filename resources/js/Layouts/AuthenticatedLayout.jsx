@@ -55,7 +55,7 @@ export default function AuthenticatedLayout({ children, title }) {
         <AuthenticatedLayoutContext.Provider value={true}>
             <SidebarProvider>
                 <AppSidebar />
-                <SidebarInset className="bg-background min-h-screen min-w-0 flex flex-col font-['Inter'] transition-colors duration-200">
+                <SidebarInset className="bg-background min-h-screen min-w-0 flex flex-col font-sans transition-colors duration-200">
                     {/* Header with trigger, separator, breadcrumb and live network status */}
                     <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-card/90 backdrop-blur-md px-4 sm:px-6 sticky top-0 z-30 transition-all ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14">
                         <div className="flex items-center gap-2 sm:gap-3">

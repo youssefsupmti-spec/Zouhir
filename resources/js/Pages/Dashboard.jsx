@@ -98,7 +98,7 @@ export default function Dashboard({ stats = {}, recentShipments = [] }) {
                                 <Sparkles className="w-3.5 h-3.5 text-[#ff8806]" />
                                 <span>Portail Marchand OUAISS EXPRESS 2026</span>
                             </div>
-                            <h2 className="text-xl sm:text-2xl font-extrabold font-['Inter'] tracking-tight text-white">
+                            <h2 className="text-xl sm:text-2xl font-extrabold font-sans tracking-tight text-white">
                                 Ravi de vous revoir, {user.name || 'Marchand'} !
                             </h2>
                             <p className="text-slate-200 text-xs max-w-xl leading-relaxed">
@@ -195,7 +195,7 @@ export default function Dashboard({ stats = {}, recentShipments = [] }) {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-2.5">
-                            <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-['Inter']">
+                            <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-sans">
                                 {stats.total_shipments || 128}
                             </div>
                             <div className="space-y-1">
@@ -225,7 +225,7 @@ export default function Dashboard({ stats = {}, recentShipments = [] }) {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-2.5">
-                            <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 font-['Inter']">
+                            <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 font-sans">
                                 {stats.in_transit || 14}
                             </div>
                             <div className="space-y-1">
@@ -255,7 +255,7 @@ export default function Dashboard({ stats = {}, recentShipments = [] }) {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-2.5">
-                            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-500 font-['Inter']">
+                            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-500 font-sans">
                                 {stats.delivered_rate || stats.success_rate || 98.2}%
                             </div>
                             <div className="space-y-1">
@@ -285,7 +285,7 @@ export default function Dashboard({ stats = {}, recentShipments = [] }) {
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-2.5">
-                            <div className="text-xl sm:text-2xl font-extrabold text-foreground font-['Inter']">
+                            <div className="text-xl sm:text-2xl font-extrabold text-foreground font-sans">
                                 {(stats.crbt_balance || 14850).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} <span className="text-xs font-bold text-[#ff8806]">MAD</span>
                             </div>
                             <div className="space-y-1">

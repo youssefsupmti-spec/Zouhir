@@ -37,19 +37,20 @@ class LivreurTarifController extends Controller
         $user = $request->user();
 
         $zoneId = $this->idOuNull($request->input('zone_id'));
-        $livreurId = $this->idOuNull($request->input('livreur_id'));
-
-        $livreur = $livreurId === null ? null : User::drivers()->find($livreurId, ['id', 'nom_complet', 'telephone']);
+        $search = trim((string) $request->input('search', ''));
+        $statut = in_array($request->input('statut'), LivreurTarifQuery::STATUTS, true) ? (string) $request->input('statut') : 'tous';
+        $parPage = min(max((int) $request->input('per_page', 15), 5), 50);
 
         return Inertia::render('TarifsLivreurs/Index', [
-            'livreurs' => $this->query->livreurs(),
             'stats' => $this->query->statistiques(),
             'zones' => Zone::query()->orderBy('name')->get(['id', 'name', 'code']),
-            'livreur' => $livreur === null ? null : ['id' => (int) $livreur->id, 'nom' => (string) $livreur->nom_complet, 'telephone' => $livreur->telephone],
-            'grille' => $livreur === null ? null : $this->query->grilleDuLivreur((int) $livreur->id, $zoneId),
+            'livreurs' => $statut === 'corbeille' ? null : $this->query->resumes(['search' => $search, 'zone_id' => $zoneId, 'statut' => $statut], $parPage),
+            'corbeille' => $statut === 'corbeille' ? $this->query->corbeille($search) : null,
             'filters' => [
-                'livreur_id' => $livreur === null ? 'all' : (string) $livreur->id,
+                'statut' => $statut,
+                'search' => $search,
                 'zone_id' => $zoneId === null ? 'all' : (string) $zoneId,
+                'per_page' => $parPage,
             ],
             'can' => [
                 'create' => $user->can('create', LivreurTarif::class),
@@ -57,6 +58,15 @@ class LivreurTarifController extends Controller
                 'delete' => $user->can('delete', LivreurTarif::class),
             ],
         ]);
+    }
+
+    /** Commissions actives d'UN livreur (compte archivé compris), chargées à l'ouverture de sa carte. */
+    public function grille(Request $request, int $livreur): JsonResponse
+    {
+        Gate::authorize('viewAny', LivreurTarif::class);
+        abort_unless(User::withTrashed()->drivers()->whereKey($livreur)->exists(), 404);
+
+        return response()->json($this->query->grilleDuLivreur($livreur, $this->idOuNull($request->input('zone_id'))));
     }
 
     /** Référentiel du dialog d'affectation : villes ACTIVES et livreurs (JSON). */
@@ -140,6 +150,20 @@ class LivreurTarifController extends Controller
         $n = $this->ecriture->restaurerLot((int) $d['livreur_id'], $d['ids']);
 
         return back()->with('success', "{$n} commission(s) restaurée(s) avec leurs montants d'origine.");
+    }
+
+    public function restaurerCorbeille(LivreurTarifRequest $request): RedirectResponse
+    {
+        $n = $this->ecriture->restaurerCorbeille($request->validated('ids'));
+
+        return back()->with('success', "{$n} commission(s) restaurée(s) avec leurs montants d'origine.");
+    }
+
+    public function purgerCorbeille(LivreurTarifRequest $request): RedirectResponse
+    {
+        $n = $this->ecriture->purgerCorbeille($request->validated('ids'));
+
+        return back()->with('success', "{$n} commission(s) supprimée(s) définitivement de la corbeille. Aucun colis n'est modifié.");
     }
 
     private function idOuNull(mixed $valeur): ?int

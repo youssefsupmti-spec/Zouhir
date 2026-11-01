@@ -28,7 +28,7 @@ export default function Footer() {
 
                     {/* Solutions */}
                     <div className="space-y-3">
-                        <h4 className="text-white font-bold text-sm tracking-wide uppercase font-['Outfit']">
+                        <h4 className="text-white font-bold text-sm tracking-wide uppercase font-sans">
                             Solutions
                         </h4>
                         <ul className="space-y-2 text-xs text-slate-400">
@@ -42,7 +42,7 @@ export default function Footer() {
 
                     {/* Villes Principales */}
                     <div className="space-y-3">
-                        <h4 className="text-white font-bold text-sm tracking-wide uppercase font-['Outfit']">
+                        <h4 className="text-white font-bold text-sm tracking-wide uppercase font-sans">
                             Couverture Réseau
                         </h4>
                         <ul className="space-y-2 text-xs text-slate-400">
@@ -57,7 +57,7 @@ export default function Footer() {
 
                     {/* Contact & Support */}
                     <div className="space-y-3">
-                        <h4 className="text-white font-bold text-sm tracking-wide uppercase font-['Outfit']">
+                        <h4 className="text-white font-bold text-sm tracking-wide uppercase font-sans">
                             Contact & Hub
                         </h4>
                         <ul className="space-y-2.5 text-xs text-slate-400">

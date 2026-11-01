@@ -73,7 +73,7 @@ export default function Login({ status }) {
                     <Badge variant="secondary" size="md">
                         Portail Marchand 2026
                     </Badge>
-                    <h2 className="text-3xl font-extrabold font-['Outfit'] tracking-tight leading-snug">
+                    <h2 className="text-3xl font-extrabold font-sans tracking-tight leading-snug">
                         Gérez vos expéditions nationales avec précision et sérénité.
                     </h2>
                     <ul className="space-y-3.5 text-xs text-slate-300">
@@ -125,7 +125,7 @@ export default function Login({ status }) {
                 <div className="max-w-md w-full mx-auto my-auto space-y-8">
                     {/* Header */}
                     <div className="space-y-2">
-                        <h1 className="text-3xl font-extrabold text-[#004c68] font-['Outfit'] tracking-tight">
+                        <h1 className="text-3xl font-extrabold text-[#004c68] font-sans tracking-tight">
                             Connexion Espace Client
                         </h1>
                         <p className="text-sm text-slate-500">

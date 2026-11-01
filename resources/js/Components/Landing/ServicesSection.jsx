@@ -96,7 +96,7 @@ export default function ServicesSection() {
                     <Badge variant="secondary" size="md" className="mb-3">
                         Notre Expertise Terrain
                     </Badge>
-                    <h2 className="text-3xl sm:text-4xl font-extrabold text-[#004c68] font-['Outfit'] tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl font-extrabold text-[#004c68] font-sans tracking-tight">
                         Une suite complète d'opérations pour accélérer votre commerce
                     </h2>
                     <p className="mt-4 text-slate-600 text-sm sm:text-base leading-relaxed">
@@ -131,7 +131,7 @@ export default function ServicesSection() {
                                     </div>
 
                                     <div>
-                                        <h3 className="text-xl font-bold text-slate-900 font-['Outfit'] group-hover:text-[#004c68] transition-colors">
+                                        <h3 className="text-xl font-bold text-slate-900 font-sans group-hover:text-[#004c68] transition-colors">
                                             {item.title}
                                         </h3>
                                         <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">

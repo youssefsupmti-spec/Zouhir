@@ -104,7 +104,7 @@ export default function Register() {
                         <span>Compte Marchand Gratuit</span>
                     </Badge>
 
-                    <h2 className="text-3xl font-extrabold font-['Outfit'] tracking-tight leading-snug">
+                    <h2 className="text-3xl font-extrabold font-sans tracking-tight leading-snug">
                         Démarrez vos expéditions dès aujourd'hui sans caution.
                     </h2>
 
@@ -158,7 +158,7 @@ export default function Register() {
                 <div className="max-w-xl w-full mx-auto my-auto space-y-7">
                     {/* Header */}
                     <div className="space-y-1.5">
-                        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#004c68] font-['Outfit'] tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#004c68] font-sans tracking-tight">
                             Création de Compte Marchand
                         </h1>
                         <p className="text-xs sm:text-sm text-slate-500">

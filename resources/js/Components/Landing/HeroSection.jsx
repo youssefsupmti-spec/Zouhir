@@ -43,7 +43,7 @@ export default function HeroSection({ onTrackSearch }) {
                         </div>
 
                         {/* Main Title */}
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#004c68] font-['Outfit'] tracking-tight leading-[1.12]">
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#004c68] font-sans tracking-tight leading-[1.12]">
                             La Livraison Express{' '}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004c68] via-[#0d6386] to-[#ff8806]">
                                 Sans Faux Pas
@@ -131,7 +131,7 @@ export default function HeroSection({ onTrackSearch }) {
                                 {/* Decorative badge */}
                                 <div className="flex items-center justify-between pb-6 border-b border-slate-700/60">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="w-10 h-10 rounded-xl bg-[#ff8806] flex items-center justify-center font-black text-white font-['Outfit'] text-lg shadow-md">
+                                        <div className="w-10 h-10 rounded-xl bg-[#ff8806] flex items-center justify-center font-black text-white font-sans text-lg shadow-md">
                                             OE
                                         </div>
                                         <div>
@@ -173,7 +173,7 @@ export default function HeroSection({ onTrackSearch }) {
                                             <span className="text-xs text-slate-400">Colis en acheminement</span>
                                             <span className="text-xs font-bold text-emerald-400">+12% vs hier</span>
                                         </div>
-                                        <div className="text-3xl font-extrabold mt-1 text-white font-['Outfit']">
+                                        <div className="text-3xl font-extrabold mt-1 text-white font-sans">
                                             3 842 <span className="text-xs font-normal text-slate-400">colis</span>
                                         </div>
                                         <div className="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
