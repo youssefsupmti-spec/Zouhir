@@ -46,16 +46,24 @@ export function TeamSwitcher({
               />
             }
           >
-            <div className="flex aspect-square size-9 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm bg-[#004c68]/20 border border-white/10">
-              {activeTeam.logo}
+            <div className="flex items-center group-data-[collapsible=icon]:hidden overflow-hidden">
+              <img 
+                src="/images/logo-full-dark.png" 
+                alt="OUAISS EXPRESS" 
+                className="h-8.5 w-auto max-w-[195px] object-contain block [.sidebar-light_&]:hidden"
+              />
+              <img 
+                src="/images/logo.png" 
+                alt="OUAISS EXPRESS" 
+                className="h-8.5 w-auto max-w-[195px] object-contain hidden [.sidebar-light_&]:block"
+              />
             </div>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-bold text-sidebar-foreground tracking-tight">
-                {activeTeam.name}
-              </span>
-              <span className="truncate text-[11px] font-medium text-sidebar-foreground/70">
-                {activeTeam.plan}
-              </span>
+            <div className="hidden group-data-[collapsible=icon]:flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#004c68]/30 border border-white/10 overflow-hidden shadow-sm mx-auto">
+              <img 
+                src="/images/logo-icon-rounded.png" 
+                alt="OUAISS EXPRESS" 
+                className="size-full rounded-md object-contain"
+              />
             </div>
             <ChevronsUpDownIcon className="ml-auto size-4 text-sidebar-foreground/60" />
           </DropdownMenuTrigger>

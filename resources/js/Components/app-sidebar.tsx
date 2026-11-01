@@ -1,12 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { usePage } from "@inertiajs/react"
+import { usePage, Link } from "@inertiajs/react"
 
 import { NavMain, type NavItem } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +21,6 @@ import {
   GlobeIcon, 
   CalculatorIcon, 
   PhoneCallIcon,
-  Building2Icon,
   StoreIcon,
   ShieldCheckIcon,
   KeyRoundIcon,
@@ -37,30 +35,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     email: "contact@ouaissexpress.com",
     avatar: "/images/logo-icon-rounded.png",
   }
-
-  const teams = [
-    {
-      name: "OUAISS EXPRESS",
-      logo: (
-        <img 
-          src="/images/logo-icon-rounded.png" 
-          alt="OUAISS EXPRESS" 
-          className="size-full rounded-md object-contain shadow-sm"
-        />
-      ),
-      plan: "Hub National Casablanca",
-    },
-    {
-      name: "Agence Rabat",
-      logo: <Building2Icon className="size-4 text-white" />,
-      plan: "Hub Régional Centre",
-    },
-    {
-      name: "Agence Tanger",
-      logo: <Building2Icon className="size-4 text-white" />,
-      plan: "Hub Nord & Port",
-    },
-  ]
 
   // Badges : uniquement des compteurs réels fournis par le Backend ({ kind: "count" })
   // ou l'état « Bientôt » ({ kind: "soon" }). Aucun compteur fictif.
@@ -177,8 +151,37 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
-      <SidebarHeader className="border-b border-sidebar-border">
-        <TeamSwitcher teams={teams} />
+      <SidebarHeader className="h-14 justify-center border-b border-sidebar-border px-3 py-2">
+        <Link 
+          href="/dashboard"
+          className="flex items-center gap-2.5 rounded-lg py-1 px-2 transition-colors hover:bg-sidebar-accent/50 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group w-full"
+          title="OUAISS EXPRESS - Tableau de bord"
+        >
+          {/* Mode déplié : Logo horizontal complet */}
+          <div className="flex items-center group-data-[collapsible=icon]:hidden">
+            {/* Version pour fond sombre (par défaut sur sidebar OUAISS EXPRESS) */}
+            <img 
+              src="/images/logo-full-dark.png" 
+              alt="OUAISS EXPRESS" 
+              className="h-8.5 w-auto max-w-[195px] object-contain transition-transform duration-200 group-hover:scale-[1.02] block [.sidebar-light_&]:hidden"
+            />
+            {/* Version pour fond clair (si la sidebar passe en mode clair) */}
+            <img 
+              src="/images/logo.png" 
+              alt="OUAISS EXPRESS" 
+              className="h-8.5 w-auto max-w-[195px] object-contain transition-transform duration-200 group-hover:scale-[1.02] hidden [.sidebar-light_&]:block"
+            />
+          </div>
+
+          {/* Mode replié (collapsible="icon") : Emblème officiel squircle centré */}
+          <div className="hidden group-data-[collapsible=icon]:flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#004c68]/30 border border-white/10 overflow-hidden shadow-sm mx-auto">
+            <img 
+              src="/images/logo-icon-rounded.png" 
+              alt="OUAISS EXPRESS" 
+              className="size-full rounded-md object-contain"
+            />
+          </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent className="py-2">
         <NavMain items={navMain} />
