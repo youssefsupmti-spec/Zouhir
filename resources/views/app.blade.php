@@ -8,10 +8,14 @@
     <title inertia>{{ config('app.name', 'Ouais Express') }} - Livraison Express & Logistique au Maroc</title>
     <meta name="description" content="Ouais Express - Votre partenaire logistique de référence au Maroc. Livraison e-commerce 24/48h, ramassage gratuit, gestion des retours et remboursement CRBT express.">
 
-    <!-- Favicons -->
+    <!-- Favicons & Touch Icons (Multi-Devices & Dark/Light support) -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/images/logo-icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/logo-icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/images/logo-icon-512.png">
+    <meta name="theme-color" content="#004c68">
 
 
     <!-- Theme detection script (prevent FOUC) -->

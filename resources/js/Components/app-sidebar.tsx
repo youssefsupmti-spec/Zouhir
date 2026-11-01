@@ -35,13 +35,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = auth?.user || {
     name: "Client OUAISS",
     email: "contact@ouaissexpress.com",
-    avatar: "/favicon.png",
+    avatar: "/images/logo-icon-rounded.png",
   }
 
   const teams = [
     {
       name: "OUAISS EXPRESS",
-      logo: <TruckIcon className="size-4 text-white" />,
+      logo: (
+        <img 
+          src="/images/logo-icon-rounded.png" 
+          alt="OUAISS EXPRESS" 
+          className="size-full rounded-md object-contain shadow-sm"
+        />
+      ),
       plan: "Hub National Casablanca",
     },
     {
