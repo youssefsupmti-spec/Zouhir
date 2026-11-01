@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { usePage, Link } from "@inertiajs/react"
+import { usePage } from "@inertiajs/react"
 
 import { NavMain, type NavItem } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
@@ -151,37 +151,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border" {...props}>
-      <SidebarHeader className="h-16 justify-center items-center border-b border-sidebar-border px-3 py-2">
-        <Link 
-          href="/dashboard"
-          className="flex items-center justify-center rounded-lg py-1 px-2 transition-colors hover:bg-sidebar-accent/50 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group w-full"
-          title="OUAISS EXPRESS - Tableau de bord"
-        >
-          {/* Mode déplié : Logo horizontal complet centré et agrandi */}
-          <div className="flex items-center justify-center w-full group-data-[collapsible=icon]:hidden">
-            {/* Version pour fond sombre (par défaut sur sidebar OUAISS EXPRESS) */}
-            <img 
-              src="/images/logo-full-dark.png" 
-              alt="OUAISS EXPRESS" 
-              className="h-10 sm:h-11 w-auto max-w-[215px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.02] block [.sidebar-light_&]:hidden"
-            />
-            {/* Version pour fond clair (si la sidebar passe en mode clair) */}
-            <img 
-              src="/images/logo.png" 
-              alt="OUAISS EXPRESS" 
-              className="h-10 sm:h-11 w-auto max-w-[215px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.02] hidden [.sidebar-light_&]:block"
-            />
-          </div>
+            <SidebarHeader className="h-20 justify-center items-center border-b border-sidebar-border px-3 py-2">
+        {/* Mode déplié : Logo officiel centré en h-15 (image seule, sans bouton ni lien) */}
+        <div className="flex items-center justify-center w-full group-data-[collapsible=icon]:hidden">
+          {/* Version pour fond sombre (par défaut sur sidebar OUAISS EXPRESS) */}
+          <img 
+            src="/images/logo-full-dark.png" 
+            alt="OUAISS EXPRESS" 
+            className="h-15 w-auto max-w-[215px] object-contain mx-auto block [.sidebar-light_&]:hidden"
+          />
+          {/* Version pour fond clair (si la sidebar passe en mode clair) */}
+          <img 
+            src="/images/logo.png" 
+            alt="OUAISS EXPRESS" 
+            className="h-15 w-auto max-w-[215px] object-contain mx-auto hidden [.sidebar-light_&]:block"
+          />
+        </div>
 
-          {/* Mode replié (collapsible="icon") : Emblème officiel squircle centré */}
-          <div className="hidden group-data-[collapsible=icon]:flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#004c68]/30 border border-white/10 overflow-hidden shadow-sm mx-auto">
-            <img 
-              src="/images/logo-icon-rounded.png" 
-              alt="OUAISS EXPRESS" 
-              className="size-full rounded-md object-contain"
-            />
-          </div>
-        </Link>
+        {/* Mode replié (collapsible="icon") : Emblème squircle officiel (image seule) */}
+        <div className="hidden group-data-[collapsible=icon]:flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#004c68]/30 border border-white/10 overflow-hidden shadow-sm mx-auto">
+          <img 
+            src="/images/logo-icon-rounded.png" 
+            alt="OUAISS EXPRESS" 
+            className="size-full rounded-md object-contain"
+          />
+        </div>
       </SidebarHeader>
       <SidebarContent className="py-2">
         <NavMain items={navMain} />

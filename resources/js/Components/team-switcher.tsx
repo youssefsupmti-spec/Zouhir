@@ -50,12 +50,12 @@ export function TeamSwitcher({
               <img 
                 src="/images/logo-full-dark.png" 
                 alt="OUAISS EXPRESS" 
-                className="h-10 sm:h-11 w-auto max-w-[215px] object-contain mx-auto block [.sidebar-light_&]:hidden"
+                className="h-15 w-auto max-w-[215px] object-contain mx-auto block [.sidebar-light_&]:hidden"
               />
               <img 
                 src="/images/logo.png" 
                 alt="OUAISS EXPRESS" 
-                className="h-10 sm:h-11 w-auto max-w-[215px] object-contain mx-auto hidden [.sidebar-light_&]:block"
+                className="h-15 w-auto max-w-[215px] object-contain mx-auto hidden [.sidebar-light_&]:block"
               />
             </div>
             <div className="hidden group-data-[collapsible=icon]:flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#004c68]/30 border border-white/10 overflow-hidden shadow-sm mx-auto">
