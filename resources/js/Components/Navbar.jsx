@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/AppButton';
-import { Menu, X, ArrowRight, User, PhoneCall, ShieldCheck, LogOut } from 'lucide-react';
+import { Menu, X, ArrowRight, User, PhoneCall, ShieldCheck, LogOut, PackageSearch } from 'lucide-react';
 
 export default function Navbar({ onOpenTracking }) {
     const { auth } = usePage().props;
@@ -17,6 +17,12 @@ export default function Navbar({ onOpenTracking }) {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const navLinkClass = `text-sm font-semibold transition-colors ${
+        scrolled 
+            ? 'text-slate-700 hover:text-[#004c68]' 
+            : 'text-slate-200 hover:text-white'
+    }`;
+
     return (
         <header
             className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
@@ -27,42 +33,37 @@ export default function Navbar({ onOpenTracking }) {
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between">
-                    {/* Brand Logo */}
-                    <Logo isWhite={false} showTagline={false} />
+                    {/* Brand Logo - dark logo on transparent hero, light logo on white scrolled navbar */}
+                    <div className="flex items-center">
+                        <Logo isWhite={!scrolled} showTagline={false} />
+                    </div>
 
                     {/* Desktop Navigation Links */}
-                    <nav className="hidden lg:flex items-center gap-8">
-                        <a
-                            href="#services"
-                            className="text-sm font-medium text-slate-700 hover:text-[#004c68] transition-colors"
-                        >
+                    <nav className="hidden lg:flex items-center gap-7">
+                        <a href="#services" className={navLinkClass}>
                             Solutions & Services
                         </a>
-                        <a
-                            href="#calculateur"
-                            className="text-sm font-medium text-slate-700 hover:text-[#004c68] transition-colors"
-                        >
+                        <a href="#comment-ca-marche" className={navLinkClass}>
+                            Comment ça marche
+                        </a>
+                        <a href="#calculateur" className={navLinkClass}>
                             Simulateur de Tarifs
                         </a>
-                        <a
-                            href="#pourquoi-nous"
-                            className="text-sm font-medium text-slate-700 hover:text-[#004c68] transition-colors"
-                        >
-                            Pourquoi Ouais Express
+                        <a href="#pourquoi-nous" className={navLinkClass}>
+                            Pourquoi Nous
                         </a>
-                        <a
-                            href="#temoignages"
-                            className="text-sm font-medium text-slate-700 hover:text-[#004c68] transition-colors"
-                        >
-                            Témoignages Marchands
+                        <a href="#temoignages" className={navLinkClass}>
+                            Témoignages
                         </a>
+                        
                         <button
                             type="button"
                             onClick={onOpenTracking}
-                            className="text-sm font-semibold text-[#ff8806] hover:text-[#e07400] transition-colors flex items-center gap-1.5"
+                            className="text-sm font-bold text-[#ff8806] hover:text-[#e07400] transition-colors flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ff8806]/10"
                         >
+                            <PackageSearch className="w-4 h-4" />
                             <span>Suivre un Colis</span>
-                            <span className="flex h-2 w-2 rounded-full bg-[#ff8806] animate-ping" />
+                            <span className="flex h-2 w-2 rounded-full bg-[#ff8806] animate-ping ml-0.5" />
                         </button>
                     </nav>
 
@@ -71,15 +72,24 @@ export default function Navbar({ onOpenTracking }) {
                         {auth?.user ? (
                             <div className="flex items-center gap-3">
                                 <Link href="/dashboard">
-                                    <Button variant="primary" size="sm" icon={User} className="font-bold shadow-md shadow-[#004c68]/20">
-                                        Mon Tableau de Bord
+                                    <Button 
+                                        variant="primary" 
+                                        size="sm" 
+                                        icon={User} 
+                                        className="font-bold shadow-md bg-[#004c68] hover:bg-[#003b52] text-white border-0"
+                                    >
+                                        Mon Espace
                                     </Button>
                                 </Link>
                                 <Link
                                     href="/logout"
                                     method="post"
                                     as="button"
-                                    className="text-xs font-semibold text-slate-500 hover:text-red-600 flex items-center gap-1 px-3 py-1.5 rounded-xl hover:bg-red-50 transition-colors"
+                                    className={`text-xs font-semibold flex items-center gap-1 px-3 py-1.5 rounded-xl transition-colors ${
+                                        scrolled 
+                                            ? 'text-slate-500 hover:text-red-600 hover:bg-red-50' 
+                                            : 'text-slate-300 hover:text-red-400 hover:bg-white/10'
+                                    }`}
                                 >
                                     <LogOut className="w-3.5 h-3.5" />
                                     <span>Déconnexion</span>
@@ -88,25 +98,38 @@ export default function Navbar({ onOpenTracking }) {
                         ) : (
                             <>
                                 <Link href="/login">
-                                    <Button variant="ghost" size="sm" icon={User}>
+                                    <button 
+                                        type="button"
+                                        className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-colors ${
+                                            scrolled 
+                                                ? 'text-[#004c68] hover:bg-slate-100' 
+                                                : 'text-white hover:bg-white/10'
+                                        }`}
+                                    >
                                         Espace Client
-                                    </Button>
+                                    </button>
                                 </Link>
                                 <Link href="/register">
-                                    <Button variant="secondary" size="sm" icon={ArrowRight} iconPosition="right">
-                                        Devenir Marchand
-                                    </Button>
+                                    <button 
+                                        type="button"
+                                        className="text-xs font-extrabold px-4 py-2 rounded-xl bg-[#ff8806] hover:bg-[#e07400] text-white shadow-md shadow-[#ff8806]/20 transition-all flex items-center gap-1.5"
+                                    >
+                                        <span>Devenir Marchand</span>
+                                        <ArrowRight className="w-3.5 h-3.5" />
+                                    </button>
                                 </Link>
                             </>
                         )}
                     </div>
 
                     {/* Mobile Hamburger Toggle */}
-                    <div className="flex items-center sm:hidden">
+                    <div className="flex items-center lg:hidden">
                         <button
                             type="button"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 focus:outline-none"
+                            className={`p-2 rounded-xl focus:outline-none ${
+                                scrolled ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
+                            }`}
                             aria-label="Menu"
                         >
                             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -117,68 +140,80 @@ export default function Navbar({ onOpenTracking }) {
 
             {/* Mobile Dropdown Menu */}
             {mobileMenuOpen && (
-                <div className="sm:hidden bg-white/98 backdrop-blur-xl border-b border-slate-200 px-4 pt-3 pb-6 shadow-xl animate-in fade-in slide-in-from-top-4 duration-200">
-                    <div className="flex flex-col space-y-3.5 pt-2">
+                <div className="lg:hidden bg-white/98 backdrop-blur-xl border-b border-slate-200 px-4 pt-3 pb-6 shadow-xl animate-in fade-in slide-in-from-top-4 duration-200">
+                    <div className="flex flex-col space-y-3 pt-2">
                         <a
                             href="#services"
                             onClick={() => setMobileMenuOpen(false)}
-                            className="text-sm font-medium text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
+                            className="text-sm font-semibold text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
                         >
                             Solutions & Services
                         </a>
                         <a
+                            href="#comment-ca-marche"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-sm font-semibold text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
+                        >
+                            Comment ça marche
+                        </a>
+                        <a
                             href="#calculateur"
                             onClick={() => setMobileMenuOpen(false)}
-                            className="text-sm font-medium text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
+                            className="text-sm font-semibold text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
                         >
                             Simulateur de Tarifs
                         </a>
                         <a
                             href="#pourquoi-nous"
                             onClick={() => setMobileMenuOpen(false)}
-                            className="text-sm font-medium text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
+                            className="text-sm font-semibold text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
                         >
-                            Pourquoi Ouais Express
+                            Pourquoi Nous
                         </a>
+                        <a
+                            href="#temoignages"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="text-sm font-semibold text-slate-800 hover:text-[#004c68] py-2 border-b border-slate-100"
+                        >
+                            Témoignages Marchands
+                        </a>
+                        
                         <button
                             type="button"
                             onClick={() => {
                                 setMobileMenuOpen(false);
                                 onOpenTracking();
                             }}
-                            className="text-left text-sm font-semibold text-[#ff8806] py-2 border-b border-slate-100"
+                            className="text-sm font-bold text-[#ff8806] py-2.5 flex items-center justify-between"
                         >
-                            🔍 Suivre un Colis en direct
+                            <span className="flex items-center gap-2">
+                                <PackageSearch className="w-4 h-4" />
+                                <span>Suivre un Colis en direct</span>
+                            </span>
+                            <span className="flex h-2 w-2 rounded-full bg-[#ff8806] animate-ping" />
                         </button>
 
-                        <div className="pt-2 flex flex-col gap-2.5">
+                        <div className="pt-4 flex flex-col gap-2.5 border-t border-slate-100">
                             {auth?.user ? (
-                                <div className="space-y-2">
-                                    <Link href="/dashboard" className="w-full">
-                                        <Button variant="primary" size="md" className="w-full font-bold">
-                                            Mon Tableau de Bord
-                                        </Button>
-                                    </Link>
-                                    <Link
-                                        href="/logout"
-                                        method="post"
-                                        as="button"
-                                        className="w-full text-center text-xs font-semibold text-red-600 py-2.5 rounded-xl border border-red-200"
-                                    >
-                                        Se déconnecter ({auth.user.name})
-                                    </Link>
-                                </div>
+                                <Link
+                                    href="/dashboard"
+                                    className="w-full text-center py-2.5 px-4 rounded-xl bg-[#004c68] text-white text-xs font-bold"
+                                >
+                                    Mon Tableau de Bord
+                                </Link>
                             ) : (
                                 <>
-                                    <Link href="/login" className="w-full">
-                                        <Button variant="outline" size="md" className="w-full">
-                                            Se Connecter (Espace Client)
-                                        </Button>
+                                    <Link
+                                        href="/login"
+                                        className="w-full text-center py-2.5 px-4 rounded-xl border border-[#004c68] text-[#004c68] text-xs font-bold"
+                                    >
+                                        Connexion Espace Client
                                     </Link>
-                                    <Link href="/register" className="w-full">
-                                        <Button variant="secondary" size="md" className="w-full">
-                                            Créer un Compte Marchand
-                                        </Button>
+                                    <Link
+                                        href="/register"
+                                        className="w-full text-center py-2.5 px-4 rounded-xl bg-[#ff8806] text-white text-xs font-bold shadow-md shadow-[#ff8806]/20"
+                                    >
+                                        Créer un Compte Marchand
                                     </Link>
                                 </>
                             )}
