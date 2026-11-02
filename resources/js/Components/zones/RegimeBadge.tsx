@@ -1,12 +1,12 @@
 import { REGIMES, type TypeZone } from './types';
 
-/** Régime logistique d'une zone : vert « Local direct · BL », bleu « National partenaire · BE ». */
-export function RegimeBadge({ type, compact = false }: { type: TypeZone; compact?: boolean }) {
+/** Régime logistique d'une zone : vert « Régional », bleu « National ». */
+export function RegimeBadge({ type }: { type: TypeZone }) {
   const r = REGIMES[type];
 
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap ${r.classe}`}>
-      {compact ? r.bon : <>{r.label} <span className="opacity-70">· {r.bon}</span></>}
+      {r.label}
     </span>
   );
 }

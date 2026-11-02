@@ -44,7 +44,7 @@ export function ZoneFormFields({ data, errors, onChange }: Props) {
                 : 'border-border hover:bg-muted/50'}`}>
               <span className="block font-semibold">{REGIMES[t].label}</span>
               <span className="text-[11px] text-muted-foreground">
-                {t === 'locale' ? 'Flotte propre de l’Agence Témara — Bons de Livraison (BL)' : 'Réseau partenaire — Bons d’Envoi (BE)'}
+                {t === 'locale' ? 'Livraison par la flotte de l’Agence Témara' : 'Livraison par le réseau partenaire'}
               </span>
             </button>
           ))}

@@ -32,15 +32,13 @@ export interface Paginee<T> {
   to: number | null;
 }
 
-export const REGIMES: Record<TypeZone, { label: string; bon: string; classe: string }> = {
+export const REGIMES: Record<TypeZone, { label: string; classe: string }> = {
   locale: {
-    label: 'Local direct',
-    bon: 'BL',
+    label: 'Régional',
     classe: 'border-emerald-600/25 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400',
   },
   nationale: {
-    label: 'National partenaire',
-    bon: 'BE',
+    label: 'National',
     classe: 'border-[#004c68]/25 bg-[#004c68]/10 text-[#004c68] dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-300',
   },
 };
