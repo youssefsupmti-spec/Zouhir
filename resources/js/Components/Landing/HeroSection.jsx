@@ -28,7 +28,7 @@ export default function HeroSection({ onTrackSearch }) {
     };
 
     return (
-        <section className="relative pt-32 pb-20 lg:pt-36 lg:pb-28 overflow-hidden bg-gradient-to-br from-[#05161f] via-[#072432] to-[#004c68] text-white">
+        <section className="relative pt-36 sm:pt-44 lg:pt-48 pb-20 lg:pb-28 overflow-hidden bg-gradient-to-br from-[#05161f] via-[#072432] to-[#004c68] text-white">
             {/* Background Texture & Decorative Shapes from Envato Template */}
             <div 
                 className="absolute inset-0 z-0 opacity-25 mix-blend-screen pointer-events-none bg-cover bg-center"
@@ -182,24 +182,17 @@ export default function HeroSection({ onTrackSearch }) {
                                     </Badge>
                                 </div>
 
-                                {/* Logistics Vehicle / Fleet Showcase (Envato Track Visual) */}
-                                <div className="mt-5 relative h-48 w-full rounded-2xl overflow-hidden border border-white/10 shadow-lg group bg-[#004c68]/30">
+                                {/* Logistics Vehicle / Fleet Showcase (Envato Track Visual with new OUAISS Banner) */}
+                                <div className="mt-5 relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-white/20 shadow-2xl group bg-[#004c68]/30">
                                     <img 
                                         src="/images/landing/thumbs/banner-three-img.png" 
-                                        alt="Réseau OUAISS EXPRESS Maroc" 
+                                        alt="Réseau OUAISS EXPRESS Maroc - Partout au Maroc, plus proche de vous !" 
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#05161f] via-transparent to-black/20" />
-                                    
-                                    {/* Truck Overlay Accent */}
-                                    <img 
-                                        src="/images/landing/thumbs/only-track.png" 
-                                        alt="Camionnette de livraison" 
-                                        className="absolute -bottom-2 -left-2 w-48 object-contain drop-shadow-2xl" 
-                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#05161f]/70 via-transparent to-black/10 pointer-events-none" />
 
-                                    <div className="absolute bottom-3 right-3 text-right">
-                                        <span className="text-[10.5px] bg-black/60 backdrop-blur-md px-3 py-1 rounded-full font-bold border border-white/15 text-[#ff8806] inline-block">
+                                    <div className="absolute bottom-3 right-3 text-right z-10">
+                                        <span className="text-[10.5px] bg-black/70 backdrop-blur-md px-3 py-1 rounded-full font-bold border border-white/20 text-[#ff8806] inline-block shadow-sm">
                                             Flotte & Départs Quotidiens
                                         </span>
                                     </div>

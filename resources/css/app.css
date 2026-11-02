@@ -197,3 +197,33 @@
 [dir="rtl"] {
     font-family: "Droid Arabic Kufi", var(--font-sans);
 }
+
+
+/* ========================================================
+   Landing Page / Header Three Styles (Inspiration Envato)
+   ======================================================== */
+.both-clipped {
+    clip-path: polygon(6% 0, 100% 0, 96% 100%, 0% 100%);
+}
+
+.hexagon-right {
+    clip-path: polygon(0 0, 93% 0%, 100% 50%, 93% 100%, 0 100%, 0% 50%);
+}
+
+@media (max-width: 640px) {
+    .hexagon-right {
+        clip-path: polygon(0 0, 90% 0%, 100% 50%, 90% 100%, 0 100%, 0% 50%);
+    }
+}
+
+.hover--translate-y-1 {
+    transition: transform 0.25s ease, color 0.2s ease;
+}
+.hover--translate-y-1:hover {
+    transform: translateY(-2px);
+}
+
+.hover-scale-120:hover {
+    transform: scale(1.2);
+    transition: transform 0.2s ease;
+}
