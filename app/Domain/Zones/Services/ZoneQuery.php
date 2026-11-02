@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class ZoneQuery
 {
-    public const ONGLETS = ['toutes', 'locale', 'nationale', 'vides', 'corbeille'];
+    public const ONGLETS = ['toutes', 'locale', 'nationale', 'vides', 'sans_zone', 'corbeille'];
 
     private const APERCU = 5;
 
@@ -91,6 +91,37 @@ final class ZoneQuery
         ]));
 
         return $page;
+    }
+
+    /**
+     * Onglet « Villes sans zone » : villes actives sans zone (ou dans une zone archivée), paginées.
+     */
+    public function villesSansZone(string $search, int $parPage): LengthAwarePaginator
+    {
+        return Ville::query()
+            ->leftJoin('zones', 'zones.id', '=', 'villes.zone_id')
+            ->where(fn ($s) => $s->whereNull('villes.zone_id')->orWhereNotNull('zones.deleted_at'))
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('villes.name_fr', 'like', "%{$search}%")
+                ->orWhere('villes.name_ar', 'like', "%{$search}%")))
+            ->orderBy('villes.name_fr')
+            ->select(['villes.id', 'villes.name_fr', 'villes.name_ar'])
+            ->paginate($parPage)
+            ->withQueryString()
+            ->through(fn ($v) => ['id' => (int) $v->id, 'nom' => (string) $v->name_fr, 'nom_ar' => $v->name_ar]);
+    }
+
+    /**
+     * Zones actives pour les listes déroulantes (régionales d'abord).
+     *
+     * @return list<array{id: int, code: string, name: string, type: string}>
+     */
+    public function options(): array
+    {
+        return Zone::query()
+            ->orderByRaw("CASE WHEN type = 'locale' THEN 0 ELSE 1 END")->orderBy('name')
+            ->get(['id', 'code', 'name', 'type'])
+            ->map(fn (Zone $z) => ['id' => (int) $z->id, 'code' => (string) $z->code, 'name' => (string) $z->name, 'type' => $z->type->value])
+            ->all();
     }
 
     /**

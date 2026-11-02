@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Zones\Services\ZoneEcriture;
 use App\Domain\Zones\Services\ZoneQuery;
+use App\Http\Requests\Zones\AffectationVillesRequest;
 use App\Http\Requests\Zones\VillesZoneRequest;
 use App\Http\Requests\Zones\ZoneRequest;
 use App\Models\Zone;
@@ -36,8 +37,12 @@ class ZoneController extends Controller
         $search = trim((string) $request->input('search', ''));
         $parPage = min(max((int) $request->input('per_page', 25), 10), 100);
 
+        $sansZone = $onglet === 'sans_zone';
+
         return Inertia::render('Zones/Index', [
-            'zones' => $this->query->zones(['onglet' => $onglet, 'search' => $search], $parPage),
+            'zones' => $sansZone ? null : $this->query->zones(['onglet' => $onglet, 'search' => $search], $parPage),
+            'villes' => $sansZone ? $this->query->villesSansZone($search, $parPage) : null,
+            'options' => $sansZone ? $this->query->options() : [],
             'stats' => $this->query->statistiques(),
             'filters' => ['onglet' => $onglet, 'search' => $search, 'per_page' => $parPage],
             'can' => ['manage' => $request->user()->can('create', Zone::class)],
@@ -106,6 +111,14 @@ class ZoneController extends Controller
     public function rattacher(VillesZoneRequest $request, Zone $zone): JsonResponse
     {
         return response()->json(['modifiees' => $this->ecriture->rattacher($zone, $request->ids())]);
+    }
+
+    /** Onglet « Villes sans zone » : enregistre les zones choisies ville par ville. */
+    public function affecter(AffectationVillesRequest $request): RedirectResponse
+    {
+        $n = $this->ecriture->affecter($request->affectations());
+
+        return back()->with('success', "{$n} ville(s) rattachée(s) à leur zone.");
     }
 
     public function detacher(VillesZoneRequest $request, Zone $zone): JsonResponse

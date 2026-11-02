@@ -13,18 +13,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
 import { CodeZone, RegimeBadge } from '@/components/zones/RegimeBadge';
 import { ZoneFormFields, type ZoneFormData } from '@/components/zones/ZoneFormFields';
-import { nomVille, type Paginee, type VillePanneau, type ZoneLigne, zoneJson } from '@/components/zones/types';
+import { nomVille, type Paginee, type VilleApercu, type VillePanneau, type ZoneLigne, zoneJson } from '@/components/zones/types';
+import { VillesSansZoneTable, type ZoneOption } from '@/components/zones/VillesSansZoneTable';
 
-type Onglet = 'toutes' | 'locale' | 'nationale' | 'vides' | 'corbeille';
+type Onglet = 'toutes' | 'locale' | 'nationale' | 'vides' | 'sans_zone' | 'corbeille';
 
 interface Props {
-  zones: LaravelPaginationMeta & { data: ZoneLigne[] };
+  zones: (LaravelPaginationMeta & { data: ZoneLigne[] }) | null;
+  villes: (LaravelPaginationMeta & { data: VilleApercu[] }) | null;
+  options: ZoneOption[];
   stats: { zones: number; locales: number; nationales: number; vides: number; corbeille: number; villes: number; villes_couvertes: number; sans_zone: number };
   filters: { onglet: Onglet; search: string; per_page: number };
   can: { manage: boolean };
 }
 
-export default function ZonesIndex({ zones, stats, filters, can }: Props) {
+export default function ZonesIndex({ zones, villes, options: zonesOptions, stats, filters, can }: Props) {
   const [creation, setCreation] = useState(false);
   const [apercu, setApercu] = useState<ZoneLigne | null>(null);
   const [suppression, setSuppression] = useState<ZoneLigne | null>(null);
@@ -48,7 +51,7 @@ export default function ZonesIndex({ zones, stats, filters, can }: Props) {
       <div className="space-y-6">
         <PageHeader
           title="Zones logistiques"
-          description="Regroupez les villes en zones : local direct (Agence Témara, BL) ou national partenaire (BE)."
+          description="Regroupez les villes en zones : régionales (Agence Témara) ou nationales (réseau partenaire)."
           icon={MapIcon}
           actions={can.manage ? (
             <Button size="sm" className="h-8 rounded-md bg-[#004c68] text-xs text-white hover:bg-[#00384d]" onClick={() => setCreation(true)}>
@@ -58,10 +61,10 @@ export default function ZonesIndex({ zones, stats, filters, can }: Props) {
         />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatsCard title="Zones actives" value={stats.zones} description={`${stats.locales} locales · ${stats.nationales} nationales`} icon={Layers} />
+          <StatsCard title="Zones actives" value={stats.zones} description={`${stats.locales} régionales · ${stats.nationales} nationales`} icon={Layers} />
           <StatsCard title="Villes couvertes" value={stats.villes_couvertes.toLocaleString('fr-FR')} description={`sur ${stats.villes.toLocaleString('fr-FR')} villes actives`} icon={MapPin} />
-          <StatsCard title="Villes sans zone" value={stats.sans_zone.toLocaleString('fr-FR')} description="À classer depuis la page d’une zone" icon={MapPinOff} iconColor="text-[#ff8806]" />
-          <StatsCard title="Zones vides" value={stats.vides} description="Aucune ville rattachée" icon={Warehouse} />
+          <StatsCard title="Villes sans zone" value={stats.sans_zone.toLocaleString('fr-FR')} description="À classer depuis l’onglet « Villes sans zone »" icon={MapPinOff} iconColor="text-[#ff8806]" />
+          <StatsCard title="Zones sans villes" value={stats.vides} description="Aucune ville rattachée" icon={Warehouse} />
         </div>
 
         <TarifsTabs
@@ -70,15 +73,19 @@ export default function ZonesIndex({ zones, stats, filters, can }: Props) {
           onValueChange={onglet}
           onglets={[
             { value: 'toutes', label: 'Toutes', count: stats.zones, icon: <Layers className="size-3.5" /> },
-            { value: 'locale', label: 'Local direct · BL', count: stats.locales, icon: <Truck className="size-3.5" /> },
-            { value: 'nationale', label: 'National · BE', count: stats.nationales, icon: <MapIcon className="size-3.5" /> },
-            { value: 'vides', label: 'Vides', count: stats.vides, icon: <Warehouse className="size-3.5" />, tone: 'muted' },
+            { value: 'locale', label: 'Régional', count: stats.locales, icon: <Truck className="size-3.5" /> },
+            { value: 'nationale', label: 'National', count: stats.nationales, icon: <MapIcon className="size-3.5" /> },
+            { value: 'vides', label: 'Zones sans villes', count: stats.vides, icon: <Warehouse className="size-3.5" />, tone: 'muted' },
+            { value: 'sans_zone', label: 'Villes sans zone', count: stats.sans_zone, icon: <MapPinOff className="size-3.5" />, tone: 'muted' },
             { value: 'corbeille', label: 'Corbeille', count: stats.corbeille, icon: <Trash2 className="size-3.5" />, tone: 'danger' },
           ]}
         />
 
-        <PageToolbar searchPlaceholder="Zone (nom ou code) ou ville rattachée…" initialSearch={filters.search} currentParams={params} />
+        <PageToolbar searchPlaceholder={villes ? 'Ville (français ou arabe)…' : 'Zone (nom ou code) ou ville rattachée…'} initialSearch={filters.search} currentParams={params} />
 
+        {villes && <VillesSansZoneTable villes={villes} options={zonesOptions} search={filters.search} params={params} canManage={can.manage} />}
+
+        {zones && <>
         <div className="overflow-x-auto rounded-md border border-border bg-card shadow-2xs">
           <Table className="min-w-[860px] text-xs">
             <TableHeader>
@@ -165,6 +172,7 @@ export default function ZonesIndex({ zones, stats, filters, can }: Props) {
         </div>
 
         {zones.total > 0 && <DataTablePagination meta={zones} currentParams={params} pageSizeOptions={[10, 25, 50, 100]} />}
+        </>}
       </div>
 
       <CreationZoneDialog open={creation} onClose={() => setCreation(false)} />

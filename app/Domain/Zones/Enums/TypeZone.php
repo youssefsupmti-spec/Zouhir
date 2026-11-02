@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Zones\Enums;
 
-/** Régime logistique d'une zone : il détermine le type de bon émis pour ses colis. */
+/** Régime logistique d'une zone : régional (flotte de l'Agence Témara) ou national (réseau partenaire). */
 enum TypeZone: string
 {
     case LOCALE = 'locale';
@@ -13,17 +13,8 @@ enum TypeZone: string
     public function label(): string
     {
         return match ($this) {
-            self::LOCALE => 'Local direct',
-            self::NATIONALE => 'National partenaire',
-        };
-    }
-
-    /** Bon logistique associé : BL (flotte propre) ou BE (expédition partenaire). */
-    public function bon(): string
-    {
-        return match ($this) {
-            self::LOCALE => 'BL',
-            self::NATIONALE => 'BE',
+            self::LOCALE => 'Régional',
+            self::NATIONALE => 'National',
         };
     }
 

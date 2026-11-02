@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     // Zones logistiques (rapport #39, structure WinningExpress).
     Route::get('/zones', [\App\Http\Controllers\ZoneController::class, 'index'])->name('zones.index');
     Route::post('/zones', [\App\Http\Controllers\ZoneController::class, 'store'])->name('zones.store');
+    Route::post('/zones/affecter', [\App\Http\Controllers\ZoneController::class, 'affecter'])->name('zones.affecter');
     Route::post('/zones/{zone}/restaurer', [\App\Http\Controllers\ZoneController::class, 'restaurer'])->whereNumber('zone')->name('zones.restaurer');
     Route::get('/zones/{zone}/edit', [\App\Http\Controllers\ZoneController::class, 'edit'])->name('zones.edit');
     Route::get('/zones/{zone}/villes', [\App\Http\Controllers\ZoneController::class, 'villes'])->name('zones.villes');

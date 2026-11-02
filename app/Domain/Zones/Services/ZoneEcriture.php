@@ -60,6 +60,35 @@ final class ZoneEcriture
     }
 
     /**
+     * Affectation en lot depuis l'onglet « Villes sans zone » : un UPDATE par zone cible,
+     * le tout dans une transaction.
+     *
+     * @param  array<int, int>  $affectations  ville_id => zone_id
+     */
+    public function affecter(array $affectations): int
+    {
+        $parZone = [];
+        foreach ($affectations as $villeId => $zoneId) {
+            $parZone[$zoneId][] = $villeId;
+        }
+
+        return DB::transaction(function () use ($parZone) {
+            $zones = Zone::query()->whereIn('id', array_keys($parZone))->get(['id', 'code'])->keyBy('id');
+            $n = 0;
+            foreach ($parZone as $zoneId => $ids) {
+                $zone = $zones->get($zoneId);
+                if ($zone === null) {
+                    continue;
+                }
+                $n += DB::table('villes')->whereIn('id', $ids)->whereNull('deleted_at')
+                    ->update(['zone_id' => $zone->id, 'code_zone' => $zone->code, 'updated_at' => now()]);
+            }
+
+            return $n;
+        });
+    }
+
+    /**
      * Retire des villes de la zone (elles deviennent « sans zone »). Seules les villes
      * réellement dans cette zone sont touchées.
      *

@@ -158,4 +158,34 @@ class ZonesPageTest extends TestCase
         }
         $this->assertSame($avant, $mesurer(), 'Aucune requête N+1 sur la liste des zones.');
     }
+    public function test_onglet_villes_sans_zone_et_affectation_en_lot(): void
+    {
+        $a = Ville::create(['name_fr' => 'Douar A']);
+        $b = Ville::create(['name_fr' => 'Douar B']);
+        $archivee = Zone::create(['name' => 'Ancienne', 'code' => 'OLD']);
+        $c = Ville::create(['name_fr' => 'Douar C', 'zone_id' => $archivee->id]);
+        $archivee->delete();
+
+        $this->actingAs($this->admin)->get('/zones?onglet=sans_zone')->assertOk()->assertInertia(fn (Assert $p) => $p
+            ->where('zones', null)
+            ->has('villes.data', 3)
+            ->where('villes.data.0.nom', 'Douar A')
+            ->has('options', 2));
+        $this->actingAs($this->admin)->get('/zones?onglet=sans_zone&search=douar b')->assertInertia(fn (Assert $p) => $p->has('villes.data', 1));
+
+        $this->actingAs($this->clientA)->post('/zones/affecter', ['affectations' => [['ville_id' => $a->id, 'zone_id' => $this->zoneRabat->id]]])->assertForbidden();
+        // Zone archivée refusée.
+        $this->actingAs($this->admin)->post('/zones/affecter', ['affectations' => [['ville_id' => $a->id, 'zone_id' => $archivee->id]]])
+            ->assertSessionHasErrors('affectations.0.zone_id');
+
+        $this->actingAs($this->admin)->post('/zones/affecter', ['affectations' => [
+            ['ville_id' => $a->id, 'zone_id' => $this->zoneRabat->id],
+            ['ville_id' => $b->id, 'zone_id' => $this->zoneRabat->id],
+            ['ville_id' => $c->id, 'zone_id' => $this->zoneCasa->id],
+        ]])->assertRedirect()->assertSessionHas('success', '3 ville(s) rattachée(s) à leur zone.');
+
+        $this->assertSame([$this->zoneRabat->id, $this->zoneRabat->code], [$a->fresh()->zone_id, $a->fresh()->code_zone]);
+        $this->assertSame($this->zoneCasa->code, $c->fresh()->code_zone);
+        $this->actingAs($this->admin)->get('/zones?onglet=sans_zone')->assertInertia(fn (Assert $p) => $p->has('villes.data', 0)->where('stats.sans_zone', 0));
+    }
 }

@@ -9,9 +9,9 @@ use Illuminate\Support\Str;
 /**
  * Référentiel cible des zones OUAISS EXPRESS (rapports #31 et #39, structure WinningExpress).
  *
- *  - Pôle LOCAL (Agence Témara, flotte propre, BL) : un secteur = une zone (rapport #31) ;
+ *  - Pôle RÉGIONAL (Agence Témara, flotte propre) : un secteur = une zone (rapport #31) ;
  *    Salé regroupe ses communes riveraines (Sala Al Jadida, Bouknadel).
- *  - Pôle NATIONAL (partenaire, BE) : hubs régionaux.
+ *  - Pôle NATIONAL (réseau partenaire) : hubs régionaux.
  *
  * Le rattachement d'une ville est déduit UNIQUEMENT des données Zouhir (nom de la ville,
  * suffixe régional du libellé legacy « Ville-region », ancienne macro-zone). Aucune donnée
@@ -24,66 +24,66 @@ final class ReferentielZones
      * @var array<string, array{name: string, type: string, description: string, villes: list<string>}>
      */
     public const ZONES = [
-        // ── Pôle local direct — Agence Témara (BL) ─────────────────────────────
-        'TM' => ['name' => 'Zone Témara', 'type' => 'locale', 'description' => 'Témara centre — flotte propre (BL)',
+        // ── Pôle régional — Agence Témara ───────────────────────────────────
+        'TM' => ['name' => 'Zone Témara', 'type' => 'locale', 'description' => 'Témara centre — flotte Agence Témara',
             'villes' => ['temara']],
-        'TMS' => ['name' => 'Zone Tamesna', 'type' => 'locale', 'description' => 'Tamesna ville nouvelle — flotte propre (BL)',
+        'TMS' => ['name' => 'Zone Tamesna', 'type' => 'locale', 'description' => 'Tamesna ville nouvelle — flotte Agence Témara',
             'villes' => ['tamesna', 'tamessna']],
-        'HAR' => ['name' => 'Zone Harhoura', 'type' => 'locale', 'description' => 'Bande côtière Harhoura — flotte propre (BL)',
+        'HAR' => ['name' => 'Zone Harhoura', 'type' => 'locale', 'description' => 'Bande côtière Harhoura — flotte Agence Témara',
             'villes' => ['harhoura']],
-        'SKH' => ['name' => 'Zone Skhirate', 'type' => 'locale', 'description' => 'Skhirate centre et littoral — flotte propre (BL)',
+        'SKH' => ['name' => 'Zone Skhirate', 'type' => 'locale', 'description' => 'Skhirate centre et littoral — flotte Agence Témara',
             'villes' => ['skhirate', 'skhirat']],
-        'AAT' => ['name' => 'Zone Ain Attig', 'type' => 'locale', 'description' => 'Ain Attig et zone industrielle — flotte propre (BL)',
+        'AAT' => ['name' => 'Zone Ain Attig', 'type' => 'locale', 'description' => 'Ain Attig et zone industrielle — flotte Agence Témara',
             'villes' => ['ain attig', 'ain atig', 'ain atiq']],
-        'AOU' => ['name' => 'Zone Ain Aouda', 'type' => 'locale', 'description' => 'Ain Aouda et Zaër Est — flotte propre (BL)',
+        'AOU' => ['name' => 'Zone Ain Aouda', 'type' => 'locale', 'description' => 'Ain Aouda et Zaër Est — flotte Agence Témara',
             'villes' => ['ain el aouda', 'ain aouda']],
-        'MEK' => ['name' => 'Zone Mers El Kheir', 'type' => 'locale', 'description' => 'Mers El Kheir — flotte propre (BL)',
+        'MEK' => ['name' => 'Zone Mers El Kheir', 'type' => 'locale', 'description' => 'Mers El Kheir — flotte Agence Témara',
             'villes' => ['mers el kheir', 'merss el khir', 'mrss lkhir']],
-        'SYZ' => ['name' => 'Zone Sidi Yahya Zaër', 'type' => 'locale', 'description' => 'Sidi Yahya Zaër et Zaër Sud — flotte propre (BL)',
+        'SYZ' => ['name' => 'Zone Sidi Yahya Zaër', 'type' => 'locale', 'description' => 'Sidi Yahya Zaër et Zaër Sud — flotte Agence Témara',
             'villes' => ['sidi yahia zaers', 'sidi yahya zaer', 'sidi yahya zaers', 'sidi yahia zaer']],
-        'RB' => ['name' => 'Zone Rabat', 'type' => 'locale', 'description' => 'Rabat intra-muros — flotte propre (BL)',
+        'RB' => ['name' => 'Zone Rabat', 'type' => 'locale', 'description' => 'Rabat intra-muros — flotte Agence Témara',
             'villes' => ['rabat']],
-        'SALE' => ['name' => 'Zone Salé', 'type' => 'locale', 'description' => 'Salé, Sala Al Jadida, Bouknadel — flotte propre (BL)',
+        'SALE' => ['name' => 'Zone Salé', 'type' => 'locale', 'description' => 'Salé, Sala Al Jadida, Bouknadel — flotte Agence Témara',
             'villes' => ['sale', 'sala jadida', 'sala al jadida', 'bouknadel', 'sidi bouknadel']],
 
-        // ── Pôle national partenaire (BE) ──────────────────────────────────────
-        'CASA' => ['name' => 'Zone Grand Casablanca', 'type' => 'nationale', 'description' => 'Casablanca, Mohammedia, Bouskoura, Bouznika — BE',
+        // ── Pôle national partenaire ───────────────────────────────────────────
+        'CASA' => ['name' => 'Zone Grand Casablanca', 'type' => 'nationale', 'description' => 'Casablanca, Mohammedia, Bouskoura, Bouznika',
             'villes' => ['casablanca', 'mohammedia', 'mouhammedia', 'mouhammadia', 'bouskoura', 'bouznika', 'dar bouazza', 'nouaceur',
                 'nouaccer', 'benslimane', 'ben slimane', 'had soualem', 'tit mellil', 'ain harrouda', 'ain harouda', 'lahraouyine', 'mediouna',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'el mansouria', 'hed soualem', 'tit melil sbit']],
-        'KECH' => ['name' => 'Zone Marrakech', 'type' => 'nationale', 'description' => 'Marrakech, Al Haouz, El Kelaa, Essaouira — BE',
+        'KECH' => ['name' => 'Zone Marrakech', 'type' => 'nationale', 'description' => 'Marrakech, Al Haouz, El Kelaa, Essaouira',
             'villes' => ['marrakech', 'marrakeche', 'ben guerir', 'benguerir', 'chichaoua', 'el kelaa des sraghna', 'kelaa des sraghna',
                 'essaouira', 'ait ourir', 'tahanaout', 'amizmiz', 'ourika',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'amezmiz', 'el kelaa sraghna', 'imentanout', 'skhour rhamna']],
-        'JD' => ['name' => 'Zone El Jadida & Safi', 'type' => 'nationale', 'description' => 'El Jadida, Safi, Settat, Berrechid — BE',
+        'JD' => ['name' => 'Zone El Jadida & Safi', 'type' => 'nationale', 'description' => 'El Jadida, Safi, Settat, Berrechid',
             'villes' => ['el jadida', 'safi', 'asfi', 'settat', 'berrechid', 'ben ahmed', 'azemmour', 'sidi bennour', 'youssoufia', 'oualidia',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'benhmed', 'chmaaiya', 'daroua', 'khemiss zmamra', 'sidi benour', 'sidi rahal', 'bir el jadid', 'berrchid', 'gara', 'hed oulad frej', 'tnin chtouka']],
-        'FES' => ['name' => 'Zone Fès-Meknès', 'type' => 'nationale', 'description' => 'Fès, Meknès, Sefrou, Ifrane, Taza — BE',
+        'FES' => ['name' => 'Zone Fès-Meknès', 'type' => 'nationale', 'description' => 'Fès, Meknès, Sefrou, Ifrane, Taza',
             'villes' => ['fes', 'meknes', 'sefrou', 'azrou', 'ifrane', 'el hajeb', 'taza', 'taounat', 'boulemane', 'missour', 'moulay yacoub',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'ain cheggag', 'ain chkef', 'boufkrane', 'boulmane', 'ghafsai', 'ifran', 'mkansa', 'tahla']],
-        'TG' => ['name' => 'Zone Tanger-Tétouan', 'type' => 'nationale', 'description' => 'Tanger, Tétouan, Larache, Chefchaouen — BE',
+        'TG' => ['name' => 'Zone Tanger-Tétouan', 'type' => 'nationale', 'description' => 'Tanger, Tétouan, Larache, Chefchaouen',
             'villes' => ['tanger', 'tetouan', 'chefchaouen', 'larache', 'asilah', 'ksar el kebir', 'mdiq', 'm diq', 'fnideq', 'martil', 'ouazzane',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'bab berred', 'fnidaq', 'madiq', 'ouadlaou', 'ouezzane', 'ksar lkbir']],
-        'AG' => ['name' => 'Zone Agadir & Sud', 'type' => 'nationale', 'description' => 'Agadir, Souss, Ouarzazate et provinces du Sud — BE',
+        'AG' => ['name' => 'Zone Agadir & Sud', 'type' => 'nationale', 'description' => 'Agadir, Souss, Ouarzazate et provinces du Sud',
             'villes' => ['agadir', 'inezgane', 'ait melloul', 'taroudant', 'tiznit', 'guelmim', 'tan tan', 'laayoune', 'dakhla', 'smara',
                 'boujdour', 'sidi ifni', 'ouarzazate', 'zagora', 'tata', 'biougra',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'agdz', 'daoura', 'inzgane', 'ouarzazat', 'oulad taima', 'tarfaya']],
-        'OR' => ['name' => 'Zone Oriental', 'type' => 'nationale', 'description' => 'Oujda, Nador, Berkane, Al Hoceima — BE',
+        'OR' => ['name' => 'Zone Oriental', 'type' => 'nationale', 'description' => 'Oujda, Nador, Berkane, Al Hoceima',
             'villes' => ['oujda', 'nador', 'berkane', 'al hoceima', 'taourirt', 'jerada', 'driouch', 'saidia', 'ahfir', 'figuig', 'guercif', 'zaio',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'berkan', 'beni enser', 'bouarfa', 'issegane', 'midar', 'selouane', 'hociema']],
-        'BM' => ['name' => 'Zone Béni Mellal-Khénifra', 'type' => 'nationale', 'description' => 'Béni Mellal, Khouribga, Khénifra, Errachidia — BE',
+        'BM' => ['name' => 'Zone Béni Mellal-Khénifra', 'type' => 'nationale', 'description' => 'Béni Mellal, Khouribga, Khénifra, Errachidia',
             'villes' => ['beni mellal', 'khouribga', 'khoribga', 'fquih ben salah', 'fkih ben salah', 'khenifra', 'azilal', 'kasba tadla',
                 'kesba tadla', 'oued zem', 'errachidia', 'midelt', 'tinghir', 'goulmima', 'arfoud', 'rissani',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'bejaad', 'kelaat magouna', 'tinjdad', 'souk sebt oulad nemma']],
-        'KENI' => ['name' => 'Zone Kénitra-Gharb', 'type' => 'nationale', 'description' => 'Kénitra, Gharb, Khémisset, Tiflet — BE',
+        'KENI' => ['name' => 'Zone Kénitra-Gharb', 'type' => 'nationale', 'description' => 'Kénitra, Gharb, Khémisset, Tiflet',
             'villes' => ['kenitra', 'sidi slimane', 'sidi kacem', 'souk el arbaa', 'souk larbaa', 'mechra bel ksiri', 'sidi yahya el gharb',
                 'sidi yahya lgharb', 'khemisset', 'tiflet', 'tifelt', 'sidi allal el bahraoui', 'mehdia', 'sidi taibi', 'moulay bousselham',
                 'moulay bousalham',

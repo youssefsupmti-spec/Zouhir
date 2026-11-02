@@ -8,7 +8,7 @@ use App\Application\Zones\Backfill\DecoupageZones;
 use Illuminate\Console\Command;
 
 /**
- * Découpe les villes en zones logistiques (10 zones locales Témara + 9 hubs nationaux).
+ * Découpe les villes en zones logistiques (10 zones régionales Témara + 9 hubs nationaux).
  * SIMULATION PAR DÉFAUT ; --apply refusé en production sans --force. Ne touche jamais `commands`.
  */
 class BackfillZonesCommand extends Command
@@ -18,7 +18,7 @@ class BackfillZonesCommand extends Command
         {--details : Lister chaque ville reclassée (avant → après, règle)}
         {--force : Autoriser --apply en environnement production}';
 
-    protected $description = 'Découpe les villes en zones logistiques (locales BL / nationales BE) — simulation par défaut';
+    protected $description = 'Découpe les villes en zones logistiques (régionales / nationales) — simulation par défaut';
 
     public function handle(DecoupageZones $decoupage): int
     {
