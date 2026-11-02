@@ -45,8 +45,8 @@ class VilleController extends Controller
 
         $villes = $query->paginate($perPage)->withQueryString();
 
-        // Référentiel des 6 zones pour les filtres
-        $zones = Zone::select('id', 'name', 'code')->get();
+        // Zones actives pour les filtres et le formulaire
+        $zones = Zone::query()->orderBy('name')->get(['id', 'name', 'code']);
 
         // Statistiques territoriales MariaDB
         $totalVilles = Ville::count();
@@ -80,14 +80,12 @@ class VilleController extends Controller
         $validated = $request->validate([
             'name_fr' => ['required', 'string', 'max:100', 'unique:villes,name_fr'],
             'name_ar' => ['nullable', 'string', 'max:100'],
-            'zone_id' => ['required', 'exists:zones,id'],
+            'zone_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('zones', 'id')->whereNull('deleted_at')],
             'code_zone' => ['nullable', 'string', 'max:20'],
         ]);
 
-        if (empty($validated['code_zone'])) {
-            $zone = Zone::find($validated['zone_id']);
-            $validated['code_zone'] = $zone?->code;
-        }
+        // code_zone est dérivé de zone_id par le modèle Ville (jamais saisi).
+        unset($validated['code_zone']);
 
         Ville::create($validated);
 
@@ -104,16 +102,18 @@ class VilleController extends Controller
         $validated = $request->validate([
             'name_fr' => ['required', 'string', 'max:100', \Illuminate\Validation\Rule::unique('villes')->ignore($ville->id)],
             'name_ar' => ['nullable', 'string', 'max:100'],
-            'zone_id' => ['required', 'exists:zones,id'],
+            'zone_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('zones', 'id')->whereNull('deleted_at')],
             'code_zone' => ['nullable', 'string', 'max:20'],
         ]);
 
-        if (empty($validated['code_zone'])) {
-            $zone = Zone::find($validated['zone_id']);
-            $validated['code_zone'] = $zone?->code;
-        }
+        // code_zone est dérivé de zone_id par le modèle Ville (jamais saisi).
+        unset($validated['code_zone']);
 
-        $ville->update($validated);
+        $ville->fill($validated);
+        if ($ville->isDirty('zone_id')) {
+            $ville->code_zone = null; // recalculé par Ville::saving
+        }
+        $ville->save();
 
         return back()->with('success', 'Ville mise à jour avec succès.');
     }

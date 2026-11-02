@@ -61,7 +61,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: "Enseignes & Boutiques", url: "/businesses" },
         { title: "Clients Marchands", url: "/clients" },
         { title: "Livreurs (DLM)", url: "/livreurs" },
-        { title: "Villes & Zones", url: "/villes" },
+        { title: "Zones logistiques", url: "/zones" },
+        { title: "Villes", url: "/villes" },
       ],
     },
     {
@@ -107,6 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/clients": "users",
     "/livreurs": "users",
     "/villes": "villes",
+    "/zones": "zones",
     "/banks": "banks",
     "/roles": "roles",
     "/permissions": "permissions",

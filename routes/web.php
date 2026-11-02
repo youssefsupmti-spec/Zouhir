@@ -52,6 +52,17 @@ Route::middleware('auth')->group(function () {
     Route::put('/villes/{ville}', [\App\Http\Controllers\VilleController::class, 'update'])->name('villes.update');
     Route::delete('/villes/{ville}', [\App\Http\Controllers\VilleController::class, 'destroy'])->name('villes.destroy');
 
+    // Zones logistiques (rapport #39, structure WinningExpress).
+    Route::get('/zones', [\App\Http\Controllers\ZoneController::class, 'index'])->name('zones.index');
+    Route::post('/zones', [\App\Http\Controllers\ZoneController::class, 'store'])->name('zones.store');
+    Route::post('/zones/{zone}/restaurer', [\App\Http\Controllers\ZoneController::class, 'restaurer'])->whereNumber('zone')->name('zones.restaurer');
+    Route::get('/zones/{zone}/edit', [\App\Http\Controllers\ZoneController::class, 'edit'])->name('zones.edit');
+    Route::get('/zones/{zone}/villes', [\App\Http\Controllers\ZoneController::class, 'villes'])->name('zones.villes');
+    Route::post('/zones/{zone}/villes', [\App\Http\Controllers\ZoneController::class, 'rattacher'])->name('zones.villes.rattacher');
+    Route::delete('/zones/{zone}/villes', [\App\Http\Controllers\ZoneController::class, 'detacher'])->name('zones.villes.detacher');
+    Route::put('/zones/{zone}', [\App\Http\Controllers\ZoneController::class, 'update'])->name('zones.update');
+    Route::delete('/zones/{zone}', [\App\Http\Controllers\ZoneController::class, 'destroy'])->name('zones.destroy');
+
     Route::get('/banks', [\App\Http\Controllers\BankController::class, 'index'])->name('banks.index');
     Route::post('/banks/comptes', [\App\Http\Controllers\BankController::class, 'storeCompte'])->name('banks.comptes.store');
     Route::put('/banks/comptes/{compte}', [\App\Http\Controllers\BankController::class, 'updateCompte'])->name('banks.comptes.update');

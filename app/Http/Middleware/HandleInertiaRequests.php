@@ -85,6 +85,7 @@ class HandleInertiaRequests extends Middleware
                     'businesses' => $user->can('viewAny', Business::class),
                     'users' => $user->can('viewAny', User::class),
                     'villes' => $user->can('viewAny', Ville::class),
+                    'zones' => $user->can('viewAny', \App\Models\Zone::class),
                     'banks' => $user->can('viewAny', CompteBancaire::class),
                     'roles' => $user->can('viewAny', \Spatie\Permission\Models\Role::class),
                     'permissions' => $user->can('viewAny', \Spatie\Permission\Models\Permission::class),

@@ -46,7 +46,7 @@ export function VilleFormDialog({
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
     name_fr: ville?.name_fr || '',
     name_ar: ville?.name_ar || '',
-    zone_id: ville?.zone_id?.toString() || (zones[0]?.id?.toString() ?? ''),
+    zone_id: ville?.zone_id?.toString() ?? '',
     code_zone: ville?.code_zone || '',
   });
 
@@ -55,14 +55,11 @@ export function VilleFormDialog({
       setData({
         name_fr: ville.name_fr || '',
         name_ar: ville.name_ar || '',
-        zone_id: ville.zone_id?.toString() || (zones[0]?.id?.toString() ?? ''),
+        zone_id: ville.zone_id?.toString() ?? '',
         code_zone: ville.code_zone || '',
       });
     } else {
       reset();
-      if (zones.length > 0) {
-        setData('zone_id', zones[0].id.toString());
-      }
     }
     clearErrors();
   }, [ville, open]);
@@ -131,7 +128,7 @@ export function VilleFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="zone_id">Zone Logistique de Rattachement *</Label>
+            <Label htmlFor="zone_id">Zone logistique</Label>
             <select
               id="zone_id"
               value={data.zone_id}
@@ -145,9 +142,8 @@ export function VilleFormDialog({
                 }));
               }}
               className="flex h-8 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-xs outline-none focus:border-ring focus:ring-1 focus:ring-ring dark:bg-input/30"
-              required
             >
-              <option value="" disabled className="dark:bg-slate-900">Sélectionnez une zone</option>
+              <option value="" className="dark:bg-slate-900">Sans zone (à classer depuis la page Zones)</option>
               {zones.map((z) => (
                 <option key={z.id} value={z.id} className="dark:bg-slate-900">
                   {z.name} ({z.code})

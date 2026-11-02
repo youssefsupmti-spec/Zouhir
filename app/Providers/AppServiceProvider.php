@@ -73,5 +73,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ClientTarif::class, ClientTarifPolicy::class);
         Gate::policy(\App\Models\StandardTarif::class, \App\Policies\StandardTarifPolicy::class);
         Gate::policy(\App\Models\LivreurTarif::class, \App\Policies\LivreurTarifPolicy::class);
+        Gate::policy(\App\Models\Zone::class, \App\Policies\ZonePolicy::class);
     }
 }

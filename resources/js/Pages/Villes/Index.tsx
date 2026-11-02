@@ -140,7 +140,7 @@ export default function VillesIndex({ villes, zones, stats, filters, canManage =
       header: 'Zone Logistique',
       cell: ({ row }) => (
         <Badge className="bg-[#004c68]/10 text-[#004c68] dark:bg-[#004c68]/30 dark:text-cyan-300 border-none rounded-md text-xs font-medium">
-          {row.original.zone?.name || 'Rabat-Témara'}
+          {row.original.zone?.name || 'Sans zone'}
         </Badge>
       ),
     },
@@ -149,7 +149,7 @@ export default function VillesIndex({ villes, zones, stats, filters, canManage =
       header: 'Code Zone',
       cell: ({ row }) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">
-          {row.original.code_zone || row.original.zone?.code || 'RBT'}
+          {row.original.zone?.code || row.original.code_zone || '—'}
         </span>
       ),
     },
@@ -191,7 +191,7 @@ export default function VillesIndex({ villes, zones, stats, filters, canManage =
         {/* Header */}
         <PageHeader
           title="Référentiel des Villes & Zones"
-          description="Découpage territorial du Maroc en 6 zones logistiques et gestion de la desserte des villes."
+          description="Référentiel national des villes et de leur zone logistique (gérée depuis la page Zones)."
           icon={MapPin}
           badge={`${stats.total_villes} villes`}
           actions={
@@ -229,7 +229,7 @@ export default function VillesIndex({ villes, zones, stats, filters, canManage =
           <StatsCard
             title="Intégrité Référentiel"
             value="100 %"
-            description="Toutes rattachées à une zone"
+            description="Référentiel national"
             icon={CheckCircle2}
             iconColor="text-emerald-600 dark:text-emerald-400"
           />

@@ -146,7 +146,7 @@ final class PermissionCatalog
             PermissionEnum::ACCESS_ADMIN->value => [
                 'module' => 'administration',
                 'description' => 'Administration système : référentiels nationaux, rôles et permissions.',
-                'enforced_by' => ['VillePolicy', 'RolePolicy', 'PermissionPolicy'],
+                'enforced_by' => ['VillePolicy', 'ZonePolicy', 'RolePolicy', 'PermissionPolicy'],
             ],
             PermissionEnum::ACT_AS_ADMIN->value => [
                 'module' => 'perimetres',

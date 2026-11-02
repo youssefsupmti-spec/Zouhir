@@ -23,6 +23,18 @@ class Ville extends Model
         'code_zone',
     ];
 
+    protected static function booted(): void
+    {
+        // `code_zone` est DÉRIVÉ de `zone_id` (jamais saisi) : une ville sans zone n'a pas de code.
+        static::saving(function (self $ville): void {
+            if ($ville->isDirty('zone_id') || ! $ville->exists) {
+                $ville->code_zone = $ville->zone_id === null
+                    ? null
+                    : Zone::withTrashed()->whereKey($ville->zone_id)->value('code');
+            }
+        });
+    }
+
     public function zone(): BelongsTo
     {
         return $this->belongsTo(Zone::class, 'zone_id');
