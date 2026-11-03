@@ -276,7 +276,7 @@ class DataIsolationAuthorizationTest extends TestCase
         $compteA = $this->compte($this->clientA, $bank, '007825000111111111111111');
         $compteB = $this->compte($this->clientB, $bank, '007825000222222222222222');
 
-        $this->actingAs($this->clientA)->get('/banks')
+        $this->actingAs($this->clientA)->get('/comptes-bancaires')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->has('comptes.data', 1)
@@ -287,11 +287,11 @@ class DataIsolationAuthorizationTest extends TestCase
             );
 
         $update = ['titulaire_nom' => 'Pirate', 'bank_id' => $bank->id, 'rib' => '007825000999999999999999'];
-        $this->actingAs($this->clientA)->put("/banks/comptes/{$compteB->id}", $update)->assertForbidden();
-        $this->actingAs($this->clientA)->delete("/banks/comptes/{$compteB->id}")->assertForbidden();
+        $this->actingAs($this->clientA)->put("/comptes-bancaires/{$compteB->id}", $update)->assertForbidden();
+        $this->actingAs($this->clientA)->delete("/comptes-bancaires/{$compteB->id}")->assertForbidden();
         $this->assertSame('007825000222222222222222', $compteB->refresh()->rib);
 
-        $this->actingAs($this->clientA)->post('/banks/comptes', [
+        $this->actingAs($this->clientA)->post('/comptes-bancaires', [
             'owner_id' => $this->clientB->id,
             'titulaire_nom' => 'Compte A2',
             'bank_id' => $bank->id,
@@ -300,7 +300,7 @@ class DataIsolationAuthorizationTest extends TestCase
         $this->assertDatabaseHas('comptes_bancaires', ['titulaire_nom' => 'Compte A2', 'owner_id' => $this->clientA->id]);
 
         // Rôle livreur : pas de view_finances.
-        $this->actingAs($this->driver)->get('/banks')->assertForbidden();
+        $this->actingAs($this->driver)->get('/comptes-bancaires')->assertForbidden();
     }
 
     /* ─────────────────────── Référentiel national ─────────────────────── */
@@ -333,21 +333,21 @@ class DataIsolationAuthorizationTest extends TestCase
         $this->actingAs($vip)->get('/colis')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('colis.data', 1)->where('colis.data.0.code', 'OUA-VIP00001'));
-        $this->actingAs($vip)->get('/banks')->assertForbidden();
+        $this->actingAs($vip)->get('/comptes-bancaires')->assertForbidden();
 
         // Attribution d'une permission au rôle (méthode officielle Spatie, cache invalidé par le package).
         $role->givePermissionTo(PermissionEnum::VIEW_FINANCES->value);
-        $this->actingAs($vip->fresh())->get('/banks')->assertOk();
+        $this->actingAs($vip->fresh())->get('/comptes-bancaires')->assertOk();
 
         // Révocation.
         $role->revokePermissionTo([PermissionEnum::TRACK_COLIS->value, PermissionEnum::VIEW_FINANCES->value]);
         $this->actingAs($vip->fresh())->get('/colis')->assertForbidden();
-        $this->actingAs($vip->fresh())->get('/banks')->assertForbidden();
+        $this->actingAs($vip->fresh())->get('/comptes-bancaires')->assertForbidden();
     }
 
     public function test_guest_is_redirected_on_every_protected_route(): void
     {
-        foreach (['/colis', '/businesses', '/clients', '/livreurs', '/villes', '/banks', '/dashboard'] as $url) {
+        foreach (['/colis', '/businesses', '/clients', '/livreurs', '/villes', '/banks', '/comptes-bancaires', '/dashboard'] as $url) {
             $this->get($url)->assertRedirect('/login');
         }
         $this->delete("/colis/{$this->colisA->id}")->assertRedirect('/login');

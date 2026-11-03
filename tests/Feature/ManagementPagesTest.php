@@ -163,14 +163,18 @@ class ManagementPagesTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get('/banks')
+            ->get('/comptes-bancaires')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Banks/Index')
+                ->component('ComptesBancaires/Index')
                 ->has('comptes.data', 1)
                 ->has('banks', 1)
-                ->where('stats.total_banks', 1)
+                ->where('stats.total_comptes', 1)
+                ->missing('comptes.data.0.rib')
             );
+
+        // Le référentiel des banques est réservé à l'administration.
+        $this->actingAs($user)->get('/banks')->assertForbidden();
     }
 }
 

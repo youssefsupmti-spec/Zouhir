@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,21 +16,23 @@ import { Landmark, Loader2 } from 'lucide-react';
 interface BankOption {
   id: number;
   name: string;
-  code_etablissement?: string;
+  code_etablissement?: string | null;
+  status?: string;
 }
 
 interface OwnerOption {
   id: number;
   nom_complet: string;
-  role?: string;
+  role?: string | null;
+  business?: string | null;
 }
 
 interface CompteItem {
   id?: number;
   owner_id?: number;
-  owner_type?: string;
+  owner_type?: string | null;
   titulaire_nom?: string;
-  bank_id?: number;
+  bank_id?: number | null;
   rib?: string;
   is_default?: boolean;
 }
@@ -52,12 +53,14 @@ export function CompteBancaireFormDialog({
   owners,
 }: CompteBancaireFormDialogProps) {
   const isEditing = !!compte?.id;
+  // Une banque désactivée reste proposée seulement au compte qui l'utilise déjà.
+  const actives = banks.filter((b) => !b.status || b.status === 'active');
 
   const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
     owner_id: compte?.owner_id?.toString() || (owners[0]?.id?.toString() ?? ''),
     owner_type: compte?.owner_type || 'client',
     titulaire_nom: compte?.titulaire_nom || '',
-    bank_id: compte?.bank_id?.toString() || (banks[0]?.id?.toString() ?? ''),
+    bank_id: compte?.bank_id?.toString() || (actives[0]?.id?.toString() ?? ''),
     rib: compte?.rib || '',
     is_default: compte?.is_default ?? true,
   });
@@ -68,14 +71,14 @@ export function CompteBancaireFormDialog({
         owner_id: compte.owner_id?.toString() || (owners[0]?.id?.toString() ?? ''),
         owner_type: compte.owner_type || 'client',
         titulaire_nom: compte.titulaire_nom || '',
-        bank_id: compte.bank_id?.toString() || (banks[0]?.id?.toString() ?? ''),
+        bank_id: compte.bank_id?.toString() || (actives[0]?.id?.toString() ?? ''),
         rib: compte.rib || '',
         is_default: compte.is_default ?? true,
       });
     } else {
       reset();
       if (owners.length > 0) setData('owner_id', owners[0].id.toString());
-      if (banks.length > 0) setData('bank_id', banks[0].id.toString());
+      if (actives.length > 0) setData('bank_id', actives[0].id.toString());
     }
     clearErrors();
   }, [compte, open]);
@@ -83,11 +86,11 @@ export function CompteBancaireFormDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing) {
-      put(`/banks/comptes/${compte.id}`, {
+      put(`/comptes-bancaires/${compte.id}`, {
         onSuccess: () => onOpenChange(false),
       });
     } else {
-      post('/banks/comptes', {
+      post('/comptes-bancaires', {
         onSuccess: () => onOpenChange(false),
       });
     }
@@ -103,12 +106,12 @@ export function CompteBancaireFormDialog({
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-foreground">
-                {isEditing ? "Modifier le compte bancaire" : "Nouveau Compte Bancaire (RIB)"}
+                {isEditing ? "Modifier le compte bancaire" : "Nouveau compte bancaire (RIB)"}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
                 {isEditing
                   ? "Ajustez les coordonnées bancaires pour les virements de reversement."
-                  : "Associez un RIB Bank Al-Maghrib à un marchand ou coursier."}
+                  : "Associez un RIB à un business (marchand) ou à un livreur."}
               </DialogDescription>
             </div>
           </div>
@@ -117,7 +120,7 @@ export function CompteBancaireFormDialog({
         <form onSubmit={handleSubmit} className="space-y-3.5 mt-2">
           {!isEditing && (
             <div className="space-y-1.5">
-              <Label htmlFor="owner_id">Bénéficiaire (Marchand / Livreur) *</Label>
+              <Label htmlFor="owner_id">Business / titulaire *</Label>
               <select
                 id="owner_id"
                 value={data.owner_id}
@@ -137,7 +140,7 @@ export function CompteBancaireFormDialog({
                 <option value="" disabled className="dark:bg-slate-900">Sélectionnez le bénéficiaire</option>
                 {owners.map((o) => (
                   <option key={o.id} value={o.id} className="dark:bg-slate-900">
-                    {o.nom_complet} ({o.role || 'client'})
+                    {o.business ? `${o.business} — ${o.nom_complet}` : o.nom_complet} ({o.role || 'client'})
                   </option>
                 ))}
               </select>
@@ -162,7 +165,7 @@ export function CompteBancaireFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="bank_id">Établissement Bancaire BAM *</Label>
+            <Label htmlFor="bank_id">Banque *</Label>
             <select
               id="bank_id"
               value={data.bank_id}
@@ -171,9 +174,9 @@ export function CompteBancaireFormDialog({
               required
             >
               <option value="" disabled className="dark:bg-slate-900">Sélectionnez la banque</option>
-              {banks.map((b) => (
+              {banks.filter((b) => actives.includes(b) || b.id === compte?.bank_id).map((b) => (
                 <option key={b.id} value={b.id} className="dark:bg-slate-900">
-                  {b.name} (Code {b.code_etablissement})
+                  {b.name}{b.code_etablissement ? ` (code ${b.code_etablissement})` : ''}{actives.includes(b) ? '' : ' — désactivée'}
                 </option>
               ))}
             </select>
@@ -183,13 +186,13 @@ export function CompteBancaireFormDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="rib">Numéro RIB Complet (24 Chiffres) *</Label>
+            <Label htmlFor="rib">RIB complet (24 chiffres){isEditing ? '' : ' *'}</Label>
             <Input
               id="rib"
-              placeholder="230 810 1234567890123456 78"
+              placeholder={isEditing ? 'Laisser vide pour garder le RIB actuel' : '230 810 1234567890123456 78'}
               value={data.rib}
               onChange={(e) => setData('rib', e.target.value)}
-              required
+              required={!isEditing}
               className="font-mono text-xs tracking-wider"
             />
             {errors.rib && (
@@ -211,11 +214,9 @@ export function CompteBancaireFormDialog({
           </div>
 
           <DialogFooter className="mt-5 flex items-center justify-end gap-2">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" size="sm" className="text-xs h-8">
-                Annuler
-              </Button>
-            </DialogClose>
+            <Button type="button" variant="outline" size="sm" className="text-xs h-8" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
             <Button
               type="submit"
               size="sm"

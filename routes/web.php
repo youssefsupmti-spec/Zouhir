@@ -64,10 +64,18 @@ Route::middleware('auth')->group(function () {
     Route::put('/zones/{zone}', [\App\Http\Controllers\ZoneController::class, 'update'])->name('zones.update');
     Route::delete('/zones/{zone}', [\App\Http\Controllers\ZoneController::class, 'destroy'])->name('zones.destroy');
 
+    // Banques (référentiel seul) et Comptes bancaires (RIB de tous les business).
     Route::get('/banks', [\App\Http\Controllers\BankController::class, 'index'])->name('banks.index');
-    Route::post('/banks/comptes', [\App\Http\Controllers\BankController::class, 'storeCompte'])->name('banks.comptes.store');
-    Route::put('/banks/comptes/{compte}', [\App\Http\Controllers\BankController::class, 'updateCompte'])->name('banks.comptes.update');
-    Route::delete('/banks/comptes/{compte}', [\App\Http\Controllers\BankController::class, 'destroyCompte'])->name('banks.comptes.destroy');
+    Route::post('/banks', [\App\Http\Controllers\BankController::class, 'store'])->name('banks.store');
+    Route::post('/banks/{bank}/restaurer', [\App\Http\Controllers\BankController::class, 'restaurer'])->whereNumber('bank')->name('banks.restaurer');
+    Route::patch('/banks/{bank}/statut', [\App\Http\Controllers\BankController::class, 'statut'])->name('banks.statut');
+    Route::put('/banks/{bank}', [\App\Http\Controllers\BankController::class, 'update'])->name('banks.update');
+    Route::delete('/banks/{bank}', [\App\Http\Controllers\BankController::class, 'destroy'])->name('banks.destroy');
+
+    Route::get('/comptes-bancaires', [\App\Http\Controllers\CompteBancaireController::class, 'index'])->name('comptes-bancaires.index');
+    Route::post('/comptes-bancaires', [\App\Http\Controllers\CompteBancaireController::class, 'store'])->name('comptes-bancaires.store');
+    Route::put('/comptes-bancaires/{compte}', [\App\Http\Controllers\CompteBancaireController::class, 'update'])->name('comptes-bancaires.update');
+    Route::delete('/comptes-bancaires/{compte}', [\App\Http\Controllers\CompteBancaireController::class, 'destroy'])->name('comptes-bancaires.destroy');
 
     // Colis & Expéditions (Sprint 3)
     Route::get('/colis', [\App\Http\Controllers\ColisController::class, 'index'])->name('colis.index');

@@ -44,7 +44,8 @@ export default function AuthenticatedLayout({ children, title }) {
         if (pathname.startsWith('/clients')) return 'Clients Marchands';
         if (pathname.startsWith('/livreurs')) return 'Livreurs (DLM)';
         if (pathname.startsWith('/villes')) return 'Villes & Zones';
-        if (pathname.startsWith('/banks')) return 'Banques & RIBs';
+        if (pathname.startsWith('/banks')) return 'Banques';
+        if (pathname.startsWith('/comptes-bancaires')) return 'Comptes bancaires';
         if (pathname.startsWith('/dashboard')) return 'Tableau de bord';
         return 'Espace Client';
     };

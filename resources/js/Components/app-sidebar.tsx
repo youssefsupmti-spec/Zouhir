@@ -62,6 +62,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: "Clients Marchands", url: "/clients" },
         { title: "Livreurs (DLM)", url: "/livreurs" },
         { title: "Zones logistiques", url: "/zones" },
+        { title: "Banques", url: "/banks" },
         { title: "Villes", url: "/villes" },
       ],
     },
@@ -81,8 +82,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Finances & CRBT",
       icon: <WalletIcon />,
       items: [
-        // Entrée unique pour /banks (doublon supprimé de « Référentiels Métier »).
-        { title: "Banques & RIBs", url: "/banks" },
+        // RIB de reversement CRBT de tous les business ; le référentiel des banques est dans « Référentiels Métier ».
+        { title: "Comptes bancaires", url: "/comptes-bancaires" },
         { title: "Relevés de paiement (CRBT)", badge: SOON, disabled: true },
         { title: "Historique des virements", badge: SOON, disabled: true },
       ],
@@ -110,6 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/villes": "villes",
     "/zones": "zones",
     "/banks": "banks",
+    "/comptes-bancaires": "comptesBancaires",
     "/roles": "roles",
     "/permissions": "permissions",
     "/tarifs-clients": "tarifsClients",

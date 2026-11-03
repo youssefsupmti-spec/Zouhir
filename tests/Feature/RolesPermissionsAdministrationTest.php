@@ -97,7 +97,7 @@ class RolesPermissionsAdministrationTest extends TestCase
 
         $this->actingAs($member->fresh())->get('/colis')->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('colis.data', 1)->where('colis.data.0.code', 'OUA-MINE0001'));
-        $this->actingAs($member->fresh())->get('/banks')->assertOk();
+        $this->actingAs($member->fresh())->get('/comptes-bancaires')->assertOk();
 
         // Modification : renommage + révocation de track_colis et view_finances.
         $this->actingAs($this->admin)->put("/roles/{$role->id}", [
@@ -107,7 +107,7 @@ class RolesPermissionsAdministrationTest extends TestCase
 
         $this->assertSame('Marchand Partenaire Restreint', $role->fresh()->name);
         $this->actingAs($member->fresh())->get('/colis')->assertForbidden();
-        $this->actingAs($member->fresh())->get('/banks')->assertForbidden();
+        $this->actingAs($member->fresh())->get('/comptes-bancaires')->assertForbidden();
     }
 
     public function test_role_validation_rejects_duplicates_and_unknown_permissions(): void

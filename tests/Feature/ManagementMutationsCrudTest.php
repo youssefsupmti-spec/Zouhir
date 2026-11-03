@@ -174,7 +174,7 @@ class ManagementMutationsCrudTest extends TestCase
         $bank = Bank::create(['name' => 'CIH Bank', 'code_etablissement' => '230']);
 
         // 1. Invalid RIB length rejected
-        $this->actingAs($admin)->post('/banks/comptes', [
+        $this->actingAs($admin)->post('/comptes-bancaires', [
             'owner_id' => $client->id,
             'owner_type' => 'client',
             'titulaire_nom' => 'Marchand Test',
@@ -183,7 +183,7 @@ class ManagementMutationsCrudTest extends TestCase
         ])->assertSessionHasErrors(['rib']);
 
         // 2. Valid 24-digit BAM RIB
-        $this->actingAs($admin)->post('/banks/comptes', [
+        $this->actingAs($admin)->post('/comptes-bancaires', [
             'owner_id' => $client->id,
             'owner_type' => 'client',
             'titulaire_nom' => 'Marchand Test CIH',
@@ -197,7 +197,7 @@ class ManagementMutationsCrudTest extends TestCase
         $this->assertTrue($compte->is_default);
 
         // 3. Update
-        $this->actingAs($admin)->put("/banks/comptes/{$compte->id}", [
+        $this->actingAs($admin)->put("/comptes-bancaires/{$compte->id}", [
             'titulaire_nom' => 'Marchand Test CIH Principal',
             'bank_id' => $bank->id,
             'is_default' => true,
@@ -207,7 +207,7 @@ class ManagementMutationsCrudTest extends TestCase
         $this->assertEquals('Marchand Test CIH Principal', $compte->titulaire_nom);
 
         // 4. Delete
-        $this->actingAs($admin)->delete("/banks/comptes/{$compte->id}")->assertSessionHasNoErrors();
+        $this->actingAs($admin)->delete("/comptes-bancaires/{$compte->id}")->assertSessionHasNoErrors();
         $this->assertSoftDeleted('comptes_bancaires', ['id' => $compte->id]);
     }
 }
