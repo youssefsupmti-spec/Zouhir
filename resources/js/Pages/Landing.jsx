@@ -47,7 +47,7 @@ export default function Landing({ cities = [], statistics = [], testimonials = [
             {/* Main Landing Page Content Inspired by Envato Template Structure */}
             <main className="flex-1">
                 {/* 1. Hero Banner with live tracking & logistics imagery */}
-                <HeroSection onTrackSearch={(code) => handleOpenTracking(code)} />
+                <HeroSection onTrackSearch={(code) => handleOpenTracking(code)} statistics={statistics} />
 
                 {/* 2. Services Suite with cards, badges & checkmarks */}
                 <ServicesSection />
