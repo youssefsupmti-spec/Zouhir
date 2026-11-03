@@ -10,11 +10,8 @@ import {
     Truck, 
     Banknote, 
     MapPin, 
-    Sparkles,
     CheckCircle2,
-    Check,
-    PhoneCall,
-    PackageCheck
+    PhoneCall
 } from 'lucide-react';
 
 export default function HeroSection({ onTrackSearch }) {
@@ -29,12 +26,6 @@ export default function HeroSection({ onTrackSearch }) {
 
     return (
         <section className="relative pt-36 sm:pt-44 lg:pt-48 pb-20 lg:pb-28 overflow-hidden bg-gradient-to-br from-[#05161f] via-[#072432] to-[#004c68] text-white">
-            {/* Background Texture & Decorative Shapes from Envato Template */}
-            <div 
-                className="absolute inset-0 z-0 opacity-25 mix-blend-screen pointer-events-none bg-cover bg-center"
-                style={{ backgroundImage: `url('/images/landing/thumbs/banner-three-img.png')` }}
-            />
-            
             {/* Ambient Background Glowing Orbs */}
             <div className="absolute top-10 right-10 w-[500px] h-[500px] bg-[#ff8806]/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-10 left-10 w-[600px] h-[600px] bg-[#004c68]/40 rounded-full blur-3xl pointer-events-none" />
@@ -53,204 +44,127 @@ export default function HeroSection({ onTrackSearch }) {
                 className="hidden md:block absolute top-28 right-16 w-24 opacity-60 pointer-events-none animate-pulse z-0" 
             />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-                    
-                    {/* Left Column: Value Proposition & Direct Tracking */}
-                    <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-                        {/* Innovation Pill */}
-                        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-white shadow-xs">
-                            <span className="flex h-2.5 w-2.5 rounded-full bg-[#ff8806] animate-ping" />
-                            <span className="text-[#ff8806] font-bold">NOUVEAU 2026</span>
-                            <span className="text-white/40">|</span>
-                            <span>Réseau Logistique & Livraison Express Maroc</span>
-                        </div>
-
-                        {/* Main Title Inspired by Envato Banner Typography */}
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black font-sans tracking-tight leading-[1.12]">
-                            La Logistique Express{' '}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff8806] via-[#ffa733] to-[#ffc066]">
-                                Intelligente & Rapide
-                            </span>{' '}
-                            pour votre E-commerce.
-                        </h1>
-
-                        {/* Subtitle */}
-                        <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed mx-auto lg:mx-0">
-                            Propulsez vos ventes au Maroc avec un réseau national qui livre vos colis sous <strong>24/48h</strong>, garantit vos reversements <strong>CRBT à J+2</strong> sans retard et confirme les adresses par WhatsApp pour éliminer les retours.
-                        </p>
-
-                        {/* Interactive Hero Tracking Input (Envato Style Track Order Box) */}
-                        <div className="pt-2 max-w-xl mx-auto lg:mx-0">
-                            <form 
-                                onSubmit={handleSubmit}
-                                className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 flex flex-col sm:flex-row gap-2 transition-all focus-within:border-[#ff8806] focus-within:ring-4 focus-within:ring-[#ff8806]/20"
-                            >
-                                <div className="relative flex-1 flex items-center">
-                                    <Search className="w-5 h-5 absolute left-3.5 text-[#ff8806]" />
-                                    <input
-                                        type="text"
-                                        value={trackingInput}
-                                        onChange={(e) => setTrackingInput(e.target.value)}
-                                        placeholder="Entrez votre N° de suivi (ex: OUA-782941)..."
-                                        className="w-full pl-11 pr-3 py-3 text-sm font-semibold text-white placeholder:text-slate-400 focus:outline-none bg-transparent"
-                                    />
-                                </div>
-                                <Button 
-                                    type="submit" 
-                                    variant="secondary" 
-                                    size="md" 
-                                    className="sm:w-auto w-full font-bold shadow-lg shadow-[#ff8806]/30 bg-[#ff8806] hover:bg-[#e07400] text-white border-0"
-                                >
-                                    <span>Suivre mon colis</span>
-                                    <ArrowRight className="w-4 h-4 ml-1.5" />
-                                </Button>
-                            </form>
-                            <p className="text-[11px] text-slate-400 mt-2 text-center lg:text-left flex items-center justify-center lg:justify-start gap-1.5">
-                                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                                <span>Traçabilité satellite horodatée certifiée OUAISS EXPRESS</span>
-                            </p>
-                        </div>
-
-                        {/* CTAs */}
-                        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                            <Link href="/register">
-                                <Button 
-                                    variant="secondary" 
-                                    size="lg" 
-                                    className="w-full sm:w-auto font-extrabold shadow-xl shadow-[#ff8806]/30 bg-[#ff8806] hover:bg-[#e07400] text-white border-0 px-7"
-                                >
-                                    <span>Ouvrir un Compte Marchand</span>
-                                    <ArrowRight className="w-4 h-4 ml-2" />
-                                </Button>
-                            </Link>
-                            <a href="#calculateur">
-                                <Button 
-                                    variant="outline" 
-                                    size="lg" 
-                                    className="w-full sm:w-auto text-white border-white/30 hover:bg-white/10 hover:text-white"
-                                >
-                                    <span>Simuler les Tarifs</span>
-                                </Button>
-                            </a>
-                        </div>
-
-                        {/* Key Guarantees Badges (Envato Grid Highlights) */}
-                        <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-                            <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-[#ff8806]/40 transition-colors">
-                                <Clock className="w-4 h-4 text-[#ff8806] mb-1.5" />
-                                <div className="text-xs font-bold text-white">24h / 48h</div>
-                                <div className="text-[10.5px] text-slate-400">Délais garantis</div>
-                            </div>
-                            <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-emerald-400/40 transition-colors">
-                                <Banknote className="w-4 h-4 text-emerald-400 mb-1.5" />
-                                <div className="text-xs font-bold text-white">J+2 Garanti</div>
-                                <div className="text-[10.5px] text-slate-400">Virement CRBT rapide</div>
-                            </div>
-                            <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-[#ff8806]/40 transition-colors">
-                                <Truck className="w-4 h-4 text-[#ff8806] mb-1.5" />
-                                <div className="text-xs font-bold text-white">0 DH</div>
-                                <div className="text-[10.5px] text-slate-400">Ramassage offert</div>
-                            </div>
-                            <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-[#004c68]/40 transition-colors">
-                                <MapPin className="w-4 h-4 text-cyan-400 mb-1.5" />
-                                <div className="text-xs font-bold text-white">1 300+ Villes</div>
-                                <div className="text-[10.5px] text-slate-400">Couverture nationale</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column: Hero Visual composition inspired by Envato Banner-Three */}
-                    <div className="lg:col-span-5 relative">
-                        <div className="relative mx-auto max-w-md lg:max-w-none">
-                            {/* Main Visual Card with Hub status and Fleet Preview */}
-                            <div className="relative rounded-3xl bg-gradient-to-br from-[#004c68]/90 via-[#072432]/95 to-[#05161f] p-7 text-white shadow-2xl shadow-black/50 border border-white/15 overflow-hidden">
-                                
-                                {/* Header of the Hero Card */}
-                                <div className="flex items-center justify-between pb-5 border-b border-white/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#ff8806] to-[#e07400] flex items-center justify-center font-black text-white shadow-md">
-                                            <PackageCheck className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-sm tracking-wide">OUAISS EXPRESS</h4>
-                                            <span className="text-[10.5px] text-slate-300">Hub National Casablanca</span>
-                                        </div>
-                                    </div>
-                                    <Badge variant="secondary" size="sm" dot={true}>
-                                        Opérationnel
-                                    </Badge>
-                                </div>
-
-                                {/* Logistics Vehicle / Fleet Showcase (Envato Track Visual with new OUAISS Banner) */}
-                                <div className="mt-5 relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-white/20 shadow-2xl group bg-[#004c68]/30">
-                                    <img 
-                                        src="/images/landing/thumbs/banner-three-img.png" 
-                                        alt="Réseau OUAISS EXPRESS Maroc - Partout au Maroc, plus proche de vous !" 
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#05161f]/70 via-transparent to-black/10 pointer-events-none" />
-
-                                    <div className="absolute bottom-3 right-3 text-right z-10">
-                                        <span className="text-[10.5px] bg-black/70 backdrop-blur-md px-3 py-1 rounded-full font-bold border border-white/20 text-[#ff8806] inline-block shadow-sm">
-                                            Flotte & Départs Quotidiens
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Live Operational Metric Cards */}
-                                <div className="py-4 space-y-3.5">
-                                    <div className="bg-[#05161f]/80 p-4 rounded-2xl border border-white/10 shadow-inner">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-slate-300 font-medium">Colis en cours de livraison</span>
-                                            <span className="text-xs font-bold text-emerald-400">+14% vs hier</span>
-                                        </div>
-                                        <div className="text-3xl font-black mt-1 text-white font-sans tracking-tight">
-                                            4 180 <span className="text-xs font-normal text-slate-400">expéditions actives</span>
-                                        </div>
-                                        <div className="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
-                                            <div className="bg-gradient-to-r from-[#ff8806] to-emerald-400 h-full rounded-full w-[92%]" />
-                                        </div>
-                                        <div className="flex justify-between text-[10.5px] text-slate-400 mt-1.5">
-                                            <span>Hub Casablanca & Régions</span>
-                                            <span className="text-emerald-400 font-semibold">Taux de succès : 99.4%</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Live Notification Toast Mock */}
-                                    <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                                            <CheckCircle2 className="w-5 h-5" />
-                                        </div>
-                                        <div className="text-xs flex-1">
-                                            <div className="font-bold text-white">Virement CRBT exécuté</div>
-                                            <div className="text-slate-300 text-[11px]">12 450 MAD virés à Boutique Chic Maroc</div>
-                                        </div>
-                                        <span className="text-[10px] text-slate-400 ml-auto font-medium">Il y a 2m</span>
-                                    </div>
-                                </div>
-
-                                {/* Footer Trust */}
-                                <div className="pt-3.5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                                    <span>Partenaire officiel des e-merchants</span>
-                                    <span className="text-[#ff8806] font-bold">Support Dédié 7j/7</span>
-                                </div>
-                            </div>
-
-                            {/* Floating WhatsApp Card Badge */}
-                            <div className="absolute -bottom-6 -left-6 bg-white text-slate-900 p-4 rounded-2xl shadow-2xl border border-slate-100 hidden sm:flex items-center gap-3.5 animate-in slide-in-from-bottom-2 duration-300">
-                                <div className="w-11 h-11 rounded-xl bg-[#ff8806]/15 text-[#ff8806] flex items-center justify-center flex-shrink-0 font-bold">
-                                    <Sparkles className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <div className="text-xs font-bold text-slate-900">Confirmation WhatsApp</div>
-                                    <div className="text-[11px] text-slate-500 font-medium">-32% d'annulations clients</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-7">
+                
+                {/* 1. Innovation Pill / Badge */}
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-white shadow-xs">
+                    <span className="flex h-2 w-2 rounded-full bg-[#ff8806] animate-pulse" />
+                    <span className="text-[#ff8806] font-bold">N°1 DE LA LIVRAISON E-COMMERCE AU MAROC</span>
+                    <span className="text-white/30">•</span>
+                    <span className="text-slate-200">Partout au Maroc en 24–48h</span>
                 </div>
+
+                {/* 2. Main Title (Inspired by top Moroccan logistics leaders: Short, Punchy, ROI-driven) */}
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black font-sans tracking-tight leading-[1.14] max-w-4xl mx-auto">
+                    Livrez plus vite,{' '}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff8806] via-[#ffa733] to-[#ffc066]">
+                        vendez partout
+                    </span>{' '}
+                    au Maroc.
+                </h1>
+
+                {/* 3. Short & Professional Subtitle */}
+                <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed mx-auto font-normal">
+                    La solution de livraison e-commerce la plus fiable du Royaume. Ramassage offert, expédition express en <strong>24–48h</strong> et reversement garanti de vos fonds sous <strong>48h</strong>.
+                </p>
+
+                {/* 4. Interactive Hero Tracking Input */}
+                <div className="pt-1 max-w-xl mx-auto">
+                    <form 
+                        onSubmit={handleSubmit}
+                        className="p-2 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 flex flex-col sm:flex-row gap-2 transition-all focus-within:border-[#ff8806] focus-within:ring-4 focus-within:ring-[#ff8806]/20"
+                    >
+                        <div className="relative flex-1 flex items-center">
+                            <Search className="w-5 h-5 absolute left-3.5 text-[#ff8806]" />
+                            <input
+                                type="text"
+                                value={trackingInput}
+                                onChange={(e) => setTrackingInput(e.target.value)}
+                                placeholder="Entrez votre N° de suivi (ex: OUA-782941)..."
+                                className="w-full pl-11 pr-3 py-3 text-sm font-semibold text-white placeholder:text-slate-400 focus:outline-none bg-transparent"
+                            />
+                        </div>
+                        <Button 
+                            type="submit" 
+                            variant="secondary" 
+                            size="md" 
+                            className="sm:w-auto w-full font-bold shadow-lg shadow-[#ff8806]/30 bg-[#ff8806] hover:bg-[#e07400] text-white border-0 px-6 py-3"
+                        >
+                            <span>Suivre mon colis</span>
+                            <ArrowRight className="w-4 h-4 ml-1.5" />
+                        </Button>
+                    </form>
+                    <p className="text-[11.5px] text-slate-400 mt-2 text-center flex items-center justify-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span>Traçabilité en temps réel certifiée OUAISS EXPRESS</span>
+                    </p>
+                </div>
+
+                {/* 5. CTAs */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <Link href="/register">
+                        <Button 
+                            variant="secondary" 
+                            size="lg" 
+                            className="w-full sm:w-auto font-extrabold shadow-xl shadow-[#ff8806]/30 bg-[#ff8806] hover:bg-[#e07400] text-white border-0 px-8 py-3.5 text-sm"
+                        >
+                            <span>Ouvrir un Compte Marchand</span>
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                    </Link>
+                    <a href="#calculateur">
+                        <Button 
+                            variant="outline" 
+                            size="lg" 
+                            className="w-full sm:w-auto text-white border-white/30 hover:bg-white/10 hover:text-white px-7 py-3.5 text-sm"
+                        >
+                            <span>Simuler les Tarifs</span>
+                        </Button>
+                    </a>
+                </div>
+
+                {/* 6. Key Guarantees Badges (4 Pillars) */}
+                <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-3xl mx-auto text-left">
+                    <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-[#ff8806]/40 transition-colors">
+                        <Truck className="w-4 h-4 text-[#ff8806] mb-1.5" />
+                        <div className="text-xs font-bold text-white">0 DH</div>
+                        <div className="text-[10.5px] text-slate-400">Ramassage offert</div>
+                    </div>
+                    <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-[#ff8806]/40 transition-colors">
+                        <Clock className="w-4 h-4 text-[#ff8806] mb-1.5" />
+                        <div className="text-xs font-bold text-white">24h / 48h</div>
+                        <div className="text-[10.5px] text-slate-400">Livraison express</div>
+                    </div>
+                    <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-emerald-400/40 transition-colors">
+                        <Banknote className="w-4 h-4 text-emerald-400 mb-1.5" />
+                        <div className="text-xs font-bold text-white">Sous 48h</div>
+                        <div className="text-[10.5px] text-slate-400">Retour de fonds (CRBT)</div>
+                    </div>
+                    <div className="p-3.5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xs hover:border-cyan-400/40 transition-colors">
+                        <MapPin className="w-4 h-4 text-cyan-400 mb-1.5" />
+                        <div className="text-xs font-bold text-white">1 300+ Villes</div>
+                        <div className="text-[10.5px] text-slate-400">Partout au Maroc</div>
+                    </div>
+                </div>
+
+                {/* 7. Clean Official OUAISS EXPRESS Vehicle Banner Showcase */}
+                <div className="pt-6 max-w-4xl mx-auto">
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/15 group bg-[#004c68]/20">
+                        <img 
+                            src="/images/landing/thumbs/banner-three-img.png" 
+                            alt="OUAISS EXPRESS - Partout au Maroc, plus proche de vous !" 
+                            className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-102"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#05161f]/70 via-transparent to-transparent pointer-events-none" />
+                        <div className="absolute bottom-4 right-4 z-10">
+                            <span className="text-[11px] bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-full font-bold border border-white/20 text-[#ff8806] inline-flex items-center gap-1.5 shadow-md">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                Flotte Nationale & Départs Quotidiens
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
     );
