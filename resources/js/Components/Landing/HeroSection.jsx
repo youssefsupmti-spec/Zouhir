@@ -23,14 +23,14 @@ export default function HeroSection({ onTrackSearch }) {
 
     return (
         <section className="relative min-h-[90vh] pt-36 sm:pt-40 lg:pt-44 pb-16 lg:pb-24 overflow-hidden bg-[#05161f] text-white flex items-center justify-center">
-            {/* Background Hero Image with Vivid Envato Index-3 Style Overlay */}
+            {/* Background Hero Image HD (/images/image.png) with Envato Index-3 Style Overlay */}
             <div 
                 className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
-                style={{ backgroundImage: `url('/images/landing/thumbs/banner-three-img.png')` }}
+                style={{ backgroundImage: `url('/images/image.png')` }}
             >
                 {/* Lighter Cinematic Gradient Overlay to let the official vehicle & Morocco map shine while keeping text crystal clear */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#05161f]/75 via-[#072432]/50 to-[#05161f]/85" />
-                <div className="absolute inset-0 bg-radial from-transparent via-[#05161f]/30 to-[#05161f]/70" />
+                <div className="absolute inset-0 bg-gradient-to-b from-[#05161f]/70 via-[#072432]/45 to-[#05161f]/80" />
+                <div className="absolute inset-0 bg-radial from-transparent via-[#05161f]/20 to-[#05161f]/60" />
             </div>
 
             {/* Ambient Background Glowing Accents */}
