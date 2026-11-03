@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { 
     Menu, 
     X, 
-    ChevronDown, 
     MapPin, 
     Phone, 
     Mail, 
@@ -23,12 +22,8 @@ export default function Navbar({ onOpenTracking }) {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [offcanvasOpen, setOffcanvasOpen] = useState(false);
-    const [langDropdownOpen, setLangDropdownOpen] = useState(false);
-    const [currentLang, setCurrentLang] = useState('Français');
     const [homeSubmenuOpen, setHomeSubmenuOpen] = useState(false);
     const [servicesSubmenuOpen, setServicesSubmenuOpen] = useState(false);
-
-    const langRef = useRef(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -36,17 +31,6 @@ export default function Navbar({ onOpenTracking }) {
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    // Close dropdowns on outside click
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (langRef.current && !langRef.current.contains(event.target)) {
-                setLangDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Social media icons data
@@ -299,78 +283,10 @@ export default function Navbar({ onOpenTracking }) {
 
                             </div>
 
-                            {/* Right Side: Language + Tracking Icon + Divider + Offcanvas 9-dots + Auth Button */}
-                            <div className="flex items-center gap-3 sm:gap-5">
+                            {/* Right Side: Offcanvas 9-dots + Auth Button */}
+                            <div className="flex items-center gap-3 sm:gap-4">
                                 
-                                {/* 1. Language Dropdown Selector (Morocco / Arab / English) */}
-                                <div className="relative" ref={langRef}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                                        className="flex items-center gap-1.5 text-xs font-semibold text-white hover:text-[#ff8806] transition-colors py-1 px-2 rounded-lg hover:bg-white/10"
-                                    >
-                                        <span className="text-sm">🇲🇦</span>
-                                        <span className="hidden sm:inline">{currentLang}</span>
-                                        <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-                                    </button>
-
-                                    {langDropdownOpen && (
-                                        <div className="absolute right-0 top-full mt-2 w-36 bg-[#05161f] border border-white/10 rounded-xl shadow-2xl p-1.5 text-xs text-white z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                                            <button
-                                                type="button"
-                                                onClick={() => { setCurrentLang('Français'); setLangDropdownOpen(false); }}
-                                                className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-white/10 transition-colors ${
-                                                    currentLang === 'Français' ? 'text-[#ff8806] font-bold bg-white/5' : 'text-slate-200'
-                                                }`}
-                                            >
-                                                <span>🇲🇦</span>
-                                                <span>Français</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => { setCurrentLang('العربية'); setLangDropdownOpen(false); }}
-                                                className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-white/10 transition-colors font-arabic ${
-                                                    currentLang === 'العربية' ? 'text-[#ff8806] font-bold bg-white/5' : 'text-slate-200'
-                                                }`}
-                                            >
-                                                <span>🇲🇦</span>
-                                                <span>العربية</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => { setCurrentLang('English'); setLangDropdownOpen(false); }}
-                                                className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-white/10 transition-colors ${
-                                                    currentLang === 'English' ? 'text-[#ff8806] font-bold bg-white/5' : 'text-slate-200'
-                                                }`}
-                                            >
-                                                <span>🇬🇧</span>
-                                                <span>English</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* 2. Cart / Parcel Tracking Shortcut with Pulse Badge */}
-                                <button
-                                    type="button"
-                                    onClick={onOpenTracking}
-                                    className="relative flex items-center justify-center p-2 rounded-lg hover:bg-white/10 transition-transform hover:scale-105"
-                                    title="Suivre un Colis en direct"
-                                >
-                                    <img 
-                                        src="/images/landing/icons/cart-icon.svg" 
-                                        alt="Suivi Colis" 
-                                        className="w-4 h-5 object-contain" 
-                                    />
-                                    <span className="absolute -top-1 -right-1 bg-[#ff8806] text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
-                                        0
-                                    </span>
-                                </button>
-
-                                {/* 3. Vertical Separator Line */}
-                                <span className="h-6 w-px bg-white/20 hidden sm:block" />
-
-                                {/* 4. 3x3 Dots Offcanvas Menu Button (bars-two.svg) */}
+                                {/* 3x3 Dots Offcanvas Menu Button (bars-two.svg) */}
                                 <button
                                     type="button"
                                     onClick={() => setOffcanvasOpen(true)}
@@ -383,6 +299,9 @@ export default function Navbar({ onOpenTracking }) {
                                         className="w-5 h-5 object-contain" 
                                     />
                                 </button>
+
+                                {/* Vertical Separator Line */}
+                                <span className="h-6 w-px bg-white/20 hidden sm:block" />
 
                                 {/* 5. Espace Client Button (Direct CTA) */}
                                 <div className="hidden md:flex items-center">

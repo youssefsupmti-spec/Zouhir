@@ -28,7 +28,7 @@
     "src": "node_modules/@fontsource-variable/inter/files/inter-vietnamese-wght-normal.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-F_UJ0TGb.css",
+    "file": "assets/app-BECt69wU.css",
     "name": "app",
     "names": [
       "app.css"
@@ -56,12 +56,12 @@
     "src": "resources/fonts/droid-arabic-kufi-regular.woff"
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-BDLJMQqC.js",
+    "file": "assets/app-lMsaEoIA.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "css": [
-      "assets/app-F_UJ0TGb.css"
+      "assets/app-BECt69wU.css"
     ],
     "assets": [
       "assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2",
