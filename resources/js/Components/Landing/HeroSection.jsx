@@ -26,10 +26,10 @@ export default function HeroSection({ onTrackSearch, statistics = [] }) {
 
     return (
         <section className="relative w-full min-h-screen min-h-[100dvh] pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-10 lg:pb-12 overflow-hidden bg-[#05161f] text-white flex flex-col justify-between items-center">
-            {/* Background Hero Image HD (/images/image.png) with Envato Index-3 Style Overlay */}
+            {/* Background Hero Image HD (/images/Bannière logistique Ouaiss Express au Maroc.png) with Envato Index-3 Style Overlay */}
             <div 
                 className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
-                style={{ backgroundImage: `url('/images/image.png')` }}
+                style={{ backgroundImage: "url('/images/Banni%C3%A8re%20logistique%20Ouaiss%20Express%20au%20Maroc.png')" }}
             >
                 {/* Lighter Cinematic Gradient Overlay to let the official vehicle & Morocco map shine while keeping text crystal clear */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#05161f]/90 via-[#05161f]/60 to-transparent" />
