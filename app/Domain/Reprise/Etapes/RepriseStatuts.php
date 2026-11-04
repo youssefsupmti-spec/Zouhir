@@ -56,6 +56,7 @@ final class RepriseStatuts extends EtapeReprise
         }
 
         foreach ($parLibelle as $libelle => $ids) {
+            $libelle = (string) $libelle;
             if (count($ids) > 1) {
                 $this->journal->signaler('statuts', 'statut_en_double', 'decision', "Le statut « {$libelle} » existe ".count($ids).' fois dans l’ancien référentiel (ids '.implode(', ', $ids).')', 'trackingstates', null, $libelle, ['ids' => $ids]);
             }
@@ -72,6 +73,7 @@ final class RepriseStatuts extends EtapeReprise
 
         $horsReferentiel = 0;
         foreach ($usages as $libelle => $n) {
+            $libelle = (string) $libelle;
             if ($libelle === '' || isset($parLibelle[$libelle])) {
                 continue;
             }
@@ -100,7 +102,7 @@ final class RepriseStatuts extends EtapeReprise
         }
 
         foreach ($usages as $libelle => $n) {
-            if ($libelle === '') {
+            if ((string) $libelle === '') {
                 $this->journal->signaler('statuts', 'statut_vide', 'bloquant', 'Statut vide sur '.($n['colis'] ?? 0).' colis / '.($n['historique'] ?? 0).' lignes d’historique', 'commands', null, '', $n);
             }
         }

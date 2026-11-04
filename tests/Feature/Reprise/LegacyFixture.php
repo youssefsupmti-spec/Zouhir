@@ -120,6 +120,7 @@ trait LegacyFixture
             ['id' => 3, 'command' => 'OIS-100', 'state' => 'Livré', 'agent' => 'Arbi region', 'dateadd' => (string) (self::T0 + 1800)],
             ['id' => 5, 'command' => 'CODE1', 'state' => 'Ajouté', 'agent' => 'Admin', 'dateadd' => (string) self::T0],
             ['id' => 6, 'command' => 'OIS-999', 'state' => 'Livré', 'agent' => 'Admin', 'dateadd' => (string) self::T0],
+            ['id' => 8, 'command' => '73876284110426', 'state' => 'Livré', 'agent' => '12345', 'dateadd' => (string) self::T0],
             ['id' => 7, 'command' => 'OIS-103', 'state' => 'Retour client reçu', 'agent' => 'Admin', 'dateadd' => (string) (self::T0 + 5000)],
         ]);
         $L->table('bls')->insert([

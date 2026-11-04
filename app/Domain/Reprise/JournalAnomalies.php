@@ -37,7 +37,7 @@ final class JournalAnomalies
         string $libelle,
         ?string $legacyTable = null,
         int|string|null $legacyId = null,
-        ?string $valeur = null,
+        int|string|null $valeur = null,
         array $details = [],
         ?string $cibleTable = null,
         ?int $cibleId = null,
@@ -49,6 +49,8 @@ final class JournalAnomalies
         }
 
         $legacyId = $legacyId === null ? null : (string) $legacyId;
+        // Les clés de tableau PHP numériques (code « 73876284110426 », libellé « 3 »…) arrivent en entier.
+        $valeur = $valeur === null ? null : (string) $valeur;
         $empreinte = sha1(implode('|', [$domaine, $code, $legacyTable ?? '', $legacyId ?? '', $valeur ?? '']));
 
         $this->vues[$empreinte] = true;
