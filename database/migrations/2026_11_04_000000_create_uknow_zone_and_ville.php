@@ -34,7 +34,7 @@ return new class extends Migration
                 'updated_at' => now(),
             ];
             if ($hasType) {
-                $data['type'] = 'en_attente';
+                $data['type'] = 'nationale';
             }
             $zoneId = DB::table('zones')->insertGetId($data);
         } else {

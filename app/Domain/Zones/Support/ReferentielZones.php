@@ -91,7 +91,7 @@ final class ReferentielZones
                 'aarbaoua', 'jerf el malha', 'khemissat', 'khnichat', 'machroua belkssiri', 'sidi allal bahraoui', 'sidi taybi']],
 
         // ── Pôle d'attente / Colis orphelins (city null, vide ou '=') ──────────
-        'UKN' => ['name' => 'Uknow-zone', 'type' => 'en_attente', 'description' => 'Zone d\'attente pour colis sans ville ou destination inconnue (à adapter/corriger)',
+        'UKN' => ['name' => 'Uknow-zone', 'type' => 'nationale', 'description' => 'Zone d\'attente pour colis sans ville ou destination inconnue (à adapter/corriger)',
             'villes' => ['uknow-ville', 'uknow-zone', 'unknown']],
     ];
 
