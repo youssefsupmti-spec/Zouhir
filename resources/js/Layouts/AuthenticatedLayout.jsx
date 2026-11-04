@@ -46,6 +46,11 @@ export default function AuthenticatedLayout({ children, title }) {
         if (pathname.startsWith('/villes')) return 'Villes & Zones';
         if (pathname.startsWith('/banks')) return 'Banques';
         if (pathname.startsWith('/comptes-bancaires')) return 'Comptes bancaires';
+        if (pathname.startsWith('/bons-livraison')) return 'Bons de livraison';
+        if (pathname.startsWith('/bons-envoi')) return 'Bons d’envoi';
+        if (pathname.startsWith('/bons-ramassage')) return 'Bons de ramassage';
+        if (pathname.startsWith('/bons-retour-client')) return 'Bons de retour client';
+        if (pathname.startsWith('/bons-retour-livreur')) return 'Bons de retour livreur';
         if (pathname.startsWith('/bons')) return 'Bons';
         if (pathname.startsWith('/statuts')) return 'Statuts colis';
         if (pathname.startsWith('/etat-groupes')) return 'Groupes d’état';

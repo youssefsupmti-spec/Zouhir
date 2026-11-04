@@ -25,8 +25,21 @@ class ColisController extends Controller
     /**
      * Liste paginée des colis et expéditions avec recherche, filtres et métriques CRBT.
      */
-    /** Onglets : « tous » + les groupes d'état + la corbeille (suppression logique, à part). */
+    /** Colonnes lues pour la liste (ni `note` brute ni `legacy_brut` : trop lourdes, inutiles ici). */
+    private const COLONNES_LISTE = [
+        'id', 'code', 'produit', 'quantite', 'client_id', 'business_id', 'business_name', 'nom_cliente',
+        'livreur_id', 'livreur_nom', 'livreur_telephone', 'destinataire_nom', 'destinataire_telephone',
+        'destinataire_adresse', 'destinataire_ville', 'destinataire_ville_id', 'destinataire_zone_code',
+        'prix_brut', 'frais_livraison_client', 'type_tarif_client', 'montant_supplementaire', 'montant_emballage',
+        'frais_livraison_livreur', 'state', 'state_group', 'statut_id', 'ouverture_autorisee', 'echange',
+        'created_at', 'updated_at', 'livre_at', 'deleted_at',
+    ];
 
+    /**
+     * Page « Colis ». Onglets = groupes actifs de la classification (etat_groupes) + corbeille.
+     * Tri par défaut : date de mise à jour, la plus récente d'abord (index deleted_at + updated_at).
+     * Compteurs et statistiques : UNE requête agrégée (corbeille comprise) au lieu de huit.
+     */
     public function index(Request $request): Response
     {
         Gate::authorize('viewAny', Command::class);
@@ -35,24 +48,21 @@ class ColisController extends Controller
         $search = trim((string) $request->input('search', ''));
         // `state_group` reste accepté (anciens liens) : il désigne l'onglet du même nom.
         $onglet = (string) $request->input('onglet', $request->input('state_group', 'tous'));
-        // Onglets = groupes actifs de la classification des états (etat_groupes, axe flux).
         $groupes = ClassificationEtats::groupes(actifsSeulement: true);
         $onglet = in_array($onglet, ['tous', 'corbeille', ...$groupes->pluck('code')->all()], true) ? $onglet : 'tous';
         $villeId = $request->input('ville_id');
         $clientId = $request->input('client_id');
         $livreurId = $request->input('livreur_id');
-        $sort = $request->input('sort', 'created_at');
-        $direction = $request->input('direction', 'desc');
+        $sort = (string) $request->input('sort', 'updated_at');
+        $direction = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
         $perPage = min(max((int) $request->input('per_page', 25), 1), 100);
-
-        $allowedSorts = ['id', 'code', 'prix_brut', 'destinataire_nom', 'created_at', 'updated_at', 'livre_at'];
-        if (! in_array($sort, $allowedSorts, true)) {
-            $sort = 'created_at';
+        if (! in_array($sort, ['id', 'code', 'prix_brut', 'destinataire_nom', 'created_at', 'updated_at', 'livre_at'], true)) {
+            $sort = 'updated_at';
         }
-        $direction = strtolower((string) $direction) === 'asc' ? 'asc' : 'desc';
 
-        // Data Isolation : toute la page (liste, onglets ET statistiques) est limitée au périmètre.
+        // Data Isolation : liste, onglets ET statistiques sont limités au périmètre.
         $scoped = fn () => Command::query()->visibleTo($user);
+        $filtre = $search !== '' || ($villeId && $villeId !== 'all') || ($clientId && $clientId !== 'all') || ($livreurId && $livreurId !== 'all');
         $filtres = function ($q) use ($search, $villeId, $clientId, $livreurId) {
             $q->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
@@ -71,10 +81,17 @@ class ColisController extends Controller
         };
 
         $colis = $scoped()
+            ->select(self::COLONNES_LISTE)
             ->when($onglet === 'corbeille', fn ($q) => $q->onlyTrashed())
             ->when(! in_array($onglet, ['tous', 'corbeille'], true), fn ($q) => $q->where('state_group', $onglet))
             ->tap($filtres)
-            ->with(['client:id,nom_complet,email,telephone', 'business:id,name', 'livreur:id,nom_complet,telephone', 'ville:id,name_fr,code_zone'])
+            // Notes : nombre et dernier message (sous-requêtes indexées sur note_messages.command_id).
+            ->withCount('noteMessages as notes_count')
+            ->addSelect([
+                'derniere_note' => NoteMessage::select('message')->whereColumn('command_id', 'commands.id')->orderByDesc('id')->limit(1),
+                'derniere_note_auteur' => NoteMessage::selectRaw('COALESCE(auteur_nom, role)')->whereColumn('command_id', 'commands.id')->orderByDesc('id')->limit(1),
+            ])
+            ->with(['client:id,nom_complet,telephone', 'business:id,name', 'livreur:id,nom_complet,telephone', 'ville:id,name_fr,code_zone'])
             ->orderBy($sort, $direction)->orderBy('id', $direction)
             ->paginate($perPage)->withQueryString();
 
@@ -84,58 +101,56 @@ class ColisController extends Controller
                 'update' => ! $c->trashed() && $user->can('update', $c),
                 'updateState' => ! $c->trashed() && $user->can('updateState', $c),
                 'delete' => $user->can('delete', $c),
+                'note' => $user->can('view', $c),
             ]);
 
             return $c;
         });
 
-        // Compteurs des onglets : UNE requête groupée (mêmes filtres de recherche que la liste).
-        $parGroupe = $scoped()->tap($filtres)->selectRaw('state_group, COUNT(*) AS n')->groupBy('state_group')->pluck('n', 'state_group');
+        // Une requête : par groupe et par état de corbeille, nombre et CRBT.
+        $agregat = fn ($q) => $q->withTrashed()
+            ->selectRaw('state_group, (deleted_at IS NULL) AS actif, COUNT(*) AS n, COALESCE(SUM(prix_brut), 0) AS crbt')
+            ->groupBy('state_group', DB::raw('(deleted_at IS NULL)'))
+            ->get();
+        $tout = $agregat($scoped());
+        $vue = $filtre ? $agregat($scoped()->tap($filtres)) : $tout;
+
+        $actifs = fn ($lignes) => $lignes->filter(fn ($l) => (int) $l->actif === 1);
+        $parGroupe = $actifs($vue)->pluck('n', 'state_group');
         $onglets = ['tous' => (int) $parGroupe->sum()];
         foreach ($groupes as $g) {
             $onglets[$g->code] = (int) ($parGroupe[$g->code] ?? 0);
         }
-        $onglets['corbeille'] = $scoped()->onlyTrashed()->tap($filtres)->count();
+        $onglets['corbeille'] = (int) $vue->filter(fn ($l) => (int) $l->actif === 0)->sum('n');
 
-        // Statistiques (périmètre, hors corbeille).
-        $totalColis = (int) $scoped()->count();
-        $livresColis = (int) $scoped()->where('state_group', 'livre')->count();
-        $tauxLivraison = $totalColis > 0 ? round(($livresColis / $totalColis) * 100, 1) : 0;
-
-        // Listes de référence limitées au périmètre : un marchand ne voit que lui-même,
-        // seule l'administration voit les autres marchands et les livreurs.
-        $clientsList = User::clients()
-            ->when(! $user->isAdmin(), fn ($q) => $q->whereKey($user->id))
-            ->with(['businesses:id,user_id,name'])
-            ->select('id', 'nom_complet', 'telephone')
-            ->orderBy('nom_complet')
-            ->get();
-
-        $villesList = Ville::select('id', 'name_fr', 'code_zone')->orderBy('name_fr')->get();
-
-        $livreursList = User::drivers()
-            ->when(! $user->isAdmin(), fn ($q) => $q->whereRaw('1 = 0'))
-            ->select('id', 'nom_complet', 'telephone')
-            ->orderBy('nom_complet')
-            ->get();
+        $stat = $actifs($tout)->keyBy('state_group');
+        $compte = fn (array $codes) => (int) collect($codes)->sum(fn ($c) => (int) ($stat[$c]->n ?? 0));
+        $totalColis = (int) $stat->sum('n');
+        $livresColis = $compte(['livre']);
 
         return Inertia::render('Colis/Index', [
             'colis' => $colis,
             'canCreate' => $user->can('create', Command::class),
             'canSetManualFee' => $user->isAdmin(),
             'canBulk' => $user->isAdmin() || $user->isClient(),
-            'clients' => $clientsList,
-            'villes' => $villesList,
-            'livreurs' => $livreursList,
+            // Listes de référence limitées au périmètre (un marchand ne voit que lui-même).
+            'clients' => fn () => User::clients()
+                ->when(! $user->isAdmin(), fn ($q) => $q->whereKey($user->id))
+                ->with(['businesses:id,user_id,name'])->select('id', 'nom_complet', 'telephone')->orderBy('nom_complet')->get(),
+            'livreurs' => fn () => User::drivers()
+                ->when(! $user->isAdmin(), fn ($q) => $q->whereRaw('1 = 0'))
+                ->select('id', 'nom_complet', 'telephone')->orderBy('nom_complet')->get(),
+            // 1 350 villes : utiles au seul formulaire → chargées après l'affichage.
+            'villes' => Inertia::defer(fn () => Ville::select('id', 'name_fr', 'code_zone')->orderBy('name_fr')->get()),
             'onglets' => $onglets,
             'groupes' => $groupes->map(fn ($g) => ['code' => $g->code, 'nom' => $g->nom, 'couleur' => $g->couleur, 'description' => $g->description])->values(),
             'stats' => [
                 'total' => $totalColis,
                 'livres' => $livresColis,
-                'en_cours' => (int) $scoped()->whereIn('state_group', ['en_cours', 'planifie'])->count(),
-                'retours' => (int) $scoped()->whereIn('state_group', [...\App\Domain\Colis\Support\GroupesColis::RETOURS, 'echec'])->count(),
-                'taux_livraison' => $tauxLivraison,
-                'total_crbt' => (float) $scoped()->where('state_group', 'livre')->sum('prix_brut'),
+                'en_cours' => $compte(['en_cours', 'planifie']),
+                'retours' => $compte([...\App\Domain\Colis\Support\GroupesColis::RETOURS, 'echec']),
+                'taux_livraison' => $totalColis > 0 ? round(($livresColis / $totalColis) * 100, 1) : 0,
+                'total_crbt' => (float) ($stat['livre']->crbt ?? 0),
             ],
             'filters' => [
                 'search' => $search,
@@ -148,6 +163,47 @@ class ColisController extends Controller
                 'per_page' => $perPage,
             ],
         ]);
+    }
+
+    /** Fil des notes d'un colis (JSON), du plus ancien au plus récent. */
+    public function notes(Command $coli): JsonResponse
+    {
+        Gate::authorize('view', $coli);
+
+        $notes = NoteMessage::query()->where('command_id', $coli->id)->with('auteur:id,nom_complet')
+            ->orderByRaw("CASE WHEN source = 'legacy' THEN 0 ELSE 1 END")->orderBy('position')->orderBy('id')->get();
+
+        return response()->json([
+            'colis' => ['id' => $coli->id, 'code' => $coli->code, 'destinataire' => $coli->destinataire_nom, 'state' => $coli->state],
+            'notes' => $notes->map(fn (NoteMessage $n) => [
+                'id' => $n->id, 'role' => $n->role, 'auteur' => $n->auteur?->nom_complet ?? $n->auteur_nom, 'message' => $n->message,
+                'source' => $n->source, 'date' => $n->created_at?->toIso8601String(), 'date_exacte' => $n->date_exacte,
+                'moi' => $n->user_id !== null && (int) $n->user_id === (int) request()->user()->id,
+            ]),
+        ]);
+    }
+
+    /** Ajouter une note : toute personne qui voit le colis (admin, marchand, livreur) peut écrire. */
+    public function ajouterNote(Request $request, Command $coli): JsonResponse
+    {
+        Gate::authorize('view', $coli);
+        $data = $request->validate(['message' => ['required', 'string', 'max:2000']], ['message.required' => 'Écrivez la note.']);
+        $user = $request->user();
+
+        $note = NoteMessage::create([
+            'command_id' => $coli->id,
+            'user_id' => $user->id,
+            'role' => $user->isAdmin() ? 'moderateur' : ($user->isDriver() ? 'livreur' : ($user->isClient() ? 'client' : 'inconnu')),
+            'auteur_nom' => $user->nom_complet,
+            'message' => trim($data['message']),
+            'position' => (int) NoteMessage::where('command_id', $coli->id)->where('source', 'application')->max('position') + 1,
+            'source' => 'application',
+            'date_exacte' => true,
+        ]);
+        // La note fait remonter le colis en tête du tri « dernière mise à jour ».
+        $coli->touch();
+
+        return response()->json(['id' => $note->id], 201);
     }
 
     /**

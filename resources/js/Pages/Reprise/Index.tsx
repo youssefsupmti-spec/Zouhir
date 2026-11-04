@@ -4,6 +4,7 @@ import {
   AlertOctagon, CheckCircle2, ChevronDown, ChevronRight, DatabaseZap, Download, EyeOff, Gavel, Info, Loader2, RotateCcw, TriangleAlert,
 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { ChargementTableau, useChargementPage } from '@/components/common/ChargementTableau';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatsCard } from '@/components/common/StatsCard';
 import { PageToolbar } from '@/components/common/PageToolbar';
@@ -90,6 +91,7 @@ function Details({ details }: { details: Record<string, unknown> }) {
 }
 
 export default function RepriseIndex({ anomalies, domaines, gravites, statuts, compteurs, codes, stats, filters, can }: Props) {
+  const chargement = useChargementPage();
   const [ouvertes, setOuvertes] = useState<Record<number, boolean>>({});
   const [cible, setCible] = useState<Anomalie | { ids: number[]; libelle: string; statut: Statut } | null>(null);
   const selection = useSelection(anomalies.data.map((a) => a.id));
@@ -187,7 +189,8 @@ export default function RepriseIndex({ anomalies, domaines, gravites, statuts, c
           </BarreSelection>
         )}
 
-        <div className="overflow-x-auto rounded-md border border-border bg-card shadow-2xs">
+        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+          <ChargementTableau actif={chargement} />
           <Table className="min-w-[1100px] text-xs">
             <TableHeader>
               <TableRow className="hover:bg-transparent">

@@ -31,19 +31,44 @@ class BonController extends Controller
         'retour' => [BonRetour::class, 'Bons de retour', 'bons_retour'],
     ];
 
-    public function index(Request $request): Response
+    /**
+     * Une page par liste (comme WinningExpress) : url => [type, sous-type de retour, titre, description].
+     */
+    public const PAGES = [
+        'bons-livraison' => ['livraison', null, 'Bons de livraison', 'Tournées des livreurs de l’agence (dernier kilomètre).'],
+        'bons-envoi' => ['envoi', null, 'Bons d’envoi', 'Colis remis au réseau partenaire pour les autres villes du Royaume.'],
+        'bons-ramassage' => ['ramassage', null, 'Bons de ramassage', 'Colis des marchands entrés au hub.'],
+        'bons-retour-client' => ['retour', 'client', 'Bons de retour client', 'Colis restitués aux marchands.'],
+        'bons-retour-livreur' => ['retour', 'livreur', 'Bons de retour livreur', 'Colis déchargés par les livreurs à l’agence.'],
+    ];
+
+    /** Page d'un bon → URL de sa liste. */
+    public static function urlListe(string $type, ?string $sousType = null): string
+    {
+        foreach (self::PAGES as $url => [$t, $s]) {
+            if ($t === $type && ($s === null || $s === $sousType)) {
+                return '/'.$url;
+            }
+        }
+
+        return '/bons-livraison';
+    }
+
+    public function index(Request $request, string $page = 'bons-livraison'): Response
     {
         Gate::authorize('viewAny', BonLivraison::class);
 
-        $type = array_key_exists((string) $request->input('type'), self::TYPES) ? (string) $request->input('type') : 'livraison';
+        abort_unless(array_key_exists($page, self::PAGES), 404);
+        [$type, $sousType, $titre, $description] = self::PAGES[$page];
         [$modele] = self::TYPES[$type];
+        $restreindre = fn ($w) => $w->when($sousType !== null, fn ($x) => $x->where('type', $sousType));
         $statut = (string) $request->input('statut', '');
         $search = trim((string) $request->input('search', ''));
         $parPage = min(max((int) $request->input('per_page', 25), 10), 100);
         $corbeille = $request->boolean('corbeille');
 
         /** @var Builder $q */
-        $q = $modele::query()
+        $q = $modele::query()->tap($restreindre)
             ->when($corbeille, fn ($w) => $w->onlyTrashed())
             ->when(array_key_exists($statut, $modele::STATUTS), fn ($w) => $w->where('status', $statut))
             ->when($search !== '', fn ($w) => $w->where(function ($s) use ($search, $type) {
@@ -58,19 +83,18 @@ class BonController extends Controller
                     $s->orWhere('nom_cliente', 'like', "%{$search}%");
                 }
                 $s->orWhereHas('lignes', fn ($l) => $l->where($type === 'ramassage' ? 'code' : 'command_code', 'like', "%{$search}%"));
-            }))
-            ->when($type === 'retour' && in_array($request->input('sous_type'), ['client', 'livreur'], true), fn ($w) => $w->where('type', $request->input('sous_type')));
+            }));
 
         $bons = $q->orderByDesc('legacy_dateadd_at')->orderByDesc('id')->paginate($parPage)->withQueryString()
             ->through(fn (Model $b) => $this->ligne($type, $b));
 
         return Inertia::render('Bons/Index', [
             'type' => $type,
+            'page' => ['url' => '/'.$page, 'titre' => $titre, 'description' => $description, 'sous_type' => $sousType],
             'bons' => $bons,
-            'compteurs' => collect(self::TYPES)->map(fn ($t) => $t[0]::query()->count()),
-            'stats' => $this->stats($modele),
+            'stats' => $this->stats($modele, $restreindre),
             'statuts' => $modele::STATUTS,
-            'filters' => ['statut' => $statut, 'search' => $search, 'per_page' => $parPage, 'corbeille' => $corbeille, 'sous_type' => (string) $request->input('sous_type', '')],
+            'filters' => ['statut' => $statut, 'search' => $search, 'per_page' => $parPage, 'corbeille' => $corbeille],
         ]);
     }
 
@@ -105,7 +129,8 @@ class BonController extends Controller
 
         return Inertia::render('Bons/Show', [
             'type' => $type,
-            'libelleType' => $libelle,
+            'libelleType' => $type === 'retour' ? ($b->type === 'livreur' ? 'Bons de retour livreur' : 'Bons de retour client') : $libelle,
+            'urlListe' => self::urlListe($type, $b->type ?? null),
             'bon' => $this->ligne($type, $b) + [
                 'legacy_brut' => $b->legacy_brut,
                 'traite_sans_pointage_historique' => (bool) ($b->traite_sans_pointage_historique ?? false),
@@ -169,15 +194,15 @@ class BonController extends Controller
      * @param  class-string<Model>  $modele
      * @return array<string, mixed>
      */
-    private function stats(string $modele): array
+    private function stats(string $modele, \Closure $restreindre): array
     {
-        $parStatut = $modele::query()->selectRaw('status, COUNT(*) AS n')->groupBy('status')->pluck('n', 'status');
+        $parStatut = $modele::query()->tap($restreindre)->selectRaw('status, COUNT(*) AS n')->groupBy('status')->pluck('n', 'status');
 
         return [
             'total' => (int) $parStatut->sum(),
             'par_statut' => $parStatut,
-            'colis' => (int) $modele::query()->sum('total_colis'),
-            'corbeille' => $modele::onlyTrashed()->count(),
+            'colis' => (int) $modele::query()->tap($restreindre)->sum('total_colis'),
+            'corbeille' => $modele::onlyTrashed()->tap($restreindre)->count(),
         ];
     }
 }

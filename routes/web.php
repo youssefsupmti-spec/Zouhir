@@ -84,10 +84,16 @@ Route::middleware('auth')->group(function () {
     Route::patch('/colis/{coli}/state', [\App\Http\Controllers\ColisController::class, 'updateState'])->name('colis.state');
     Route::delete('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'destroy'])->name('colis.destroy');
     Route::post('/colis/groupe', [\App\Http\Controllers\ColisController::class, 'groupe'])->name('colis.groupe');
+    Route::get('/colis/{coli}/notes', [\App\Http\Controllers\ColisController::class, 'notes'])->name('colis.notes');
+    Route::post('/colis/{coli}/notes', [\App\Http\Controllers\ColisController::class, 'ajouterNote'])->middleware('throttle:60,1')->name('colis.notes.store');
     Route::get('/colis/{coli}/suivi', [\App\Http\Controllers\ColisController::class, 'suivi'])->name('colis.suivi');
 
     // Circuit colis : bons, statuts, réseau (agences, livreurs, partenaires)
-    Route::get('/bons', [\App\Http\Controllers\BonController::class, 'index'])->name('bons.index');
+    // Une page par liste de bons (comme WinningExpress) ; /bons renvoie vers les bons de livraison.
+    Route::redirect('/bons', '/bons-livraison')->name('bons.index');
+    foreach (array_keys(\App\Http\Controllers\BonController::PAGES) as $pageBons) {
+        Route::get('/'.$pageBons, [\App\Http\Controllers\BonController::class, 'index'])->defaults('page', $pageBons)->name($pageBons.'.index');
+    }
     Route::post('/bons/{type}/groupe', [\App\Http\Controllers\BonController::class, 'groupe'])->whereIn('type', ['livraison', 'envoi', 'ramassage', 'retour'])->name('bons.groupe');
     Route::get('/bons/{type}/{bon}', [\App\Http\Controllers\BonController::class, 'show'])->whereIn('type', ['livraison', 'envoi', 'ramassage', 'retour'])->whereNumber('bon')->name('bons.show');
     Route::get('/statuts', [\App\Http\Controllers\StatutController::class, 'index'])->name('statuts.index');

@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { Boxes, Eye, FileStack, Package, PackageCheck, RotateCcw, Send, Trash2, Truck, Undo2 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { ChargementTableau, useChargementPage } from '@/components/common/ChargementTableau';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageToolbar } from '@/components/common/PageToolbar';
-import { FilterDropdown } from '@/components/common/FilterDropdown';
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
 import { DataTablePagination, type LaravelPaginationMeta } from '@/components/common/DataTablePagination';
 import { ActionGroupee, BarreSelection, CaseACocher, useSelection } from '@/components/common/SelectionGroupee';
-import { CartesOnglets } from '@/components/common/CartesOnglets';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
@@ -32,10 +31,10 @@ interface Bon {
 interface Props {
   type: TypeBon;
   bons: LaravelPaginationMeta & { data: Bon[] };
-  compteurs: Record<TypeBon, number>;
+  page: { url: string; titre: string; description: string; sous_type: 'client' | 'livreur' | null };
   stats: { total: number; par_statut: Record<string, number>; colis: number; corbeille: number };
   statuts: Record<string, string>;
-  filters: { statut: string; search: string; per_page: number; corbeille: boolean; sous_type: string };
+  filters: { statut: string; search: string; per_page: number; corbeille: boolean };
 }
 
 const TYPES: Record<TypeBon, { label: string; court: string; icone: typeof Truck; titulaire: string; aide: string; couleur: string }> = {
@@ -45,13 +44,15 @@ const TYPES: Record<TypeBon, { label: string; court: string; icone: typeof Truck
   retour: { label: 'Retour', court: 'BRC', icone: Undo2, titulaire: 'Enseigne / livreur', aide: 'Restitués ou déchargés', couleur: '#F97316' },
 };
 
-export default function BonsIndex({ type, bons, compteurs, stats, statuts, filters }: Props) {
+export default function BonsIndex({ type, page, bons, stats, statuts, filters }: Props) {
+  const chargement = useChargementPage();
   const [confirmation, setConfirmation] = useState<{ action: 'corbeille' | 'restaurer'; ids: number[]; libelle: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const params = { ...filters, type, corbeille: filters.corbeille ? 1 : undefined };
+  const params = { ...filters, corbeille: filters.corbeille ? 1 : undefined };
   const naviguer = (changes: Record<string, unknown>) =>
-    router.get('/bons', { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true });
+    router.get(page.url, { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true, only: ['bons', 'stats', 'filters'] });
   const T = TYPES[type];
+  const titulaire = page.sous_type === 'livreur' ? 'Livreur' : page.sous_type === 'client' ? 'Enseigne' : T.titulaire;
   const onglet = filters.corbeille ? 'corbeille' : (filters.statut || 'tous');
   const selection = useSelection(bons.data.map((b) => b.id));
 
@@ -66,22 +67,11 @@ export default function BonsIndex({ type, bons, compteurs, stats, statuts, filte
   };
 
   return (
-    <AuthenticatedLayout title="Bons">
-      <Head title="Bons - OUAISS EXPRESS" />
+    <AuthenticatedLayout title={page.titre}>
+      <Head title={`${page.titre} - OUAISS EXPRESS`} />
 
       <div className="space-y-6">
-        <PageHeader title="Bons" description="Bordereaux du circuit colis : livraison, envoi national, ramassage et retour." icon={FileStack} />
-
-        <CartesOnglets
-          label="Familles de bons"
-          colonnes="sm:grid-cols-4"
-          value={type}
-          onChange={(v) => router.get('/bons', { type: v }, { preserveScroll: true })}
-          onglets={(Object.keys(TYPES) as TypeBon[]).map((t) => {
-            const I = TYPES[t].icone;
-            return { value: t, label: `${TYPES[t].label} · ${TYPES[t].court}`, count: compteurs[t] ?? 0, couleur: TYPES[t].couleur, description: TYPES[t].aide, icon: <I /> };
-          })}
-        />
+        <PageHeader title={page.titre} description={page.description} icon={T.icone} />
 
         <TarifsTabs
           label="Statut des bons"
@@ -94,15 +84,7 @@ export default function BonsIndex({ type, bons, compteurs, stats, statuts, filte
           ]}
         />
 
-        <PageToolbar searchPlaceholder={`Code du bon, ${T.titulaire.toLowerCase()} ou code colis…`} initialSearch={filters.search} currentParams={params}>
-          {type === 'retour' && (
-            <FilterDropdown
-              label="Type"
-              value={filters.sous_type || 'all'}
-              options={[{ value: 'all', label: 'Tous' }, { value: 'client', label: 'Retour marchand' }, { value: 'livreur', label: 'Décharge livreur' }]}
-              onChange={(v) => naviguer({ sous_type: v === 'all' ? undefined : v })}
-            />
-          )}
+        <PageToolbar searchPlaceholder={`Code du bon, ${titulaire.toLowerCase()} ou code colis…`} initialSearch={filters.search} currentParams={params}>
           <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Package className="size-3.5" /> {stats.colis.toLocaleString('fr-FR')} colis dans ces bons</span>
         </PageToolbar>
 
@@ -112,13 +94,14 @@ export default function BonsIndex({ type, bons, compteurs, stats, statuts, filte
             : <ActionGroupee danger icone={<Trash2 className="size-3.5" />} onClick={() => setConfirmation({ action: 'corbeille', ids: selection.ids, libelle: `${selection.taille} bon(s)` })}>Mettre en corbeille</ActionGroupee>}
         </BarreSelection>
 
-        <div className="overflow-x-auto rounded-md border border-border bg-card shadow-2xs">
+        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+          <ChargementTableau actif={chargement} />
           <Table className="min-w-[900px] text-xs">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-10 pl-4"><CaseACocher label="Tout sélectionner" coche={selection.tous} partiel={selection.partiel} onChange={selection.basculerTous} /></TableHead>
                 <TableHead>Bon</TableHead>
-                <TableHead>{T.titulaire}</TableHead>
+                <TableHead>{titulaire}</TableHead>
                 <TableHead className="w-28">Statut</TableHead>
                 <TableHead className="w-20 text-right">Colis</TableHead>
                 <TableHead className="w-32 text-right">Montant CRBT</TableHead>
@@ -132,7 +115,7 @@ export default function BonsIndex({ type, bons, compteurs, stats, statuts, filte
                   <TableCell className="pl-4"><CaseACocher label={`Sélectionner ${b.code}`} coche={selection.estChoisi(b.id)} onChange={() => selection.basculer(b.id)} /></TableCell>
                   <TableCell>
                     <Link href={`/bons/${type}/${b.id}`} className="font-mono font-semibold text-[#004c68] hover:underline dark:text-cyan-300">{b.code}</Link>
-                    {b.sous_type === 'livreur' && <span className="ml-2 rounded bg-sky-500/10 px-1.5 py-px text-[10px] text-sky-700 dark:text-sky-300">Décharge livreur</span>}
+                    
                     {b.anomalies > 0 && <span className="ml-2 rounded bg-[#ff8806]/10 px-1.5 py-px text-[10px] font-semibold text-[#c26200]">{b.anomalies} colis introuvable(s)</span>}
                   </TableCell>
                   <TableCell className="font-medium">{b.titulaire ?? <span className="text-muted-foreground">—</span>}</TableCell>

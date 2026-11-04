@@ -58,7 +58,7 @@ class GroupesEtCorbeilleTest extends TestCase
             ->where('onglets.corbeille', 1)
             ->where('onglets.livre', 2)
             ->where('filters.onglet', 'tous')
-            ->where('filters.sort', 'created_at')
+            ->where('filters.sort', 'updated_at')
             ->where('filters.direction', 'desc')
             ->has('colis.data', 5));
 
@@ -93,7 +93,7 @@ class GroupesEtCorbeilleTest extends TestCase
         $this->actingAs($this->admin)->post('/bons/livraison/groupe', ['action' => 'corbeille', 'ids' => $ids])->assertSessionHas('success');
         $this->assertSame(2, DB::table('bons_livraison')->whereNotNull('deleted_at')->count());
         $this->assertGreaterThan(0, DB::table('bon_livraison_command')->count()); // lignes conservées
-        $this->actingAs($this->admin)->get('/bons?type=livraison&corbeille=1')->assertInertia(fn (Assert $p) => $p->has('bons.data', 2)->where('stats.corbeille', 2));
+        $this->actingAs($this->admin)->get('/bons-livraison?corbeille=1')->assertInertia(fn (Assert $p) => $p->has('bons.data', 2)->where('stats.corbeille', 2));
         $this->actingAs($this->admin)->post('/bons/livraison/groupe', ['action' => 'restaurer', 'ids' => $ids])->assertSessionHas('success');
         $this->assertSame(0, DB::table('bons_livraison')->whereNotNull('deleted_at')->count());
         $this->actingAs($this->client)->post('/bons/livraison/groupe', ['action' => 'corbeille', 'ids' => $ids])->assertForbidden();
@@ -133,5 +133,41 @@ class GroupesEtCorbeilleTest extends TestCase
         $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p->has('groupes', 7));
 
         $this->actingAs($this->client)->get('/etat-groupes')->assertForbidden();
+    }
+
+    public function test_liste_triee_par_derniere_mise_a_jour_et_colonne_notes(): void
+    {
+        DB::table('commands')->where('id', 102)->update(['updated_at' => now()->addMinute()]);
+        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p
+            ->where('colis.data.0.id', 102)
+            ->where('colis.data.1.notes_count', fn ($n) => is_int($n))
+            ->missing('colis.data.0.legacy_brut')
+            ->missing('villes'));          // 1 350 villes : chargées en différé
+
+        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p
+            ->where('colis.data', fn ($lignes) => collect($lignes)->firstWhere('id', 100)['derniere_note'] === 'Rappeler'
+                && collect($lignes)->firstWhere('id', 100)['notes_count'] === 2));
+    }
+
+    public function test_fil_des_notes_lecture_et_ajout(): void
+    {
+        $this->actingAs($this->admin)->getJson('/colis/100/notes')->assertOk()
+            ->assertJsonCount(2, 'notes')
+            ->assertJsonPath('notes.0.message', 'Client pas chez lui')
+            ->assertJsonPath('notes.0.role', 'livreur');
+
+        $this->actingAs($this->client)->postJson('/colis/100/notes', ['message' => 'Merci de livrer avant 18h'])->assertCreated();
+        $this->actingAs($this->client)->postJson('/colis/100/notes', ['message' => ''])->assertUnprocessable();
+        $this->actingAs($this->admin)->getJson('/colis/100/notes')->assertJsonCount(3, 'notes')
+            ->assertJsonPath('notes.2.role', 'client')
+            ->assertJsonPath('notes.2.auteur', 'Speedo');
+
+        // Ajouter une note fait remonter le colis en tête (dernière mise à jour).
+        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p->where('colis.data.0.id', 100)->where('colis.data.0.derniere_note', 'Merci de livrer avant 18h'));
+
+        // Hors périmètre : ni lecture ni écriture.
+        DB::table('commands')->where('id', 104)->update(['client_id' => 1]);
+        $this->actingAs($this->client)->getJson('/colis/104/notes')->assertForbidden();
+        $this->actingAs($this->client)->postJson('/colis/104/notes', ['message' => 'x'])->assertForbidden();
     }
 }

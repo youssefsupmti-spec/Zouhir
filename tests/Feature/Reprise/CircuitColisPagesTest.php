@@ -62,17 +62,15 @@ class CircuitColisPagesTest extends TestCase
 
     public function test_pages_bons_par_famille_et_detail(): void
     {
-        $this->actingAs($this->admin)->get('/bons')->assertOk()->assertInertia(fn (Assert $p) => $p
-            ->component('Bons/Index')
-            ->where('type', 'livraison')
-            ->where('compteurs.livraison', 2)
-            ->where('compteurs.envoi', 1)
-            ->where('compteurs.ramassage', 1)
-            ->where('compteurs.retour', 2));
+        $this->actingAs($this->admin)->get('/bons')->assertRedirect('/bons-livraison');
+        $total = fn (string $url) => $this->actingAs($this->admin)->get($url)->assertOk()->viewData('page')['props']['stats']['total'];
+        $this->assertSame([2, 1, 1, 1, 1], array_map($total, ['/bons-livraison', '/bons-envoi', '/bons-ramassage', '/bons-retour-client', '/bons-retour-livreur']));
+        $this->actingAs($this->admin)->get('/bons-livraison')->assertInertia(fn (Assert $p) => $p
+            ->component('Bons/Index')->where('type', 'livraison')->where('page.titre', 'Bons de livraison'));
 
-        $this->actingAs($this->admin)->get('/bons?type=retour&sous_type=livreur')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1)->where('bons.data.0.code', 'BRL-05'));
-        $this->actingAs($this->admin)->get('/bons?type=livraison&search=OIS-104')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1));
-        $this->actingAs($this->admin)->get('/bons?type=livraison&statut=traite')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1));
+        $this->actingAs($this->admin)->get('/bons-retour-livreur')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1)->where('bons.data.0.code', 'BRL-05'));
+        $this->actingAs($this->admin)->get('/bons-livraison?search=OIS-104')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1));
+        $this->actingAs($this->admin)->get('/bons-livraison?statut=traite')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1));
 
         $bl = DB::table('bons_livraison')->where('source_bls_id', 1)->value('id');
         $this->actingAs($this->admin)->get("/bons/livraison/{$bl}")->assertOk()->assertInertia(fn (Assert $p) => $p
@@ -84,7 +82,7 @@ class CircuitColisPagesTest extends TestCase
             ->has('anomalies'));
 
         $this->actingAs($this->admin)->get('/bons/inconnu/1')->assertNotFound();
-        $this->actingAs($this->client)->get('/bons')->assertForbidden();
+        $this->actingAs($this->client)->get('/bons-livraison')->assertForbidden();
     }
 
     public function test_page_statuts_et_reclassement_des_colis(): void

@@ -23,6 +23,7 @@ interface Ligne {
 interface Props {
   type: string;
   libelleType: string;
+  urlListe: string;
   bon: {
     id: number; code: string; source_bls_id: number | null; status: string; sous_type: string | null; titulaire: string | null;
     total_colis: number; montant: number; anomalies: number; date: string | null; supprime: boolean;
@@ -37,7 +38,7 @@ const GROUPE: Record<string, string> = {
   livre: 'text-emerald-700 dark:text-emerald-400', retour_agence: 'text-[#c26200] dark:text-[#ff8806]', retour_stock: 'text-amber-800 dark:text-amber-300', retour_client: 'text-purple-700 dark:text-purple-300', echec: 'text-destructive', planifie: 'text-violet-700 dark:text-violet-300', en_cours: 'text-sky-700 dark:text-sky-300', nouveau: 'text-muted-foreground',
 };
 
-export default function BonShow({ type, libelleType, bon, statuts, lignes, anomalies }: Props) {
+export default function BonShow({ libelleType, urlListe, bon, statuts, lignes, anomalies }: Props) {
   const absents = lignes.filter((l) => l.command_id === null).length;
   const parGroupe = lignes.reduce<Record<string, number>>((acc, l) => {
     if (l.groupe_actuel) acc[l.groupe_actuel] = (acc[l.groupe_actuel] ?? 0) + 1;
@@ -49,7 +50,7 @@ export default function BonShow({ type, libelleType, bon, statuts, lignes, anoma
       <Head title={`${bon.code} - OUAISS EXPRESS`} />
 
       <div className="space-y-6">
-        <Link href={`/bons?type=${type}`} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        <Link href={urlListe} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-3.5" /> {libelleType}
         </Link>
 
