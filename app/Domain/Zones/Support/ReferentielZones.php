@@ -89,10 +89,6 @@ final class ReferentielZones
                 'moulay bousalham',
                 // Variantes d'orthographe des libellés legacy Zouhir (portent des tarifs).
                 'aarbaoua', 'jerf el malha', 'khemissat', 'khnichat', 'machroua belkssiri', 'sidi allal bahraoui', 'sidi taybi']],
-
-        // ── Pôle d'attente / Colis orphelins (city null, vide ou '=') ──────────
-        'UKN' => ['name' => 'Uknow-zone', 'type' => 'nationale', 'description' => 'Zone d\'attente pour colis sans ville ou destination inconnue (à adapter/corriger)',
-            'villes' => ['uknow-ville', 'uknow-zone', 'unknown']],
     ];
 
     /** Suffixe régional des libellés legacy « Ville-region » (ex. « Ait melloul-agadir »). */

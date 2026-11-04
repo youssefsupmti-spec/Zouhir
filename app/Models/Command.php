@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Command extends Model
@@ -47,6 +48,16 @@ class Command extends Model
         'expedie_at',
         'ramasse_at',
         'datereported_at',
+        'statut_id',
+        'destinataire_zone_id',
+        'montant_supplementaire',
+        'montant_emballage',
+        'retour_agence_at',
+        'retour_recu_client_at',
+        'agence_id',
+        'partenaire_id',
+        'facture_client',
+        'facture_livreur',
     ];
 
     protected $casts = [
@@ -61,6 +72,13 @@ class Command extends Model
         'expedie_at' => 'datetime',
         'ramasse_at' => 'datetime',
         'datereported_at' => 'datetime',
+        'retour_agence_at' => 'datetime',
+        'retour_recu_client_at' => 'datetime',
+        'montant_supplementaire' => 'decimal:2',
+        'montant_emballage' => 'decimal:2',
+        'facture_client' => 'boolean',
+        'facture_livreur' => 'boolean',
+        'legacy_brut' => 'array',
     ];
 
     /** Relations */
@@ -82,6 +100,36 @@ class Command extends Model
     public function ville(): BelongsTo
     {
         return $this->belongsTo(Ville::class, 'destinataire_ville_id');
+    }
+
+    public function statut(): BelongsTo
+    {
+        return $this->belongsTo(Statut::class);
+    }
+
+    public function zone(): BelongsTo
+    {
+        return $this->belongsTo(Zone::class, 'destinataire_zone_id');
+    }
+
+    public function agence(): BelongsTo
+    {
+        return $this->belongsTo(Agence::class);
+    }
+
+    public function partenaire(): BelongsTo
+    {
+        return $this->belongsTo(Partenaire::class);
+    }
+
+    public function historiques(): HasMany
+    {
+        return $this->hasMany(CommandStatusHistory::class)->orderBy('created_at')->orderBy('id');
+    }
+
+    public function noteMessages(): HasMany
+    {
+        return $this->hasMany(NoteMessage::class)->orderBy('position');
     }
 
     /** Scopes */

@@ -40,11 +40,6 @@ final class VilleRef
         'sekhirat' => 'Skhirate',
         'sidi yahya zair' => 'Sidi yahia zaers',
         'mers lkhir' => 'Mers el kheir',
-        '=' => 'Uknow-ville',
-        'uknow' => 'Uknow-ville',
-        'unknown' => 'Uknow-ville',
-        'non specifiee' => 'Uknow-ville',
-        'non specifie' => 'Uknow-ville',
     ];
 
     private bool $charge = false;
@@ -73,17 +68,7 @@ final class VilleRef
      */
     public function resoudre(int|string|null $ville, bool $historique = false): VilleResolution
     {
-        if ($ville === null || $ville === '' || trim((string) $ville) === '' || trim((string) $ville) === '=') {
-            if ($historique) {
-                $this->charger();
-                // Rapprochement automatique vers Uknow-ville pour l'historique
-                $cleNormalisee = self::cleNormalisee('Uknow-ville');
-                $ids = $this->normalise[$cleNormalisee] ?? [];
-                if ($ids !== []) {
-                    return $this->retenir($ids, VilleResolution::ALIAS);
-                }
-            }
-
+        if ($ville === null || $ville === '') {
             return new VilleResolution(null, VilleResolution::INTROUVABLE);
         }
 

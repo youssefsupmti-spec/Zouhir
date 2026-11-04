@@ -21,10 +21,10 @@ class BackfillUsersFromStockoutCommand extends Command
      * @var string
      */
     protected $signature = 'app:backfill-users-from-stockout 
-                            {--host=localhost : Host MySQL legacy} 
-                            {--database=u405480831_stockout : Base legacy} 
-                            {--user=u405480831_stockout : Utilisateur legacy} 
-                            {--password=1987Hassan/00 : Mot de passe legacy} 
+                            {--host= : Host MySQL legacy (défaut : LEGACY_DB_HOST)} 
+                            {--database= : Base legacy (défaut : LEGACY_DB_DATABASE)} 
+                            {--user= : Utilisateur legacy (défaut : LEGACY_DB_USERNAME)} 
+                            {--password= : Mot de passe legacy (défaut : LEGACY_DB_PASSWORD du .env)} 
                             {--dry-run : Exécuter une simulation sans modifier la base}';
 
     /**
@@ -40,10 +40,10 @@ class BackfillUsersFromStockoutCommand extends Command
     public function handle(): int
     {
         $isDryRun = (bool) $this->option('dry-run');
-        $host = $this->option('host');
-        $database = $this->option('database');
-        $username = $this->option('user');
-        $password = $this->option('password');
+        $host = $this->option('host') ?: config('database.connections.legacy_stockout.host');
+        $database = $this->option('database') ?: config('database.connections.legacy_stockout.database');
+        $username = $this->option('user') ?: config('database.connections.legacy_stockout.username');
+        $password = $this->option('password') ?: config('database.connections.legacy_stockout.password');
 
         $this->info("=== DÉMARRAGE DU BACKFILL USERS (Stockout -> OUAISS EXPRESS WinningExpress) ===");
         if ($isDryRun) {
