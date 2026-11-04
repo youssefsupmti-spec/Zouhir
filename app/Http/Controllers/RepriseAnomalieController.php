@@ -102,6 +102,26 @@ class RepriseAnomalieController extends Controller
         return back()->with('success', 'Anomalie '.mb_strtolower(RepriseAnomalie::STATUTS[$data['statut']]).'.');
     }
 
+    /** Même décision pour toute une sélection (ex. 35 villes introuvables corrigées d'un coup). */
+    public function groupe(Request $request): RedirectResponse
+    {
+        Gate::authorize('update', RepriseAnomalie::class);
+
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*' => ['integer'],
+            'statut' => ['required', Rule::in(array_keys(RepriseAnomalie::STATUTS))],
+            'decision' => ['nullable', 'string', 'max:2000', Rule::requiredIf(fn () => $request->input('statut') !== 'ouverte')],
+        ], ['decision.required' => 'Indiquez la décision prise (elle reste attachée à chaque anomalie).']);
+
+        $valeurs = $data['statut'] === 'ouverte'
+            ? ['statut' => 'ouverte', 'traite_par' => null, 'traite_le' => null]
+            : ['statut' => $data['statut'], 'decision' => $data['decision'], 'traite_par' => $request->user()->id, 'traite_le' => now()];
+        $n = RepriseAnomalie::query()->whereIn('id', $data['ids'])->update($valeurs + ['updated_at' => now()]);
+
+        return back()->with('success', "{$n} anomalie(s) : ".mb_strtolower(RepriseAnomalie::STATUTS[$data['statut']]).'.');
+    }
+
     public function export(Request $request): StreamedResponse
     {
         Gate::authorize('viewAny', RepriseAnomalie::class);

@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -418,11 +417,9 @@ export function ColisFormDialog({
           </div>
 
           <DialogFooter className="mt-5 flex items-center justify-end gap-2">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" size="sm" className="text-xs h-8">
-                Annuler
-              </Button>
-            </DialogClose>
+            <Button type="button" variant="outline" size="sm" className="text-xs h-8" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
             <Button
               type="submit"
               size="sm"

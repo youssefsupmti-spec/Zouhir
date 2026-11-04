@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Domain\Reprise;
 
 /**
- * Groupe (nouveau | en_cours | livre | retour | annule) d'un libellé de statut legacy.
+ * Groupe (nouveau | en_cours | planifie | livre | echec | retour_agence | retour_stock | retour_client) d'un libellé de statut legacy —
+ * découpage de « Tous les colis » de WinningExpress / Zakaria2 (voir GroupesColis).
  *
  * Table EXPLICITE, libellé par libellé (casse et accents ignorés) — pas de recherche de mots-clés.
  * Seule règle de motif : les relances « pas de réponse … » (≈ 15 variantes saisies à la main) sont
- * des colis en cours. Un libellé absent de la table renvoie null : la reprise le classe « en_cours »
+ * des échecs de livraison, comme dans WinningExpress. Un libellé absent de la table renvoie null : la reprise le classe « en_cours »
  * et le signale pour décision.
  */
 final class CarteStatuts
@@ -24,34 +25,38 @@ final class CarteStatuts
         'pret pour expedition' => 'en_cours',
         'expedie' => 'en_cours',
         'en voyage' => 'en_cours',
-        'programme' => 'en_cours',
-        'reporte' => 'en_cours',
         'interesse' => 'en_cours',
-        'injoignable' => 'en_cours',
         'changement adresse' => 'en_cours',
         'changement numero' => 'en_cours',
         'demande de suivi' => 'en_cours',
         'change' => 'en_cours',
 
+        'programme' => 'planifie',
+        'reporte' => 'planifie',
+
         'livre' => 'livre',
         'echange' => 'livre',
 
-        'refuse' => 'retour',
-        'retourne' => 'retour',
-        'retourne client' => 'retour',
-        'retourne vers agence casablanca' => 'retour',
-        'demande de retour' => 'retour',
-        'retour client recu' => 'retour',
-        'routourne hub temara' => 'retour',
-        'retour recu agence casablanca' => 'retour',
-        'retour recu agence casa' => 'retour',
-        'retour recu agence sale' => 'retour',
+        'retourne' => 'retour_agence',
+        'retourne vers agence casablanca' => 'retour_agence',
+        'demande de retour' => 'retour_agence',
+        'routourne hub temara' => 'retour_agence',
+        'retour recu agence casablanca' => 'retour_agence',
+        'retour recu agence casa' => 'retour_agence',
+        'retour recu agence sale' => 'retour_agence',
 
-        'annule' => 'annule',
-        'hors zone' => 'annule',
-        'manque de stock' => 'annule',
-        'perdu' => 'annule',
-        'pas interesse' => 'annule',
+        'retourne vers stock' => 'retour_stock',
+
+        'retour client recu' => 'retour_client',
+        'retourne client' => 'retour_client',
+
+        'annule' => 'echec',
+        'refuse' => 'echec',
+        'injoignable' => 'echec',
+        'hors zone' => 'echec',
+        'manque de stock' => 'echec',
+        'perdu' => 'echec',
+        'pas interesse' => 'echec',
     ];
 
     /** Événements d'historique qui datent un jalon du colis (libellés normalisés). */
@@ -74,7 +79,7 @@ final class CarteStatuts
         }
 
         if (preg_match('/^pas de reponse\b/', $cle) === 1) {
-            return 'en_cours';
+            return 'echec';
         }
 
         return null;

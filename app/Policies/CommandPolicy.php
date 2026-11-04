@@ -46,4 +46,10 @@ class CommandPolicy
     {
         return $this->update($user, $command);
     }
+
+    /** Restaurer depuis la corbeille : mêmes droits que la mise en corbeille. */
+    public function restore(User $user, Command $command): bool
+    {
+        return $this->delete($user, $command);
+    }
 }

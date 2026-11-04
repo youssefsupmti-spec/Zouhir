@@ -11,13 +11,8 @@ class Statut extends Model
 {
     use SoftDeletes;
 
-    public const GROUPES = [
-        'nouveau' => 'Nouveau',
-        'en_cours' => 'En cours',
-        'livre' => 'Livré',
-        'retour' => 'Retour',
-        'annule' => 'Annulé / échec',
-    ];
+    /** Groupes de référence ; la liste vivante est dans etat_groupes (ClassificationEtats). */
+    public const GROUPES = \App\Domain\Colis\Support\GroupesColis::LIBELLES;
 
     public const ORIGINES = [
         'referentiel_legacy' => 'Référentiel de l’ancien site',

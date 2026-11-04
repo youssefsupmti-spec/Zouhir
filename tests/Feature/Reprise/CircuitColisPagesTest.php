@@ -94,8 +94,8 @@ class CircuitColisPagesTest extends TestCase
             ->where('stats.hors_referentiel', 2));
 
         $statut = DB::table('statuts')->where('libelle', 'pas de réponse 3 fois')->first();
-        $this->actingAs($this->admin)->put("/statuts/{$statut->id}", ['groupe' => 'annule', 'couleur' => '#FF7700', 'actif' => false])->assertSessionHasNoErrors();
-        $this->assertSame('annule', DB::table('commands')->find(101)->state_group);
+        $this->actingAs($this->admin)->put("/statuts/{$statut->id}", ['groupe' => 'retour_client', 'couleur' => '#FF7700', 'actif' => false])->assertSessionHasNoErrors();
+        $this->assertSame('retour_client', DB::table('commands')->find(101)->state_group);
 
         $this->actingAs($this->client)->get('/statuts')->assertForbidden();
     }
@@ -124,7 +124,7 @@ class CircuitColisPagesTest extends TestCase
             ->assertJsonCount(2, 'notes')
             ->assertJsonPath('bons.0.code', 'BL-01');
 
-        $this->actingAs($this->admin)->patch('/colis/100/state', ['state_group' => 'retour', 'note' => 'Client a refusé'])->assertSessionHasNoErrors();
+        $this->actingAs($this->admin)->patch('/colis/100/state', ['state_group' => 'retour_client', 'note' => 'Client a refusé'])->assertSessionHasNoErrors();
 
         $this->assertStringContainsString('<b>Livreur: </b>', DB::table('commands')->find(100)->note); // note d'origine intacte
         $this->assertTrue(DB::table('note_messages')->where('command_id', 100)->where('source', 'application')->where('message', 'Client a refusé')->exists());

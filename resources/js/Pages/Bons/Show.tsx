@@ -34,7 +34,7 @@ interface Props {
 }
 
 const GROUPE: Record<string, string> = {
-  livre: 'text-emerald-700 dark:text-emerald-400', retour: 'text-[#c26200] dark:text-[#ff8806]', annule: 'text-destructive', en_cours: 'text-sky-700 dark:text-sky-300', nouveau: 'text-muted-foreground',
+  livre: 'text-emerald-700 dark:text-emerald-400', retour_agence: 'text-[#c26200] dark:text-[#ff8806]', retour_stock: 'text-amber-800 dark:text-amber-300', retour_client: 'text-purple-700 dark:text-purple-300', echec: 'text-destructive', planifie: 'text-violet-700 dark:text-violet-300', en_cours: 'text-sky-700 dark:text-sky-300', nouveau: 'text-muted-foreground',
 };
 
 export default function BonShow({ type, libelleType, bon, statuts, lignes, anomalies }: Props) {

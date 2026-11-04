@@ -108,7 +108,7 @@ final class RepriseColis extends EtapeReprise
                 if ($statutId === null) {
                     $this->journal->signaler('statuts', 'statut_colis_inconnu', 'bloquant', "Colis {$c->code} : statut « {$state} » introuvable dans le référentiel", 'commands', $id, $state, [], 'commands', $id);
                 }
-                if ($dlm === 0 && in_array($groupe, ['livre', 'retour'], true)) {
+                if ($dlm === 0 && in_array($groupe, ['livre', 'retour_agence', 'retour_client'], true)) {
                     $this->journal->signaler('livreurs', 'colis_traite_sans_livreur', 'attention', "Colis {$c->code} « {$state} » sans livreur dans l’ancienne base", 'commands', $id, $state, [], 'commands', $id);
                 }
 

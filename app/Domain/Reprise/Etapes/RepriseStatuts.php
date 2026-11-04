@@ -51,7 +51,9 @@ final class RepriseStatuts extends EtapeReprise
                     'ordre' => (int) $t->id,
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]], ['id'], ['libelle', 'couleur', 'groupe', 'kpi_legacy', 'acteurs_legacy', 'actif', 'origine', 'ordre', 'updated_at']);
+                ]], ['id'], ['libelle', 'couleur', 'kpi_legacy', 'acteurs_legacy', 'origine', 'ordre', 'updated_at']);
+                // Groupe et activation : posés à la création seulement — un choix fait dans la page
+                // « Statuts colis » n'est jamais écrasé par un nouveau passage.
             }
         }
 
@@ -108,6 +110,13 @@ final class RepriseStatuts extends EtapeReprise
         foreach ($usages as $libelle => $n) {
             if ((string) $libelle === '') {
                 $this->journal->signaler('statuts', 'statut_vide', 'bloquant', 'Statut vide sur '.($n['colis'] ?? 0).' colis / '.($n['historique'] ?? 0).' lignes d’historique', 'commands', null, '', $n);
+            }
+        }
+
+        if (! $this->simulation && DB::getSchemaBuilder()->hasTable('etat_groupe_etats')) {
+            $rattaches = DB::table('etat_groupe_etats')->where('axe', 'flux')->pluck('etat_id')->all();
+            foreach (DB::table('statuts')->whereNotIn('id', $rattaches)->get(['id', 'groupe']) as $s) {
+                \App\Domain\StatutsColis\ClassificationEtats::rattacherParCode((string) $s->groupe, (int) $s->id);
             }
         }
 

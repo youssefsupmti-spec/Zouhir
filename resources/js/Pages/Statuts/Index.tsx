@@ -38,11 +38,14 @@ const TON_GROUPE: Record<string, string> = {
   nouveau: 'bg-muted text-muted-foreground',
   en_cours: 'bg-sky-600/10 text-sky-700 dark:text-sky-300',
   livre: 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-400',
-  retour: 'bg-[#ff8806]/10 text-[#c26200] dark:text-[#ff8806]',
-  annule: 'bg-destructive/10 text-destructive',
+  retour_agence: 'bg-[#ff8806]/10 text-[#c26200] dark:text-[#ff8806]',
+  retour_stock: 'bg-amber-700/10 text-amber-800 dark:text-amber-300',
+  retour_client: 'bg-purple-600/10 text-purple-700 dark:text-purple-300',
+  planifie: 'bg-violet-600/10 text-violet-700 dark:text-violet-300',
+  echec: 'bg-destructive/10 text-destructive',
 };
 
-const BARRE: Record<string, string> = { nouveau: 'bg-muted-foreground/40', en_cours: 'bg-sky-600', livre: 'bg-emerald-600', retour: 'bg-[#ff8806]', annule: 'bg-destructive' };
+const BARRE: Record<string, string> = { nouveau: 'bg-muted-foreground/40', en_cours: 'bg-sky-600', livre: 'bg-emerald-600', retour_agence: 'bg-[#ff8806]', retour_stock: 'bg-amber-700', retour_client: 'bg-purple-600', planifie: 'bg-violet-600', echec: 'bg-destructive' };
 
 /** Les couleurs legacy sont parfois des mots (« Gris foncé ») : pastille seulement si c'est une couleur CSS. */
 const estCouleur = (c: string | null) => !!c && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c);

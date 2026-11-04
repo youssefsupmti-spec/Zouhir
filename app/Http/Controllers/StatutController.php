@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Domain\StatutsColis\ClassificationEtats;
+use App\Models\EtatGroupe;
 use App\Models\Statut;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +23,8 @@ class StatutController extends Controller
         Gate::authorize('viewAny', Statut::class);
 
         $origine = array_key_exists((string) $request->input('origine'), Statut::ORIGINES) ? (string) $request->input('origine') : '';
-        $groupe = array_key_exists((string) $request->input('groupe'), Statut::GROUPES) ? (string) $request->input('groupe') : '';
+        $groupes = ClassificationEtats::groupes()->pluck('nom', 'code');
+        $groupe = $groupes->has((string) $request->input('groupe')) ? (string) $request->input('groupe') : '';
         $search = trim((string) $request->input('search', ''));
 
         $colis = DB::table('commands')->whereNotNull('statut_id')->selectRaw('statut_id, COUNT(*) AS n')->groupBy('statut_id')->pluck('n', 'statut_id');
@@ -47,7 +50,7 @@ class StatutController extends Controller
 
         return Inertia::render('Statuts/Index', [
             'statuts' => $statuts,
-            'groupes' => Statut::GROUPES,
+            'groupes' => $groupes,
             'origines' => Statut::ORIGINES,
             'stats' => [
                 'total' => Statut::count(),
@@ -70,18 +73,16 @@ class StatutController extends Controller
         Gate::authorize('update', $statut);
 
         $data = $request->validate([
-            'groupe' => ['required', Rule::in(array_keys(Statut::GROUPES))],
+            'groupe' => ['required', Rule::in(ClassificationEtats::groupes()->pluck('code')->all())],
             'couleur' => ['nullable', 'string', 'max:30'],
             'actif' => ['required', 'boolean'],
         ]);
 
         $colis = DB::transaction(function () use ($statut, $data) {
-            $ancien = $statut->groupe;
-            $statut->update($data);
+            $statut->update(['couleur' => $data['couleur'] ?? null, 'actif' => $data['actif']]);
+            $groupe = EtatGroupe::query()->where('axe', EtatGroupe::AXE_FLUX)->where('code', $data['groupe'])->firstOrFail();
 
-            return $ancien !== $statut->groupe
-                ? DB::table('commands')->where('statut_id', $statut->id)->update(['state_group' => $statut->groupe])
-                : 0;
+            return ClassificationEtats::rattacher($groupe, [$statut->id]);
         });
 
         return back()->with('success', "Statut « {$statut->libelle} » enregistré".($colis > 0 ? " — groupe recopié sur {$colis} colis." : '.'));

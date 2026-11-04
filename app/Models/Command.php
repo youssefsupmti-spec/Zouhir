@@ -145,7 +145,7 @@ class Command extends Model
 
     public function scopeRetour(Builder $query): Builder
     {
-        return $query->where('state_group', 'retour');
+        return $query->whereIn('state_group', \App\Domain\Colis\Support\GroupesColis::RETOURS);
     }
 
     public function scopeForClient(Builder $query, int $clientId): Builder

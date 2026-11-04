@@ -7,12 +7,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Truck, CheckCircle2, RotateCcw, XCircle, Clock, Loader2 } from 'lucide-react';
+import { Truck, CheckCircle2, RotateCcw, XCircle, CalendarClock, Clock, Loader2 } from 'lucide-react';
 
 interface LivreurOption {
   id: number;
@@ -67,11 +66,14 @@ export function ChangeStatutDialog({
   };
 
   const statuts = [
-    { id: 'nouveau', label: 'Nouveau Colis', icon: Clock, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200' },
-    { id: 'en_cours', label: 'En cours de livraison', icon: Truck, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200' },
-    { id: 'livre', label: 'Livré & Encaissé', icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200' },
-    { id: 'retour', label: 'Retour Expéditeur', icon: RotateCcw, color: 'text-orange-600 bg-orange-50 dark:bg-orange-950/40 border-orange-200' },
-    { id: 'annule', label: 'Annulé', icon: XCircle, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200' },
+    { id: 'nouveau', label: 'Nouveau', icon: Clock, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200' },
+    { id: 'en_cours', label: 'En cours', icon: Truck, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200' },
+    { id: 'planifie', label: 'Planifié (reporté)', icon: CalendarClock, color: 'text-violet-600 bg-violet-50 dark:bg-violet-950/40 border-violet-200' },
+    { id: 'livre', label: 'Livré', icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200' },
+    { id: 'retour_agence', label: 'Retour agence', icon: RotateCcw, color: 'text-orange-600 bg-orange-50 dark:bg-orange-950/40 border-orange-200' },
+    { id: 'retour_stock', label: 'Retour stock', icon: RotateCcw, color: 'text-amber-700 bg-amber-50 dark:bg-amber-950/40 border-amber-200' },
+    { id: 'retour_client', label: 'Retour client', icon: RotateCcw, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200' },
+    { id: 'echec', label: 'Échoué (annulé)', icon: XCircle, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200' },
   ];
 
   return (
@@ -153,11 +155,9 @@ export function ChangeStatutDialog({
           </div>
 
           <DialogFooter className="mt-5 flex items-center justify-end gap-2">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" size="sm" className="text-xs h-8">
-                Annuler
-              </Button>
-            </DialogClose>
+            <Button type="button" variant="outline" size="sm" className="text-xs h-8" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
             <Button
               type="submit"
               size="sm"

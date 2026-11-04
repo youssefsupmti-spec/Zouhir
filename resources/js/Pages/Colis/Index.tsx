@@ -1,67 +1,29 @@
-import React, { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Head, router } from '@inertiajs/react';
+import {
+  ArrowDown, ArrowUp, ArrowUpDown, Ban, CalendarClock, CheckCircle2, Clock, Edit, History, MapPin, Package, PackageOpen,
+  Layers, Phone, Plus, RefreshCw, Repeat, RotateCcw, Store, Trash2, Truck, Undo2, Wallet, Warehouse, XCircle,
+} from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatsCard } from '@/components/common/StatsCard';
 import { PageToolbar } from '@/components/common/PageToolbar';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { ServerDataTable, DataTableFeatures } from '@/components/common/ServerDataTable';
+import { FilterDropdown } from '@/components/common/FilterDropdown';
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
+import { DataTablePagination, type LaravelPaginationMeta } from '@/components/common/DataTablePagination';
+import { ActionGroupee, BarreSelection, CaseACocher, useSelection } from '@/components/common/SelectionGroupee';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CartesOnglets } from '@/components/common/CartesOnglets';
 import { ColisFormDialog } from './ColisFormDialog';
 import { ChangeStatutDialog } from './ChangeStatutDialog';
 import { SuiviColisDialog } from './SuiviColisDialog';
-import { type ColumnDef } from '@tanstack/react-table';
-import { 
-  Package, 
-  Truck, 
-  CheckCircle2, 
-  Wallet, 
-  Plus, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
-  MapPin, 
-  RefreshCw,
-  Phone,
-  Store,
-  History
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
+type Onglet = string;
 
-// Provenance du frais client figé (commands.type_tarif_client) — libellés seulement, aucun calcul.
-const TYPE_TARIF_LABEL: Record<string, string> = {
-  client: 'négocié',
-  standard: 'standard',
-  manual: 'manuel',
-  promo: 'promo',
-};
-
-interface ClientOption {
-  id: number;
-  nom_complet: string;
-  telephone?: string;
-  businesses?: Array<{ id: number; name: string; user_id: number }>;
-}
-
-interface VilleOption {
-  id: number;
-  name_fr: string;
-  code_zone?: string;
-}
-
-interface LivreurOption {
-  id: number;
-  nom_complet: string;
-  telephone?: string;
-}
+interface ClientOption { id: number; nom_complet: string; telephone?: string; businesses?: Array<{ id: number; name: string; user_id: number }> }
+interface VilleOption { id: number; name_fr: string; code_zone?: string }
+interface LivreurOption { id: number; nom_complet: string; telephone?: string }
 
 interface ColisItem {
   /** Capacités calculées côté serveur par CommandPolicy. */
@@ -78,6 +40,8 @@ interface ColisItem {
   destinataire_zone_code?: string;
   prix_brut: number;
   frais_livraison_client: number;
+  montant_supplementaire?: number;
+  montant_emballage?: number;
   type_tarif_client?: string | null;
   state: string;
   state_group: string;
@@ -92,424 +56,276 @@ interface ColisItem {
   echange: boolean;
   note?: string;
   created_at: string;
+  updated_at?: string;
   livre_at?: string;
-  client?: {
-    id: number;
-    nom_complet: string;
-    email: string;
-    telephone?: string;
-  };
-  business?: {
-    id: number;
-    name: string;
-  };
-  livreur?: {
-    id: number;
-    nom_complet: string;
-    telephone?: string;
-  };
+  deleted_at?: string | null;
+  client?: { id: number; nom_complet: string; email: string; telephone?: string };
+  business?: { id: number; name: string };
+  livreur?: { id: number; nom_complet: string; telephone?: string };
+  ville?: { id: number; name_fr: string; code_zone?: string };
 }
 
-interface ColisIndexProps {
+interface Props {
   canCreate?: boolean;
   canSetManualFee?: boolean;
-  colis: {
-    data: ColisItem[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-    from: number | null;
-    to: number | null;
-  };
+  canBulk?: boolean;
+  colis: LaravelPaginationMeta & { data: ColisItem[] };
   clients: ClientOption[];
   villes: VilleOption[];
   livreurs: LivreurOption[];
-  stats: {
-    total: number;
-    livres: number;
-    en_cours: number;
-    retours: number;
-    taux_livraison: number;
-    total_crbt: number;
-  };
-  filters: {
-    search?: string;
-    state_group?: string;
-    ville_id?: string;
-    client_id?: string;
-    livreur_id?: string;
-    sort?: string;
-    direction?: string;
-    per_page?: number;
-  };
+  onglets: Record<string, number>;
+  groupes: { code: string; nom: string; couleur: string | null; description: string | null }[];
+  stats: { total: number; livres: number; en_cours: number; retours: number; taux_livraison: number; total_crbt: number };
+  filters: { search?: string; onglet: Onglet; ville_id?: string; client_id?: string; livreur_id?: string; sort: string; direction: 'asc' | 'desc'; per_page: number };
 }
 
-export default function ColisIndex({
-  colis,
-  clients = [],
-  villes = [],
-  livreurs = [],
-  stats,
-  filters,
-  canCreate = false,
-  canSetManualFee = false,
-}: ColisIndexProps) {
+/** Habillage des groupes d'état (onglets et badges). */
+const GROUPE: Record<string, { icone: typeof Clock; badge: string }> = {
+  nouveau: { icone: Clock, badge: 'border-slate-400/30 bg-slate-500/10 text-slate-700 dark:text-slate-300' },
+  en_cours: { icone: Truck, badge: 'border-sky-600/25 bg-sky-600/10 text-sky-700 dark:text-sky-300' },
+  planifie: { icone: CalendarClock, badge: 'border-violet-600/25 bg-violet-600/10 text-violet-700 dark:text-violet-300' },
+  livre: { icone: CheckCircle2, badge: 'border-emerald-600/25 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400' },
+  retour_agence: { icone: Undo2, badge: 'border-[#ff8806]/30 bg-[#ff8806]/10 text-[#c26200] dark:text-[#ff8806]' },
+  retour_stock: { icone: Warehouse, badge: 'border-amber-700/30 bg-amber-700/10 text-amber-800 dark:text-amber-300' },
+  retour_client: { icone: Store, badge: 'border-purple-600/25 bg-purple-600/10 text-purple-700 dark:text-purple-300' },
+  echec: { icone: XCircle, badge: 'border-destructive/25 bg-destructive/10 text-destructive' },
+};
+
+const dh = (v: number | string | null | undefined) => `${Number(v ?? 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+function dateCourte(d?: string | null) {
+  if (!d) return '—';
+  const x = new Date(d);
+  if (Number.isNaN(x.getTime())) return d;
+  return `${x.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })} ${x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+export default function ColisIndex({ colis, clients = [], villes = [], livreurs = [], onglets, groupes, stats, filters, canCreate = false, canSetManualFee = false, canBulk = false }: Props) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingColis, setEditingColis] = useState<ColisItem | null>(null);
-
-  const [statutOpen, setStatutOpen] = useState(false);
   const [statutColis, setStatutColis] = useState<ColisItem | null>(null);
-
   const [suiviId, setSuiviId] = useState<number | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingColis, setDeletingColis] = useState<ColisItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmation, setConfirmation] = useState<{ action: 'corbeille' | 'restaurer'; ids: number[]; libelle: string } | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleCreate = () => {
-    setEditingColis(null);
-    setFormOpen(true);
-  };
+  const corbeille = filters.onglet === 'corbeille';
+  const params: Record<string, unknown> = { ...filters };
+  const selection = useSelection(colis.data.map((c) => c.id));
 
-  const handleEdit = (c: ColisItem) => {
-    setEditingColis(c);
-    setFormOpen(true);
-  };
+  const naviguer = (changes: Record<string, unknown>) =>
+    router.get('/colis', { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true });
 
-  const handleStatusClick = (c: ColisItem) => {
-    setStatutColis(c);
-    setStatutOpen(true);
-  };
+  const trier = (col: string) =>
+    naviguer({ sort: col, direction: filters.sort === col && filters.direction === 'desc' ? 'asc' : 'desc' });
 
-  const handleDeleteClick = (c: ColisItem) => {
-    setDeletingColis(c);
-    setDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deletingColis) return;
-    setIsDeleting(true);
-    router.delete(`/colis/${deletingColis.id}`, {
-      onFinish: () => {
-        setIsDeleting(false);
-        setDeleteOpen(false);
-        setDeletingColis(null);
-      },
+  const executer = () => {
+    if (!confirmation) return;
+    router.post('/colis/groupe', { action: confirmation.action, ids: confirmation.ids }, {
+      preserveScroll: true,
+      onStart: () => setBusy(true),
+      onSuccess: () => selection.vider(),
+      onFinish: () => { setBusy(false); setConfirmation(null); },
     });
   };
 
-  const handleFilterChange = (key: string, value?: string) => {
-    router.get(
-      '/colis',
-      {
-        ...filters,
-        [key]: value ?? 'all',
-        page: 1,
-      },
-      { preserveState: true }
-    );
-  };
-
-  const columns: ColumnDef<DataTableFeatures, ColisItem>[] = [
-    {
-      accessorKey: 'code',
-      header: 'Code AWB',
-      cell: ({ row }) => (
-        <div>
-          <span className="font-mono font-bold text-xs text-primary block">
-            {row.original.code}
-          </span>
-          <span className="text-[11px] text-muted-foreground font-mono">
-            {row.original.created_at ? new Date(row.original.created_at).toLocaleDateString('fr-FR') : '-'}
-          </span>
-        </div>
-      ),
-    },
-    {
-      id: 'expediteur',
-      header: 'Expéditeur',
-      cell: ({ row }) => (
-        <div>
-          <span className="font-semibold text-xs text-foreground block">
-            {row.original.nom_cliente || row.original.client?.nom_complet || 'Marchand OUAISS'}
-          </span>
-          {row.original.business_name && (
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Store className="h-3 w-3" />
-              {row.original.business_name}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      id: 'destinataire',
-      header: 'Destinataire',
-      cell: ({ row }) => (
-        <div>
-          <span className="font-medium text-xs text-foreground block">
-            {row.original.destinataire_nom}
-          </span>
-          <a
-            href={`tel:${row.original.destinataire_telephone}`}
-            className="text-[11px] text-muted-foreground font-mono flex items-center gap-1 hover:text-primary"
-          >
-            <Phone className="h-2.5 w-2.5" />
-            {row.original.destinataire_telephone}
-          </a>
-        </div>
-      ),
-    },
-    {
-      id: 'destination',
-      header: 'Destination',
-      cell: ({ row }) => (
-        <div>
-          <div className="flex items-center gap-1 text-xs font-semibold text-foreground">
-            <MapPin className="h-3 w-3 text-muted-foreground" />
-            <span>{row.original.destinataire_ville}</span>
-          </div>
-          {row.original.destinataire_zone_code && (
-            <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.2 rounded-xs">
-              Zone: {row.original.destinataire_zone_code}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'prix_brut',
-      header: 'CRBT (MAD)',
-      cell: ({ row }) => (
-        <div>
-          <span className="font-mono font-bold text-xs text-foreground block">
-            {Number(row.original.prix_brut).toFixed(2)} MAD
-          </span>
-          <span className="text-[10px] text-muted-foreground font-mono">
-            Frais: {row.original.type_tarif_client === 'missing'
-              ? <span className="font-sans font-semibold text-[#b45f00]">tarif manquant</span>
-              : Number(row.original.frais_livraison_client).toFixed(2)}
-            {TYPE_TARIF_LABEL[row.original.type_tarif_client ?? ''] && row.original.type_tarif_client !== 'missing' && (
-              <span className="ml-1 font-sans">· {TYPE_TARIF_LABEL[row.original.type_tarif_client ?? '']}</span>
-            )}
-          </span>
-        </div>
-      ),
-    },
-    {
-      id: 'livreur',
-      header: 'Livreur',
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground font-medium">
-          {row.original.livreur_nom || row.original.livreur?.nom_complet || 'Non affecté'}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'state_group',
-      header: 'Statut',
-      cell: ({ row }) => (
-        <StatusBadge status={row.original.state_group || 'nouveau'} />
-      ),
-    },
-    {
-      id: 'actions',
-      header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => {
-        const can = row.original.can;
-        if (!can || (!can.update && !can.updateState && !can.delete)) return null;
-        return (
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44 text-xs">
-              <DropdownMenuItem onClick={() => setSuiviId(row.original.id)} className="gap-2 cursor-pointer">
-                <History className="h-3.5 w-3.5" />
-                Suivi & historique
-              </DropdownMenuItem>
-              {can.updateState && (
-              <DropdownMenuItem onClick={() => handleStatusClick(row.original)} className="gap-2 cursor-pointer font-medium text-primary">
-                <RefreshCw className="h-3.5 w-3.5" />
-                Changer de statut
-              </DropdownMenuItem>
-              )}
-              {can.update && (
-              <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
-                <Edit className="h-3.5 w-3.5" />
-                Modifier le colis
-              </DropdownMenuItem>
-              )}
-              {can.delete && (
-              <DropdownMenuItem
-                onClick={() => handleDeleteClick(row.original)}
-                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Archiver
-              </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        );
-      },
-    },
-  ];
+  const Tri = ({ col, children }: { col: string; children: ReactNode }) => (
+    <button type="button" onClick={() => trier(col)} className="inline-flex items-center gap-1 hover:text-foreground">
+      {children}
+      {filters.sort === col ? (filters.direction === 'desc' ? <ArrowDown className="size-3" /> : <ArrowUp className="size-3" />) : <ArrowUpDown className="size-3 opacity-40" />}
+    </button>
+  );
 
   return (
-    <AuthenticatedLayout title="Expéditions & Colis">
-      <Head title="Expéditions & Colis - OUAISS EXPRESS" />
+    <AuthenticatedLayout title="Colis">
+      <Head title="Colis - OUAISS EXPRESS" />
 
       <div className="space-y-6">
-        {/* Header */}
         <PageHeader
-          title="Expéditions & Colis Express"
-          description="Gestion du flux logistique national, expéditions marchands et encaissement des CRBT."
+          title="Colis"
+          description="Tous les colis, de l’enregistrement à la livraison ou au retour, avec le détail du CRBT."
           icon={Package}
-          badge={`${stats.total} colis`}
-          actions={
-            canCreate && <Button
-              onClick={handleCreate}
-              className="bg-[#004c68] hover:bg-[#00384d] text-white rounded-md shadow-2xs text-xs font-semibold cursor-pointer"
-            >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Nouveau Colis Express
+          actions={canCreate && (
+            <Button onClick={() => { setEditingColis(null); setFormOpen(true); }} size="sm" className="h-8 bg-[#004c68] text-xs text-white hover:bg-[#00384d]">
+              <Plus className="size-3.5" /> Nouveau colis
             </Button>
-          }
+          )}
         />
 
-        {/* Cartes KPI Statistiques */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatsCard
-            title="Total Expéditions"
-            value={stats.total}
-            description="Volume total traité"
-            icon={Package}
-          />
-          <StatsCard
-            title="Taux de Livraison"
-            value={`${stats.taux_livraison} %`}
-            trend={{ value: `${stats.livres} colis livrés`, isPositive: true, period: "succès" }}
-            icon={CheckCircle2}
-            iconColor="text-emerald-600 dark:text-emerald-400"
-          />
-          <StatsCard
-            title="En Distribution"
-            value={stats.en_cours}
-            description="Tournées coursiers"
-            icon={Truck}
-            iconColor="text-orange-500"
-          />
-          <StatsCard
-            title="CRBT Encaissé"
-            value={`${Number(stats.total_crbt).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} MAD`}
-            description="Fonds à reverser"
-            icon={Wallet}
-            iconColor="text-blue-600 dark:text-blue-400"
-          />
+          <StatsCard title="Colis" value={stats.total.toLocaleString('fr-FR')} description={`${(onglets.corbeille ?? 0).toLocaleString('fr-FR')} en corbeille`} icon={Package} />
+          <StatsCard title="Taux de livraison" value={`${stats.taux_livraison} %`} description={`${stats.livres.toLocaleString('fr-FR')} colis livrés`} icon={CheckCircle2} iconColor="text-emerald-600 dark:text-emerald-400" />
+          <StatsCard title="En cours & planifiés" value={stats.en_cours.toLocaleString('fr-FR')} description={`${stats.retours.toLocaleString('fr-FR')} en retour ou en échec`} icon={Truck} iconColor="text-[#ff8806]" />
+          <StatsCard title="CRBT des colis livrés" value={`${dh(stats.total_crbt)} DH`} description="Montant encaissé auprès des destinataires" icon={Wallet} />
         </div>
 
-        {/* Toolbar & Server Data Table */}
-        <div className="space-y-3">
-          <PageToolbar
-            searchPlaceholder="Rechercher par code AWB, destinataire, téléphone, produit..."
-            initialSearch={filters.search}
-            currentParams={filters}
-          >
-            {/* Filtre par État */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 text-xs rounded-md">
-                  {filters.state_group && filters.state_group !== 'all' ? `Statut: ${filters.state_group}` : 'Tous les statuts'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44">
-                <DropdownMenuItem onClick={() => handleFilterChange('state_group', undefined)} className="text-xs cursor-pointer">
-                  Tous les statuts
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterChange('state_group', 'livre')} className="text-xs cursor-pointer">
-                  Livré avec succès
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterChange('state_group', 'en_cours')} className="text-xs cursor-pointer">
-                  En cours de livraison
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterChange('state_group', 'retour')} className="text-xs cursor-pointer">
-                  Retour expéditeur
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterChange('state_group', 'annule')} className="text-xs cursor-pointer">
-                  Annulé
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleFilterChange('state_group', 'nouveau')} className="text-xs cursor-pointer">
-                  Nouveau colis
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <CartesOnglets
+          label="Groupes de colis"
+          colonnes="sm:grid-cols-5 2xl:grid-cols-10"
+          value={filters.onglet}
+          onChange={(v) => naviguer({ onglet: v })}
+          onglets={[
+            { value: 'tous', label: 'Tous les colis', count: onglets.tous ?? 0, couleur: '#004c68', icon: <Package />, description: 'Hors corbeille' },
+            ...groupes.map((g) => {
+              const I = GROUPE[g.code]?.icone ?? Layers;
+              return { value: g.code, label: g.nom, count: onglets[g.code] ?? 0, couleur: g.couleur, description: g.description, icon: <I /> };
+            }),
+            { value: 'corbeille', label: 'Corbeille', count: onglets.corbeille ?? 0, couleur: '#64748b', icon: <Trash2 />, description: 'Supprimés, restaurables' },
+          ]}
+        />
 
-            {/* Filtre par Ville */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 text-xs rounded-md">
-                  {filters.ville_id && filters.ville_id !== 'all'
-                    ? `Ville: ${villes.find((v) => v.id.toString() === filters.ville_id)?.name_fr || filters.ville_id}`
-                    : 'Toutes les villes'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48 max-h-60 overflow-y-auto">
-                <DropdownMenuItem onClick={() => handleFilterChange('ville_id', undefined)} className="text-xs cursor-pointer">
-                  Toutes les villes
-                </DropdownMenuItem>
-                {villes.map((v) => (
-                  <DropdownMenuItem key={v.id} onClick={() => handleFilterChange('ville_id', v.id.toString())} className="text-xs cursor-pointer">
-                    {v.name_fr}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </PageToolbar>
+        <PageToolbar searchPlaceholder="Code, destinataire, téléphone, ville, produit, enseigne…" initialSearch={filters.search ?? ''} currentParams={params}>
+          {clients.length > 1 && (
+            <FilterDropdown
+              label="Expéditeur"
+              value={filters.client_id ?? 'all'}
+              options={[{ value: 'all', label: 'Tous' }, ...clients.map((c) => ({ value: String(c.id), label: c.businesses?.[0]?.name ? `${c.businesses[0].name} — ${c.nom_complet}` : c.nom_complet }))]}
+              onChange={(v) => naviguer({ client_id: v === 'all' ? undefined : v })}
+            />
+          )}
+          {livreurs.length > 0 && (
+            <FilterDropdown
+              label="Livreur"
+              value={filters.livreur_id ?? 'all'}
+              options={[{ value: 'all', label: 'Tous' }, ...livreurs.map((l) => ({ value: String(l.id), label: l.nom_complet }))]}
+              onChange={(v) => naviguer({ livreur_id: v === 'all' ? undefined : v })}
+            />
+          )}
+        </PageToolbar>
 
-          <ServerDataTable
-            columns={columns}
-            data={colis.data}
-            paginationMeta={colis}
-            currentParams={filters}
-            emptyMessage="Aucun colis ne correspond à ces critères"
-          />
+        {canBulk && (
+          <BarreSelection taille={selection.taille} onVider={selection.vider}>
+            {corbeille
+              ? <ActionGroupee icone={<RotateCcw className="size-3.5" />} onClick={() => setConfirmation({ action: 'restaurer', ids: selection.ids, libelle: `${selection.taille} colis` })}>Restaurer</ActionGroupee>
+              : <ActionGroupee danger icone={<Trash2 className="size-3.5" />} onClick={() => setConfirmation({ action: 'corbeille', ids: selection.ids, libelle: `${selection.taille} colis` })}>Mettre en corbeille</ActionGroupee>}
+          </BarreSelection>
+        )}
+
+        <div className="overflow-x-auto rounded-md border border-border bg-card shadow-2xs">
+          <Table className="min-w-[1220px] text-xs">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {canBulk && (
+                  <TableHead className="w-10 pl-4">
+                    <CaseACocher label="Tout sélectionner" coche={selection.tous} partiel={selection.partiel} onChange={selection.basculerTous} />
+                  </TableHead>
+                )}
+                <TableHead className={canBulk ? '' : 'pl-4'}><Tri col="code">Référence</Tri></TableHead>
+                <TableHead>Expéditeur</TableHead>
+                <TableHead><Tri col="destinataire_nom">Destinataire</Tri></TableHead>
+                <TableHead>Produit</TableHead>
+                <TableHead className="text-right"><Tri col="prix_brut">CRBT (DH)</Tri></TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead>Livreur</TableHead>
+                <TableHead><Tri col="created_at">Dates</Tri></TableHead>
+                <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {colis.data.map((c) => {
+                const g = GROUPE[c.state_group] ?? { icone: Layers, badge: 'border-border bg-muted text-muted-foreground' };
+                const enseigne = c.business?.name ?? c.business_name;
+                const frais = Number(c.frais_livraison_client ?? 0);
+                const extra = Number(c.montant_supplementaire ?? 0);
+                const emballage = Number(c.montant_emballage ?? 0);
+                return (
+                  <TableRow key={c.id} data-state={selection.estChoisi(c.id) ? 'selected' : undefined} className="align-top">
+                    {canBulk && (
+                      <TableCell className="pl-4 pt-3">
+                        <CaseACocher label={`Sélectionner ${c.code}`} coche={selection.estChoisi(c.id)} onChange={() => selection.basculer(c.id)} />
+                      </TableCell>
+                    )}
+                    <TableCell className={canBulk ? '' : 'pl-4'}>
+                      <button type="button" onClick={() => setSuiviId(c.id)} className="font-mono text-[12px] font-bold text-[#004c68] hover:underline dark:text-cyan-300">{c.code}</button>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {c.echange && <span className="inline-flex items-center gap-0.5 rounded bg-violet-600/10 px-1.5 py-px text-[10px] text-violet-700 dark:text-violet-300"><Repeat className="size-2.5" /> Échange</span>}
+                        {c.ouverture_autorisee && <span className="inline-flex items-center gap-0.5 rounded bg-sky-600/10 px-1.5 py-px text-[10px] text-sky-700 dark:text-sky-300"><PackageOpen className="size-2.5" /> Ouverture</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-[170px]">
+                      {enseigne
+                        ? <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-[#ff8806]/10 px-1.5 py-0.5 text-[11px] font-semibold text-[#c26200] dark:text-[#ff8806]"><Store className="size-3 shrink-0" /><span className="truncate">{enseigne}</span></span>
+                        : <span className="text-muted-foreground">—</span>}
+                      <div className="mt-0.5 truncate text-[10px] text-muted-foreground">{c.client?.nom_complet ?? c.nom_cliente ?? 'Sans expéditeur'}</div>
+                    </TableCell>
+                    <TableCell className="max-w-[220px]">
+                      <div className="truncate font-semibold">{c.destinataire_nom || '—'}</div>
+                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Phone className="size-3" /> {c.destinataire_telephone || '—'}</div>
+                      <div className="flex items-center gap-1 text-[11px]">
+                        <MapPin className="size-3 text-[#ff8806]" />
+                        <span className="font-medium">{c.ville?.name_fr ?? c.destinataire_ville ?? '—'}</span>
+                        {c.destinataire_zone_code && <span className="rounded bg-muted px-1 text-[9px] font-semibold text-muted-foreground">{c.destinataire_zone_code}</span>}
+                      </div>
+                      {c.destinataire_adresse && <div className="truncate text-[10px] text-muted-foreground" title={c.destinataire_adresse}>{c.destinataire_adresse}</div>}
+                    </TableCell>
+                    <TableCell className="max-w-[180px]">
+                      <div className="line-clamp-2" title={c.produit}>{c.produit || '—'}</div>
+                      <span className="mt-0.5 inline-block rounded bg-muted px-1.5 text-[10px] text-muted-foreground">Qté ×{c.quantite}</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="text-[13px] font-bold tabular-nums">{dh(c.prix_brut)}</div>
+                      <dl className="mt-0.5 space-y-px text-[10px] tabular-nums text-muted-foreground">
+                        <div>Frais {dh(frais)}{c.type_tarif_client ? ` · ${c.type_tarif_client}` : ''}</div>
+                        {extra !== 0 && <div>Suppl. {dh(extra)}</div>}
+                        {emballage !== 0 && <div>Emballage {dh(emballage)}</div>}
+                        <div className="font-semibold text-foreground">Net {dh(Number(c.prix_brut) - frais - extra - emballage)}</div>
+                      </dl>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${g.badge}`}>
+                        <g.icone className="size-3" /> {c.state}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[140px]">
+                      {c.livreur_nom || c.livreur?.nom_complet
+                        ? <><div className="truncate font-medium">{c.livreur?.nom_complet ?? c.livreur_nom}</div><div className="text-[10px] text-muted-foreground">{c.livreur?.telephone ?? c.livreur_telephone}</div></>
+                        : <span className="text-muted-foreground">Non assigné</span>}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-[10px] text-muted-foreground">
+                      <div><span className="font-semibold text-foreground">Ajout</span> {dateCourte(c.created_at)}</div>
+                      <div><span className="font-semibold">Màj</span> {dateCourte(c.updated_at)}</div>
+                      {c.livre_at && <div className="text-emerald-700 dark:text-emerald-400"><span className="font-semibold">Livré</span> {dateCourte(c.livre_at)}</div>}
+                      {c.deleted_at && <div className="text-destructive"><span className="font-semibold">Corbeille</span> {dateCourte(c.deleted_at)}</div>}
+                    </TableCell>
+                    <TableCell className="pr-4 text-right">
+                      <span className="inline-flex gap-0.5">
+                        <Button size="icon" variant="ghost" className="size-7" title="Suivi & historique" aria-label={`Suivi de ${c.code}`} onClick={() => setSuiviId(c.id)}><History className="size-3.5" /></Button>
+                        {c.can?.updateState && <Button size="icon" variant="ghost" className="size-7" title="Changer le statut" aria-label={`Statut de ${c.code}`} onClick={() => setStatutColis(c)}><RefreshCw className="size-3.5 text-[#004c68] dark:text-cyan-300" /></Button>}
+                        {c.can?.update && <Button size="icon" variant="ghost" className="size-7" title="Modifier" aria-label={`Modifier ${c.code}`} onClick={() => { setEditingColis(c); setFormOpen(true); }}><Edit className="size-3.5 text-[#ff8806]" /></Button>}
+                        {c.can?.delete && (corbeille
+                          ? <Button size="icon" variant="ghost" className="size-7" title="Restaurer" aria-label={`Restaurer ${c.code}`} onClick={() => setConfirmation({ action: 'restaurer', ids: [c.id], libelle: c.code })}><RotateCcw className="size-3.5 text-emerald-600" /></Button>
+                          : <Button size="icon" variant="ghost" className="size-7" title="Mettre en corbeille" aria-label={`Corbeille ${c.code}`} onClick={() => setConfirmation({ action: 'corbeille', ids: [c.id], libelle: c.code })}><Trash2 className="size-3.5 text-destructive" /></Button>)}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {colis.data.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={canBulk ? 10 : 9} className="py-14 text-center text-muted-foreground">
+                    {corbeille ? <><Ban className="mx-auto mb-2 size-5 opacity-50" />La corbeille est vide.</> : 'Aucun colis pour ces filtres.'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
+
+        {colis.total > 0 && <DataTablePagination meta={colis} currentParams={params} pageSizeOptions={[25, 50, 100]} />}
       </div>
 
-      {/* Modals Dialog CRUD */}
-      <ColisFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        colis={editingColis}
-        clients={clients}
-        villes={villes}
-        livreurs={livreurs}
-        canSetManualFee={canSetManualFee}
-      />
-
-      <ChangeStatutDialog
-        open={statutOpen}
-        onOpenChange={setStatutOpen}
-        colis={statutColis}
-        livreurs={livreurs}
-      />
-
+      <ColisFormDialog open={formOpen} onOpenChange={setFormOpen} colis={editingColis} clients={clients} villes={villes} livreurs={livreurs} canSetManualFee={canSetManualFee} />
+      <ChangeStatutDialog open={statutColis !== null} onOpenChange={(o) => !o && setStatutColis(null)} colis={statutColis} livreurs={livreurs} />
       <SuiviColisDialog colisId={suiviId} onClose={() => setSuiviId(null)} />
-
       <ConfirmDeleteDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Archiver l'expédition"
-        description={`Êtes-vous sûr de vouloir archiver le colis #${deletingColis?.code} ?`}
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
+        open={confirmation !== null}
+        onOpenChange={(o) => !o && !busy && setConfirmation(null)}
+        title={confirmation?.action === 'restaurer' ? 'Restaurer depuis la corbeille' : 'Mettre en corbeille'}
+        description={confirmation?.action === 'restaurer'
+          ? `Restaurer ${confirmation?.libelle} ? Ils reviennent dans leur onglet d’origine.`
+          : `Mettre ${confirmation?.libelle} en corbeille ? Rien n’est effacé : ils restent consultables et restaurables depuis l’onglet « Corbeille ».`}
+        isLoading={busy}
+        onConfirm={executer}
       />
     </AuthenticatedLayout>
   );
 }
-

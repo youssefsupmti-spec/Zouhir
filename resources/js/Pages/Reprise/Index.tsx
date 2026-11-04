@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { Fragment, useState, type FormEvent } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
   AlertOctagon, CheckCircle2, ChevronDown, ChevronRight, DatabaseZap, Download, EyeOff, Gavel, Info, Loader2, RotateCcw, TriangleAlert,
@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ActionGroupee, BarreSelection, CaseACocher, useSelection } from '@/components/common/SelectionGroupee';
 
 type Gravite = 'bloquant' | 'attention' | 'decision' | 'info';
 type Statut = 'ouverte' | 'resolue' | 'ignoree';
@@ -89,12 +91,18 @@ function Details({ details }: { details: Record<string, unknown> }) {
 
 export default function RepriseIndex({ anomalies, domaines, gravites, statuts, compteurs, codes, stats, filters, can }: Props) {
   const [ouvertes, setOuvertes] = useState<Record<number, boolean>>({});
-  const [cible, setCible] = useState<Anomalie | null>(null);
+  const [cible, setCible] = useState<Anomalie | { ids: number[]; libelle: string; statut: Statut } | null>(null);
+  const selection = useSelection(anomalies.data.map((a) => a.id));
   const params = { ...filters };
   const naviguer = (changes: Record<string, unknown>) =>
     router.get('/reprise', { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true });
 
   const form = useForm<{ statut: Statut; decision: string }>({ statut: 'resolue', decision: '' });
+  const ouvrirSelection = () => {
+    form.setData({ statut: filters.statut === 'ouverte' ? 'resolue' : 'ouverte', decision: '' });
+    form.clearErrors();
+    setCible({ ids: selection.ids, libelle: `${selection.taille} anomalie(s) sélectionnée(s)`, statut: filters.statut });
+  };
   const ouvrir = (a: Anomalie) => {
     form.setData({ statut: a.statut === 'ouverte' ? 'resolue' : 'ouverte', decision: a.decision ?? '' });
     form.clearErrors();
@@ -103,7 +111,13 @@ export default function RepriseIndex({ anomalies, domaines, gravites, statuts, c
   const enregistrer = (e: FormEvent) => {
     e.preventDefault();
     if (!cible) return;
-    form.put(`/reprise/${cible.id}`, { preserveScroll: true, onSuccess: () => setCible(null) });
+    if ('ids' in cible) {
+      form.transform((d) => ({ ...d, ids: cible.ids }));
+      form.post('/reprise/groupe', { preserveScroll: true, onSuccess: () => { setCible(null); selection.vider(); } });
+    } else {
+      form.transform((d) => d);
+      form.put(`/reprise/${cible.id}`, { preserveScroll: true, onSuccess: () => setCible(null) });
+    }
   };
 
   return (
@@ -167,57 +181,90 @@ export default function RepriseIndex({ anomalies, domaines, gravites, statuts, c
           />
         </PageToolbar>
 
-        <div className="space-y-2">
-          {anomalies.data.map((a) => {
-            const g = GRAVITE[a.gravite] ?? GRAVITE.info;
-            const Icone = g.icone;
-            const deplie = ouvertes[a.id] === true;
-            const aDetails = Object.keys(a.details).length > 0;
-            return (
-              <article key={a.id} className="relative overflow-hidden rounded-lg border border-border bg-card pl-4 shadow-2xs">
-                <span className={`absolute inset-y-0 left-0 w-1 ${g.barre}`} aria-hidden />
-                <div className="flex flex-wrap items-start gap-3 p-3 pl-1">
-                  <span className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold ${g.classe}`}>
-                    <Icone className="size-3" /> {gravites[a.gravite] ?? a.gravite}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium leading-snug">{a.libelle}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                      <span>{domaines[a.domaine] ?? a.domaine}</span>
-                      <code className="rounded bg-muted px-1.5 py-px text-[10px]">{a.code}</code>
-                      {a.legacy_table && <span>Ancienne base : {LIBELLE_TABLE[a.legacy_table] ?? a.legacy_table}{a.legacy_id ? ` #${a.legacy_id}` : ''}</span>}
-                      {a.valeur_legacy !== null && a.valeur_legacy !== '' && <span className="max-w-[320px] truncate">Valeur : « {a.valeur_legacy} »</span>}
-                      {a.nb_elements !== null && <span className="font-semibold text-foreground">{a.nb_elements} élément(s)</span>}
-                    </div>
-                    {a.decision && (
-                      <p className="mt-2 rounded-md bg-emerald-600/5 px-2.5 py-1.5 text-xs text-emerald-800 dark:text-emerald-300">
-                        <span className="font-semibold">Décision{a.traite_par ? ` (${a.traite_par}, ${dateCourte(a.traite_le)})` : ''} : </span>{a.decision}
-                      </p>
+        {can.manage && (
+          <BarreSelection taille={selection.taille} onVider={selection.vider}>
+            <ActionGroupee icone={<Gavel className="size-3.5" />} onClick={ouvrirSelection}>{filters.statut === 'ouverte' ? 'Décider pour la sélection' : 'Rouvrir / modifier la décision'}</ActionGroupee>
+          </BarreSelection>
+        )}
+
+        <div className="overflow-x-auto rounded-md border border-border bg-card shadow-2xs">
+          <Table className="min-w-[1100px] text-xs">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {can.manage && <TableHead className="w-10 pl-4"><CaseACocher label="Tout sélectionner" coche={selection.tous} partiel={selection.partiel} onChange={selection.basculerTous} /></TableHead>}
+                <TableHead className={`w-32 ${can.manage ? '' : 'pl-4'}`}>Gravité</TableHead>
+                <TableHead className="w-36">Domaine / type</TableHead>
+                <TableHead>Anomalie</TableHead>
+                <TableHead className="w-48">Ancienne base</TableHead>
+                <TableHead className="w-20 text-right">Éléments</TableHead>
+                <TableHead className="w-56">Décision</TableHead>
+                <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {anomalies.data.map((a) => {
+                const g = GRAVITE[a.gravite] ?? GRAVITE.info;
+                const Icone = g.icone;
+                const deplie = ouvertes[a.id] === true;
+                const aDetails = Object.keys(a.details).length > 0;
+                return (
+                  <Fragment key={a.id}>
+                    <TableRow data-state={selection.estChoisi(a.id) ? 'selected' : undefined} className="align-top">
+                      {can.manage && <TableCell className="pl-4 pt-3"><CaseACocher label={`Sélectionner l’anomalie ${a.id}`} coche={selection.estChoisi(a.id)} onChange={() => selection.basculer(a.id)} /></TableCell>}
+                      <TableCell className={can.manage ? '' : 'pl-4'}>
+                        <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold ${g.classe}`}><Icone className="size-3" /> {gravites[a.gravite] ?? a.gravite}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{domaines[a.domaine] ?? a.domaine}</div>
+                        <code className="text-[10px] text-muted-foreground">{a.code}</code>
+                      </TableCell>
+                      <TableCell className="max-w-[420px] whitespace-normal">
+                        <p className="leading-snug">{a.libelle}</p>
+                        {a.valeur_legacy !== null && a.valeur_legacy !== '' && <p className="mt-0.5 truncate text-[10px] text-muted-foreground" title={a.valeur_legacy}>Valeur : « {a.valeur_legacy} »</p>}
+                      </TableCell>
+                      <TableCell className="text-[11px] text-muted-foreground">
+                        {a.legacy_table ? `${LIBELLE_TABLE[a.legacy_table] ?? a.legacy_table}${a.legacy_id ? ` #${a.legacy_id}` : ''}` : '—'}
+                        {a.cible_table && a.cible_id && <div className="text-[10px]">→ {LIBELLE_TABLE[a.cible_table] ?? a.cible_table} #{a.cible_id}</div>}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{a.nb_elements ?? '—'}</TableCell>
+                      <TableCell className="whitespace-normal text-[11px]">
+                        {a.decision
+                          ? <><p className="text-emerald-800 dark:text-emerald-300">{a.decision}</p>{a.traite_par && <p className="text-[10px] text-muted-foreground">{a.traite_par} · {dateCourte(a.traite_le)}</p>}</>
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="pr-4 text-right">
+                        <span className="inline-flex gap-0.5">
+                          {aDetails && (
+                            <Button size="icon" variant="ghost" className="size-7" title="Détails" aria-label="Détails" onClick={() => setOuvertes((o) => ({ ...o, [a.id]: !deplie }))}>
+                              {deplie ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                            </Button>
+                          )}
+                          {can.manage && (
+                            <Button size="icon" variant="ghost" className="size-7" title={a.statut === 'ouverte' ? 'Décider' : 'Rouvrir'} aria-label="Décider" onClick={() => ouvrir(a)}>
+                              {a.statut === 'ouverte' ? <Gavel className="size-3.5 text-[#004c68] dark:text-cyan-300" /> : <RotateCcw className="size-3.5" />}
+                            </Button>
+                          )}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                    {deplie && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={can.manage ? 8 : 7} className="bg-muted/20 px-6 pb-3 pt-0"><Details details={a.details} /></TableCell>
+                      </TableRow>
                     )}
-                    {deplie && <Details details={a.details} />}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    {aDetails && (
-                      <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setOuvertes((o) => ({ ...o, [a.id]: !deplie }))}>
-                        {deplie ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />} Détails
-                      </Button>
-                    )}
-                    {can.manage && (
-                      <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => ouvrir(a)}>
-                        {a.statut === 'ouverte' ? <><Gavel className="size-3.5" /> Décider</> : <><RotateCcw className="size-3.5" /> Rouvrir</>}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-          {anomalies.data.length === 0 && (
-            <div className="rounded-lg border border-dashed border-border py-14 text-center text-sm text-muted-foreground">
-              <CheckCircle2 className="mx-auto mb-2 size-6 text-emerald-600 opacity-70" />
-              {stats.dernier_passage ? 'Aucune anomalie pour ces filtres.' : 'La reprise n’a pas encore été exécutée (php artisan reprise:legacy).'}
-            </div>
-          )}
+                  </Fragment>
+                );
+              })}
+              {anomalies.data.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={can.manage ? 8 : 7} className="py-14 text-center text-muted-foreground">
+                    <CheckCircle2 className="mx-auto mb-2 size-6 text-emerald-600 opacity-70" />
+                    {stats.dernier_passage ? 'Aucune anomalie pour ces filtres.' : 'La reprise n’a pas encore été exécutée (php artisan reprise:legacy).'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
 
         {anomalies.total > 0 && <DataTablePagination meta={anomalies} currentParams={params} pageSizeOptions={[25, 50, 100]} />}

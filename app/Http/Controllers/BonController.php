@@ -11,6 +11,7 @@ use App\Models\BonRetour;
 use App\Models\RepriseAnomalie;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -114,6 +115,29 @@ class BonController extends Controller
             'lignes' => $lignes,
             'anomalies' => $anomalies,
         ]);
+    }
+
+    /**
+     * Actions groupées : mettre en corbeille (suppression logique) ou restaurer une sélection.
+     * Les lignes du bon restent intactes ; pas de suppression définitive.
+     */
+    public function groupe(Request $request, string $type): RedirectResponse
+    {
+        abort_unless(array_key_exists($type, self::TYPES), 404);
+        [$modele] = self::TYPES[$type];
+        Gate::authorize('update', $modele);
+
+        $data = $request->validate([
+            'action' => ['required', 'in:corbeille,restaurer'],
+            'ids' => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $n = $data['action'] === 'corbeille'
+            ? $modele::query()->whereIn('id', $data['ids'])->get()->each->delete()->count()
+            : $modele::onlyTrashed()->whereIn('id', $data['ids'])->get()->each->restore()->count();
+
+        return back()->with('success', "{$n} bon(s) ".($data['action'] === 'corbeille' ? 'mis en corbeille.' : 'restauré(s).'));
     }
 
     /** @return array<string, mixed> */

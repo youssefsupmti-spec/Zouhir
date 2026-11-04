@@ -48,12 +48,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: <LayoutDashboardIcon />,
     },
     {
-      title: "Expéditions & Colis",
+      title: "Colis",
       icon: <PackageIcon />,
       items: [
-        { title: "Toutes les expéditions", url: "/colis" },
+        { title: "Tous les colis", url: "/colis" },
         { title: "Bons (BL, BE, ramassage, retour)", url: "/bons" },
         { title: "Statuts colis", url: "/statuts" },
+        { title: "Groupes d’état", url: "/etat-groupes" },
       ],
     },
     {
@@ -117,6 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/comptes-bancaires": "comptesBancaires",
     "/bons": "bons",
     "/statuts": "statuts",
+    "/etat-groupes": "statuts",
     "/reseau": "reseau",
     "/reprise": "reprise",
     "/roles": "roles",

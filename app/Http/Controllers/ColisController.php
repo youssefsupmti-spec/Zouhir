@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Application\Tarifs\Actions\FigerCommissionLivreurColis;
 use App\Application\Tarifs\Actions\FigerTarifClientColis;
 use App\Models\Business;
+use App\Domain\StatutsColis\ClassificationEtats;
 use App\Models\Command;
 use App\Models\CommandStatusHistory;
 use App\Models\NoteMessage;
@@ -24,13 +25,19 @@ class ColisController extends Controller
     /**
      * Liste paginée des colis et expéditions avec recherche, filtres et métriques CRBT.
      */
+    /** Onglets : « tous » + les groupes d'état + la corbeille (suppression logique, à part). */
+
     public function index(Request $request): Response
     {
         Gate::authorize('viewAny', Command::class);
         $user = $request->user();
 
-        $search = $request->input('search');
-        $stateGroup = $request->input('state_group');
+        $search = trim((string) $request->input('search', ''));
+        // `state_group` reste accepté (anciens liens) : il désigne l'onglet du même nom.
+        $onglet = (string) $request->input('onglet', $request->input('state_group', 'tous'));
+        // Onglets = groupes actifs de la classification des états (etat_groupes, axe flux).
+        $groupes = ClassificationEtats::groupes(actifsSeulement: true);
+        $onglet = in_array($onglet, ['tous', 'corbeille', ...$groupes->pluck('code')->all()], true) ? $onglet : 'tous';
         $villeId = $request->input('ville_id');
         $clientId = $request->input('client_id');
         $livreurId = $request->input('livreur_id');
@@ -38,68 +45,63 @@ class ColisController extends Controller
         $direction = $request->input('direction', 'desc');
         $perPage = min(max((int) $request->input('per_page', 25), 1), 100);
 
-        $allowedSorts = ['id', 'code', 'prix_brut', 'destinataire_nom', 'created_at', 'livre_at'];
+        $allowedSorts = ['id', 'code', 'prix_brut', 'destinataire_nom', 'created_at', 'updated_at', 'livre_at'];
         if (! in_array($sort, $allowedSorts, true)) {
             $sort = 'created_at';
         }
-        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+        $direction = strtolower((string) $direction) === 'asc' ? 'asc' : 'desc';
 
-        // Data Isolation : toute la page (liste ET statistiques) est limitée au périmètre.
+        // Data Isolation : toute la page (liste, onglets ET statistiques) est limitée au périmètre.
         $scoped = fn () => Command::query()->visibleTo($user);
-
-        $query = $scoped()
-            ->with([
-                'client:id,nom_complet,email,telephone',
-                'business:id,name',
-                'livreur:id,nom_complet,telephone',
-                'ville:id,name_fr,code_zone',
-            ])
-            ->when($search, function ($q, $term) {
-                $q->where(function ($sub) use ($term) {
-                    $sub->where('code', 'like', "%{$term}%")
-                        ->orWhere('destinataire_nom', 'like', "%{$term}%")
-                        ->orWhere('destinataire_telephone', 'like', "%{$term}%")
-                        ->orWhere('produit', 'like', "%{$term}%")
-                        ->orWhere('business_name', 'like', "%{$term}%")
-                        ->orWhere('nom_cliente', 'like', "%{$term}%");
+        $filtres = function ($q) use ($search, $villeId, $clientId, $livreurId) {
+            $q->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('code', 'like', "%{$search}%")
+                        ->orWhere('destinataire_nom', 'like', "%{$search}%")
+                        ->orWhere('destinataire_telephone', 'like', "%{$search}%")
+                        ->orWhere('destinataire_ville', 'like', "%{$search}%")
+                        ->orWhere('produit', 'like', "%{$search}%")
+                        ->orWhere('business_name', 'like', "%{$search}%")
+                        ->orWhere('nom_cliente', 'like', "%{$search}%");
                 });
             })
-            ->when($stateGroup && $stateGroup !== 'all', function ($q) use ($stateGroup) {
-                $q->where('state_group', $stateGroup);
-            })
-            ->when($villeId && $villeId !== 'all', function ($q) use ($villeId) {
-                $q->where('destinataire_ville_id', $villeId);
-            })
-            ->when($clientId && $clientId !== 'all', function ($q) use ($clientId) {
-                $q->where('client_id', $clientId);
-            })
-            ->when($livreurId && $livreurId !== 'all', function ($q) use ($livreurId) {
-                $q->where('livreur_id', $livreurId);
-            })
-            ->orderBy($sort, $direction);
+                ->when($villeId && $villeId !== 'all', fn ($q) => $q->where('destinataire_ville_id', $villeId))
+                ->when($clientId && $clientId !== 'all', fn ($q) => $q->where('client_id', $clientId))
+                ->when($livreurId && $livreurId !== 'all', fn ($q) => $q->where('livreur_id', $livreurId));
+        };
 
-        $colis = $query->paginate($perPage)->withQueryString();
+        $colis = $scoped()
+            ->when($onglet === 'corbeille', fn ($q) => $q->onlyTrashed())
+            ->when(! in_array($onglet, ['tous', 'corbeille'], true), fn ($q) => $q->where('state_group', $onglet))
+            ->tap($filtres)
+            ->with(['client:id,nom_complet,email,telephone', 'business:id,name', 'livreur:id,nom_complet,telephone', 'ville:id,name_fr,code_zone'])
+            ->orderBy($sort, $direction)->orderBy('id', $direction)
+            ->paginate($perPage)->withQueryString();
 
         // Capacités calculées par les Policies : l'interface n'utilise aucun nom de rôle.
         $colis->through(function (Command $c) use ($user) {
             $c->setAttribute('can', [
-                'update' => $user->can('update', $c),
-                'updateState' => $user->can('updateState', $c),
+                'update' => ! $c->trashed() && $user->can('update', $c),
+                'updateState' => ! $c->trashed() && $user->can('updateState', $c),
                 'delete' => $user->can('delete', $c),
             ]);
 
             return $c;
         });
 
-        // Statistiques logistiques et financières réelles MariaDB
-        $totalColis = $scoped()->count();
-        $livresColis = $scoped()->where('state_group', 'livre')->count();
-        $enCoursColis = $scoped()->where('state_group', 'en_cours')->count();
-        $retoursColis = $scoped()->whereIn('state_group', ['retour', 'annule'])->count();
-        $tauxLivraison = $totalColis > 0 ? round(($livresColis / $totalColis) * 100, 1) : 0;
-        $totalCrbtLivre = (float) $scoped()->where('state_group', 'livre')->sum('prix_brut');
+        // Compteurs des onglets : UNE requête groupée (mêmes filtres de recherche que la liste).
+        $parGroupe = $scoped()->tap($filtres)->selectRaw('state_group, COUNT(*) AS n')->groupBy('state_group')->pluck('n', 'state_group');
+        $onglets = ['tous' => (int) $parGroupe->sum()];
+        foreach ($groupes as $g) {
+            $onglets[$g->code] = (int) ($parGroupe[$g->code] ?? 0);
+        }
+        $onglets['corbeille'] = $scoped()->onlyTrashed()->tap($filtres)->count();
 
-        // Référentiels pour les filtres et les formulaires d'expédition
+        // Statistiques (périmètre, hors corbeille).
+        $totalColis = (int) $scoped()->count();
+        $livresColis = (int) $scoped()->where('state_group', 'livre')->count();
+        $tauxLivraison = $totalColis > 0 ? round(($livresColis / $totalColis) * 100, 1) : 0;
+
         // Listes de référence limitées au périmètre : un marchand ne voit que lui-même,
         // seule l'administration voit les autres marchands et les livreurs.
         $clientsList = User::clients()
@@ -109,9 +111,7 @@ class ColisController extends Controller
             ->orderBy('nom_complet')
             ->get();
 
-        $villesList = Ville::select('id', 'name_fr', 'code_zone')
-            ->orderBy('name_fr')
-            ->get();
+        $villesList = Ville::select('id', 'name_fr', 'code_zone')->orderBy('name_fr')->get();
 
         $livreursList = User::drivers()
             ->when(! $user->isAdmin(), fn ($q) => $q->whereRaw('1 = 0'))
@@ -123,20 +123,23 @@ class ColisController extends Controller
             'colis' => $colis,
             'canCreate' => $user->can('create', Command::class),
             'canSetManualFee' => $user->isAdmin(),
+            'canBulk' => $user->isAdmin() || $user->isClient(),
             'clients' => $clientsList,
             'villes' => $villesList,
             'livreurs' => $livreursList,
+            'onglets' => $onglets,
+            'groupes' => $groupes->map(fn ($g) => ['code' => $g->code, 'nom' => $g->nom, 'couleur' => $g->couleur, 'description' => $g->description])->values(),
             'stats' => [
                 'total' => $totalColis,
                 'livres' => $livresColis,
-                'en_cours' => $enCoursColis,
-                'retours' => $retoursColis,
+                'en_cours' => (int) $scoped()->whereIn('state_group', ['en_cours', 'planifie'])->count(),
+                'retours' => (int) $scoped()->whereIn('state_group', [...\App\Domain\Colis\Support\GroupesColis::RETOURS, 'echec'])->count(),
                 'taux_livraison' => $tauxLivraison,
-                'total_crbt' => $totalCrbtLivre,
+                'total_crbt' => (float) $scoped()->where('state_group', 'livre')->sum('prix_brut'),
             ],
             'filters' => [
                 'search' => $search,
-                'state_group' => $stateGroup ?? 'all',
+                'onglet' => $onglet,
                 'ville_id' => $villeId ?? 'all',
                 'client_id' => $clientId ?? 'all',
                 'livreur_id' => $livreurId ?? 'all',
@@ -145,6 +148,48 @@ class ColisController extends Controller
                 'per_page' => $perPage,
             ],
         ]);
+    }
+
+    /**
+     * Actions groupées : mettre en corbeille ou restaurer une sélection. Chaque colis est vérifié
+     * par la Policy (périmètre) ; ceux qui ne sont pas autorisés sont ignorés et comptés.
+     * Il n'existe pas de suppression définitive : la corbeille garde tout (aucune perte de données).
+     */
+    public function groupe(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $data = $request->validate([
+            'action' => ['required', 'in:corbeille,restaurer'],
+            'ids' => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $colis = Command::withTrashed()->whereIn('id', $data['ids'])->get();
+        $faits = 0;
+        $refuses = 0;
+
+        DB::transaction(function () use ($colis, $data, $request, &$faits, &$refuses) {
+            foreach ($colis as $c) {
+                $permis = $data['action'] === 'corbeille' ? $request->user()->can('delete', $c) : $request->user()->can('restore', $c);
+                if (! $permis) {
+                    $refuses++;
+
+                    continue;
+                }
+                if ($data['action'] === 'corbeille' && ! $c->trashed()) {
+                    $c->delete();
+                    $faits++;
+                } elseif ($data['action'] === 'restaurer' && $c->trashed()) {
+                    $c->restore();
+                    $faits++;
+                }
+            }
+        });
+
+        abort_if($faits === 0 && $refuses > 0, 403);
+
+        $verbe = $data['action'] === 'corbeille' ? 'mis en corbeille' : 'restauré(s)';
+
+        return back()->with('success', "{$faits} colis {$verbe}.".($refuses > 0 ? " {$refuses} ignoré(s) (hors de votre périmètre)." : ''));
     }
 
     /**
@@ -298,18 +343,18 @@ class ColisController extends Controller
         $isAdmin = $request->user()->isAdmin();
 
         $validated = $request->validate([
-            'state_group' => ['required', 'in:nouveau,en_cours,livre,retour,annule'],
+            'state_group' => ['required', \Illuminate\Validation\Rule::in(ClassificationEtats::groupes(actifsSeulement: true)->pluck('code')->all())],
             'livreur_id' => ['nullable', 'exists:users,id'],
             'note' => ['nullable', 'string'],
         ]);
 
-        $stateMap = [
-            'nouveau' => 'Nouveau Colis',
-            'en_cours' => 'En cours de distribution',
-            'livre' => 'Livré avec succès',
-            'retour' => 'Retour à l\'expéditeur',
-            'annule' => 'Annulé par le client',
-        ];
+        // Statut posé = libellé du référentiel (« Livré », « Reporté »…), jamais un texte inventé.
+        $stateMap = \App\Domain\Colis\Support\GroupesColis::STATUT_PAR_DEFAUT;
+        if (! isset($stateMap[$validated['state_group']])) {
+            // Groupe créé dans la classification : premier état actif rattaché à ce groupe.
+            $stateMap[$validated['state_group']] = (string) \App\Models\EtatGroupe::query()->where('axe', 'flux')->where('code', $validated['state_group'])->first()
+                ?->etats()->where('actif', true)->orderBy('ordre')->orderBy('statuts.id')->value('libelle');
+        }
 
         $group = $validated['state_group'];
         $etatAvant = $coli->state;

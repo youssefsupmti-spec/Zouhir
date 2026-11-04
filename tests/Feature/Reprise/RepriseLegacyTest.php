@@ -48,7 +48,7 @@ class RepriseLegacyTest extends TestCase
         $this->assertNotNull($this->anomalie('statut_en_double'));
         $hors = DB::table('statuts')->where('libelle', 'pas de réponse 3 fois')->first();
         $this->assertSame('hors_referentiel', $hors->origine);
-        $this->assertSame('en_cours', $hors->groupe);
+        $this->assertSame('echec', $hors->groupe); // relances « pas de réponse » = échec (WinningExpress)
         $this->assertNotNull(DB::table('reprise_anomalies')->where('code', 'groupe_inconnu')->where('valeur_legacy', 'Bizarre statut')->first());
 
         // Colis : même id, code en double gardé, valeurs d'origine conservées.

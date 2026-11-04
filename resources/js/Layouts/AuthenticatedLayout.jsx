@@ -39,7 +39,7 @@ export default function AuthenticatedLayout({ children, title }) {
     const getPageTitle = () => {
         if (title) return title;
         const pathname = url.split('?')[0].split('#')[0];
-        if (pathname.startsWith('/colis')) return 'Expéditions & Colis';
+        if (pathname.startsWith('/colis')) return 'Colis';
         if (pathname.startsWith('/businesses')) return 'Enseignes & Boutiques';
         if (pathname.startsWith('/clients')) return 'Clients Marchands';
         if (pathname.startsWith('/livreurs')) return 'Livreurs (DLM)';
@@ -48,6 +48,7 @@ export default function AuthenticatedLayout({ children, title }) {
         if (pathname.startsWith('/comptes-bancaires')) return 'Comptes bancaires';
         if (pathname.startsWith('/bons')) return 'Bons';
         if (pathname.startsWith('/statuts')) return 'Statuts colis';
+        if (pathname.startsWith('/etat-groupes')) return 'Groupes d’état';
         if (pathname.startsWith('/reseau')) return 'Réseau';
         if (pathname.startsWith('/reprise')) return 'Reprise des données';
         if (pathname.startsWith('/dashboard')) return 'Tableau de bord';

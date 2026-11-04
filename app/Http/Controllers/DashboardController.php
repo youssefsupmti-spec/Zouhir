@@ -23,7 +23,7 @@ class DashboardController extends Controller
         $totalShipments = (clone $query)->count();
         $delivered = (clone $query)->where('state_group', 'livre')->count();
         $inTransit = (clone $query)->where('state_group', 'en_cours')->count();
-        $returned = (clone $query)->where('state_group', 'retour')->count();
+        $returned = (clone $query)->whereIn('state_group', \App\Domain\Colis\Support\GroupesColis::RETOURS)->count();
         $crbtBalance = (float) (clone $query)->where('state_group', 'livre')->sum('prix_brut');
         $crbtPending = (float) (clone $query)->where('state_group', 'en_cours')->sum('prix_brut');
 
