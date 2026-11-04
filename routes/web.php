@@ -83,6 +83,22 @@ Route::middleware('auth')->group(function () {
     Route::put('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'update'])->name('colis.update');
     Route::patch('/colis/{coli}/state', [\App\Http\Controllers\ColisController::class, 'updateState'])->name('colis.state');
     Route::delete('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'destroy'])->name('colis.destroy');
+    Route::get('/colis/{coli}/suivi', [\App\Http\Controllers\ColisController::class, 'suivi'])->name('colis.suivi');
+
+    // Circuit colis : bons, statuts, réseau (agences, livreurs, partenaires)
+    Route::get('/bons', [\App\Http\Controllers\BonController::class, 'index'])->name('bons.index');
+    Route::get('/bons/{type}/{bon}', [\App\Http\Controllers\BonController::class, 'show'])->whereIn('type', ['livraison', 'envoi', 'ramassage', 'retour'])->whereNumber('bon')->name('bons.show');
+    Route::get('/statuts', [\App\Http\Controllers\StatutController::class, 'index'])->name('statuts.index');
+    Route::put('/statuts/{statut}', [\App\Http\Controllers\StatutController::class, 'update'])->name('statuts.update');
+    Route::get('/reseau', [\App\Http\Controllers\ReseauController::class, 'index'])->name('reseau.index');
+    Route::put('/reseau/agences/{agence}', [\App\Http\Controllers\ReseauController::class, 'updateAgence'])->name('reseau.agences.update');
+    Route::put('/reseau/membres/{membre}', [\App\Http\Controllers\ReseauController::class, 'updateMembre'])->name('reseau.membres.update');
+    Route::put('/reseau/partenaires/{partenaire}', [\App\Http\Controllers\ReseauController::class, 'updatePartenaire'])->name('reseau.partenaires.update');
+
+    // Reprise de l'ancienne base : données non reprises exactement, avec décision
+    Route::get('/reprise', [\App\Http\Controllers\RepriseAnomalieController::class, 'index'])->name('reprise.index');
+    Route::get('/reprise/export', [\App\Http\Controllers\RepriseAnomalieController::class, 'export'])->name('reprise.export');
+    Route::put('/reprise/{anomalie}', [\App\Http\Controllers\RepriseAnomalieController::class, 'update'])->whereNumber('anomalie')->name('reprise.update');
 
     // Tarifs Clients négociés (Sprint 28) — autorisation : ClientTarifPolicy (contrôleur / FormRequests).
     Route::get('/tarifs-clients', [\App\Http\Controllers\ClientTarifController::class, 'index'])->name('tarifs-clients.index');

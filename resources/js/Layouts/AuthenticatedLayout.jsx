@@ -46,6 +46,10 @@ export default function AuthenticatedLayout({ children, title }) {
         if (pathname.startsWith('/villes')) return 'Villes & Zones';
         if (pathname.startsWith('/banks')) return 'Banques';
         if (pathname.startsWith('/comptes-bancaires')) return 'Comptes bancaires';
+        if (pathname.startsWith('/bons')) return 'Bons';
+        if (pathname.startsWith('/statuts')) return 'Statuts colis';
+        if (pathname.startsWith('/reseau')) return 'Réseau';
+        if (pathname.startsWith('/reprise')) return 'Reprise des données';
         if (pathname.startsWith('/dashboard')) return 'Tableau de bord';
         return 'Espace Client';
     };

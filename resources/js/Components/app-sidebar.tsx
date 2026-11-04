@@ -24,6 +24,7 @@ import {
   StoreIcon,
   ShieldCheckIcon,
   KeyRoundIcon,
+  DatabaseZapIcon,
   TagsIcon,
 } from "lucide-react"
 
@@ -51,7 +52,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: <PackageIcon />,
       items: [
         { title: "Toutes les expéditions", url: "/colis" },
-        { title: "Historique & Suivi AWB", badge: SOON, disabled: true },
+        { title: "Bons (BL, BE, ramassage, retour)", url: "/bons" },
+        { title: "Statuts colis", url: "/statuts" },
       ],
     },
     {
@@ -61,6 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: "Enseignes & Boutiques", url: "/businesses" },
         { title: "Clients Marchands", url: "/clients" },
         { title: "Livreurs (DLM)", url: "/livreurs" },
+        { title: "Réseau & partenaires", url: "/reseau" },
         { title: "Zones logistiques", url: "/zones" },
         { title: "Banques", url: "/banks" },
         { title: "Villes", url: "/villes" },
@@ -112,6 +115,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/zones": "zones",
     "/banks": "banks",
     "/comptes-bancaires": "comptesBancaires",
+    "/bons": "bons",
+    "/statuts": "statuts",
+    "/reseau": "reseau",
+    "/reprise": "reprise",
     "/roles": "roles",
     "/permissions": "permissions",
     "/tarifs-clients": "tarifsClients",
@@ -133,6 +140,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const adminNav: NavItem[] = [
     { title: "Rôles", url: "/roles", icon: <ShieldCheckIcon /> },
     { title: "Permissions", url: "/permissions", icon: <KeyRoundIcon /> },
+    { title: "Reprise des données", url: "/reprise", icon: <DatabaseZapIcon /> },
   ].filter((item) => isAllowed(item.url))
 
   const quickLinks = [

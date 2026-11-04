@@ -6,9 +6,14 @@ use App\Application\Tarifs\Actions\FigerCommissionLivreurColis;
 use App\Application\Tarifs\Actions\FigerTarifClientColis;
 use App\Models\Business;
 use App\Models\Command;
+use App\Models\CommandStatusHistory;
+use App\Models\NoteMessage;
+use App\Models\Statut;
 use App\Models\User;
 use App\Models\Ville;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -307,6 +312,7 @@ class ColisController extends Controller
         ];
 
         $group = $validated['state_group'];
+        $etatAvant = $coli->state;
         $coli->state_group = $group;
         $coli->state = $stateMap[$group] ?? $group;
 
@@ -325,15 +331,92 @@ class ColisController extends Controller
             $coli->livreur_telephone = $livreur->telephone;
         }
 
-        if (! empty($validated['note'])) {
-            $coli->note = $validated['note'];
-        }
+        // La note saisie devient un message : la note d'origine (reprise de l'ancien site) reste intacte.
+        $noteSaisie = trim((string) ($validated['note'] ?? ''));
 
         // Changement de livreur avant finalisation : commission réalignée sur le nouveau livreur.
         app(FigerCommissionLivreurColis::class)->aLaModification($coli);
-        $coli->save();
+        $coli->statut_id = Statut::query()->where('libelle', $coli->state)->orderByDesc('actif')->orderBy('id')->value('id');
+
+        DB::transaction(function () use ($coli, $etatAvant, $noteSaisie, $request) {
+            $coli->save();
+            $user = $request->user();
+            $type = $user->isAdmin() ? 'moderateur' : ($user->isDriver() ? 'livreur' : ($user->isClient() ? 'client' : null));
+
+            if ($etatAvant !== $coli->state) {
+                CommandStatusHistory::create([
+                    'command_id' => $coli->id,
+                    'command_code' => $coli->code,
+                    'from_state' => $etatAvant,
+                    'to_state' => $coli->state,
+                    'to_statut_id' => $coli->statut_id,
+                    'changed_by_type' => $type,
+                    'changed_by_id' => $user->id,
+                    'changed_by_nom' => $user->nom_complet,
+                    'change_source' => 'application',
+                    'created_at' => now(),
+                ]);
+            }
+
+            if ($noteSaisie !== '') {
+                NoteMessage::create([
+                    'command_id' => $coli->id,
+                    'user_id' => $user->id,
+                    'role' => $type ?? 'inconnu',
+                    'auteur_nom' => $user->nom_complet,
+                    'message' => $noteSaisie,
+                    'position' => (int) NoteMessage::where('command_id', $coli->id)->where('source', 'application')->max('position') + 1,
+                    'source' => 'application',
+                    'date_exacte' => true,
+                ]);
+            }
+        });
 
         return back()->with('success', "Statut du colis #{$coli->code} mis à jour : {$coli->state}.");
+    }
+
+    /**
+     * Suivi d'un colis (JSON) : historique des statuts, messages de notes et bons qui le contiennent.
+     */
+    public function suivi(Command $coli): JsonResponse
+    {
+        Gate::authorize('view', $coli);
+
+        $coli->load(['historiques.auteur:id,nom_complet', 'noteMessages.auteur:id,nom_complet', 'statut:id,libelle,couleur,groupe']);
+
+        $bons = collect([
+            ['livraison', 'bon_livraison_command', 'bon_livraison_id', 'bons_livraison'],
+            ['envoi', 'bon_envoi_command', 'bon_envoi_id', 'bons_envoi'],
+            ['ramassage', 'bon_ramassage_lines', 'bon_ramassage_id', 'bon_ramassage'],
+            ['retour', 'bon_retour_command', 'bon_retour_id', 'bons_retour'],
+        ])->flatMap(fn ($t) => DB::table($t[1])->join($t[3], "{$t[3]}.id", '=', "{$t[1]}.{$t[2]}")
+            ->where("{$t[1]}.command_id", $coli->id)
+            ->get(["{$t[3]}.id", "{$t[3]}.code", "{$t[3]}.status", "{$t[3]}.legacy_dateadd_at"])
+            ->map(fn ($b) => ['type' => $t[0], 'id' => $b->id, 'code' => $b->code, 'status' => $b->status, 'date' => $b->legacy_dateadd_at]))
+            ->sortBy('date')->values();
+
+        return response()->json([
+            'colis' => [
+                'id' => $coli->id, 'code' => $coli->code, 'state' => $coli->state, 'state_group' => $coli->state_group,
+                'statut' => $coli->statut, 'note_brute' => $coli->note,
+                'jalons' => [
+                    'ramasse_at' => $coli->ramasse_at?->toDateTimeString(),
+                    'expedie_at' => $coli->expedie_at?->toDateTimeString(),
+                    'livre_at' => $coli->livre_at?->toDateTimeString(),
+                    'retour_agence_at' => $coli->retour_agence_at?->toDateTimeString(),
+                    'retour_recu_client_at' => $coli->retour_recu_client_at?->toDateTimeString(),
+                ],
+            ],
+            'historique' => $coli->historiques->map(fn ($h) => [
+                'id' => $h->id, 'de' => $h->from_state, 'vers' => $h->to_state, 'par' => $h->auteur?->nom_complet ?? $h->changed_by_nom,
+                'type' => $h->changed_by_type, 'source' => $h->change_source, 'date' => $h->created_at?->toDateTimeString(),
+            ]),
+            'notes' => $coli->noteMessages->sortBy([['source', 'desc'], ['position', 'asc']])->values()->map(fn ($n) => [
+                'id' => $n->id, 'role' => $n->role, 'auteur' => $n->auteur?->nom_complet ?? $n->auteur_nom, 'message' => $n->message,
+                'source' => $n->source, 'date' => $n->created_at?->toDateTimeString(), 'date_exacte' => $n->date_exacte,
+            ]),
+            'bons' => $bons,
+        ]);
     }
 
     /**

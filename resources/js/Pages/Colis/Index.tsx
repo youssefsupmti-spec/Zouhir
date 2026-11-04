@@ -9,6 +9,7 @@ import { ServerDataTable, DataTableFeatures } from '@/components/common/ServerDa
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
 import { ColisFormDialog } from './ColisFormDialog';
 import { ChangeStatutDialog } from './ChangeStatutDialog';
+import { SuiviColisDialog } from './SuiviColisDialog';
 import { type ColumnDef } from '@tanstack/react-table';
 import { 
   Package, 
@@ -22,7 +23,8 @@ import {
   MapPin, 
   RefreshCw,
   Phone,
-  Store
+  Store,
+  History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -159,6 +161,7 @@ export default function ColisIndex({
   const [statutOpen, setStatutOpen] = useState(false);
   const [statutColis, setStatutColis] = useState<ColisItem | null>(null);
 
+  const [suiviId, setSuiviId] = useState<number | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingColis, setDeletingColis] = useState<ColisItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -324,6 +327,10 @@ export default function ColisIndex({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44 text-xs">
+              <DropdownMenuItem onClick={() => setSuiviId(row.original.id)} className="gap-2 cursor-pointer">
+                <History className="h-3.5 w-3.5" />
+                Suivi & historique
+              </DropdownMenuItem>
               {can.updateState && (
               <DropdownMenuItem onClick={() => handleStatusClick(row.original)} className="gap-2 cursor-pointer font-medium text-primary">
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -491,6 +498,8 @@ export default function ColisIndex({
         colis={statutColis}
         livreurs={livreurs}
       />
+
+      <SuiviColisDialog colisId={suiviId} onClose={() => setSuiviId(null)} />
 
       <ConfirmDeleteDialog
         open={deleteOpen}
