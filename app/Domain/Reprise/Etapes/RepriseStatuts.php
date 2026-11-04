@@ -63,11 +63,14 @@ final class RepriseStatuts extends EtapeReprise
         }
 
         // Libellés réellement utilisés (colis + historique), comparés À L'IDENTIQUE au référentiel.
+        // Regroupement SENSIBLE À LA CASSE : sous MySQL, « Pas de réponse 2 fois » et « pas de réponse
+        // 2 fois » seraient fusionnés par la collation et l'un des deux ne serait jamais créé.
+        $cle = $this->legacy->getDriverName() === 'mysql' ? 'BINARY TRIM(state)' : 'TRIM(state)';
         $usages = [];
-        foreach ($this->legacy->table('commands')->selectRaw('TRIM(state) AS s, COUNT(*) AS n')->groupByRaw('TRIM(state)')->get() as $r) {
+        foreach ($this->legacy->table('commands')->selectRaw('TRIM(state) AS s, COUNT(*) AS n')->groupByRaw($cle)->get() as $r) {
             $usages[(string) $r->s]['colis'] = (int) $r->n;
         }
-        foreach ($this->legacy->table('commandshistory')->selectRaw('TRIM(state) AS s, COUNT(*) AS n')->groupByRaw('TRIM(state)')->get() as $r) {
+        foreach ($this->legacy->table('commandshistory')->selectRaw('TRIM(state) AS s, COUNT(*) AS n')->groupByRaw($cle)->get() as $r) {
             $usages[(string) $r->s]['historique'] = (int) $r->n;
         }
 
@@ -88,7 +91,8 @@ final class RepriseStatuts extends EtapeReprise
                 $this->journal->signaler('statuts', 'groupe_inconnu', 'decision', "Statut « {$libelle} » : groupe à confirmer (classé « en cours »)", 'commands', null, $libelle);
             }
 
-            if (! $this->simulation && ! DB::table('statuts')->where('libelle', $libelle)->exists()) {
+            $existe = DB::table('statuts')->whereNull('deleted_at')->pluck('libelle')->contains(fn ($l) => $l === $libelle);
+            if (! $this->simulation && ! $existe) {
                 DB::table('statuts')->insert([
                     'libelle' => $libelle,
                     'groupe' => $groupe ?? 'en_cours',

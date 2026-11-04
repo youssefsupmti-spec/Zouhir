@@ -109,6 +109,7 @@ trait LegacyFixture
             $colis(102, ['code' => 'CODE1', 'city' => 'Ville Fantome', 'client' => 0, 'dlm' => 0, 'state' => 'Ajouté', 'qty' => '(L - XL) taille']),
             $colis(103, ['city' => 'ain atig', 'state' => 'Retour client reçu', 'trash' => 0, 'price' => 672499672, 'openpackage' => 260,
                 'note' => '&lt;p&gt;&lt;strong&gt;Hicham Rabat: &lt;/strong&gt;Tri9 3in 3awda&lt;ins&gt;01/04/26 10:50&lt;/ins&gt;&lt;/p&gt;<b>Livreur: </b>Livré a ain aouda<br />']),
+            $colis(105, ['state' => 'Pas de réponse 3 fois', 'note' => '&lt;b&gt;Client: &lt;/b&gt;Svp demain matin&lt;br /&gt;&amp;lt;p&amp;gt;&amp;lt;strong&amp;gt;Perma: &amp;lt;/strong&amp;gt;اريد واحدة&amp;lt;ins&amp;gt;07/08/2025 15:24&amp;lt;/ins&amp;gt;&amp;lt;/p&amp;gt;']),
             $colis(104, ['city' => 'Casablanca', 'note' => 'client intéressé', 'datereported' => '-55766448000']),
         ] as $ligne) {
             $L->table('commands')->insert($ligne);

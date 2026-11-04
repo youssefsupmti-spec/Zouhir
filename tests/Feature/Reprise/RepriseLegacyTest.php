@@ -52,7 +52,7 @@ class RepriseLegacyTest extends TestCase
         $this->assertNotNull(DB::table('reprise_anomalies')->where('code', 'groupe_inconnu')->where('valeur_legacy', 'Bizarre statut')->first());
 
         // Colis : même id, code en double gardé, valeurs d'origine conservées.
-        $this->assertSame(5, DB::table('commands')->count());
+        $this->assertSame(6, DB::table('commands')->count());
         $this->assertSame(2, DB::table('commands')->where('code', 'CODE1')->count());
         $this->assertNotNull($this->anomalie('code_en_double'));
 
@@ -113,6 +113,14 @@ class RepriseLegacyTest extends TestCase
         $this->assertSame('Hicham Rabat', $n103[0]->auteur_nom);
         $this->assertTrue((bool) $n103[0]->date_exacte);
         $this->assertSame('inconnu', DB::table('note_messages')->where('command_id', 104)->value('role'));
+        $n105 = DB::table('note_messages')->where('command_id', 105)->orderBy('position')->get();
+        $this->assertSame(['client', 'externe'], $n105->pluck('role')->all()); // formats échappés une et deux fois
+        $this->assertSame('Perma', $n105[1]->auteur_nom);
+        $this->assertStringStartsWith('2025-08-07', (string) $n105[1]->created_at);
+        $this->assertNull($this->anomalie('fragment_non_interprete'));
+        // Casse distincte = statut distinct (« Pas de réponse 3 fois » ≠ « pas de réponse 3 fois »).
+        $this->assertNotNull(DB::table('commands')->find(105)->statut_id);
+        $this->assertNotSame(DB::table('commands')->find(105)->statut_id, DB::table('commands')->find(101)->statut_id);
         $this->assertStringContainsString('<b>Livreur: </b>', DB::table('commands')->find(100)->note);
 
         // Bons : quatre familles, « 0 » ignoré, colis disparu gardé, doublon dans le bon signalé.
@@ -180,7 +188,7 @@ class RepriseLegacyTest extends TestCase
 
         $md = file_get_contents("{$dossier}/RAPPORT-REPRISE-ANOMALIES.md");
         $this->assertStringContainsString('ville_introuvable', $md);
-        $this->assertStringContainsString('| Colis | 5 |', $md);
+        $this->assertStringContainsString('| Colis | 6 |', $md);
         $this->assertGreaterThan(5, count(file("{$dossier}/reprise-anomalies.csv")));
         array_map('unlink', glob("{$dossier}/*"));
         rmdir($dossier);

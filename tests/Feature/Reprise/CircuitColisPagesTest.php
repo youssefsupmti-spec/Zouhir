@@ -91,7 +91,7 @@ class CircuitColisPagesTest extends TestCase
     {
         $this->actingAs($this->admin)->get('/statuts')->assertOk()->assertInertia(fn (Assert $p) => $p
             ->component('Statuts/Index')
-            ->where('stats.hors_referentiel', 1));
+            ->where('stats.hors_referentiel', 2));
 
         $statut = DB::table('statuts')->where('libelle', 'pas de réponse 3 fois')->first();
         $this->actingAs($this->admin)->put("/statuts/{$statut->id}", ['groupe' => 'annule', 'couleur' => '#FF7700', 'actif' => false])->assertSessionHasNoErrors();
