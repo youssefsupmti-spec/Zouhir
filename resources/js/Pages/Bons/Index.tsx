@@ -83,8 +83,13 @@ export default function BonsIndex({ type, page, sousTypes, bons, stats, statuts,
               return (
                 <button key={v} type="button" role="tab" aria-selected={actif}
                   onClick={() => router.get(page.url, v === 'tous' ? {} : { sous_type: v }, { preserveScroll: true })}
-                  className={`rounded-md px-3 py-1.5 font-medium ${actif ? 'bg-[#004c68] text-white dark:bg-[#ff8806] dark:text-[#05161f]' : 'text-muted-foreground hover:text-foreground'}`}>
-                  {l} <span className="ml-1 tabular-nums opacity-80">{n.toLocaleString('fr-FR')}</span>
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium ${actif ? 'bg-[#004c68] text-white dark:bg-[#ff8806] dark:text-[#05161f]' : 'text-muted-foreground hover:text-foreground'}`}>
+                  {l}
+                  <span className={`min-w-5 rounded-full px-1.5 py-px text-center text-[10px] font-semibold tabular-nums ${actif
+                    ? 'bg-white/20 text-white dark:bg-[#05161f]/15 dark:text-[#05161f]'
+                    : 'bg-[#004c68]/10 text-[#004c68] dark:bg-[#ff8806]/15 dark:text-[#ff8806]'}`}>
+                    {n.toLocaleString('fr-FR')}
+                  </span>
                 </button>
               );
             })}
