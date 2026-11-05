@@ -98,6 +98,69 @@ class BonController extends Controller
         ]);
     }
 
+    /**
+     * Bon imprimable (A4) : en-tête de l'agence, informations, code-barres du bon, tableau des colis,
+     * total CRBT et cases de signature. Affiché dans une modale (iframe) ; « Enregistrer en PDF »
+     * passe par l'impression du navigateur — aucun moteur PDF à installer sur l'hébergement.
+     */
+    public function imprimer(string $type, int $bon): \Illuminate\Contracts\View\View
+    {
+        abort_unless(array_key_exists($type, self::TYPES), 404);
+        [$modele, $libelle] = self::TYPES[$type];
+        Gate::authorize('view', $modele);
+
+        /** @var Model $b */
+        $b = $modele::withTrashed()->with('lignes')->findOrFail($bon);
+        $colis = \App\Models\Command::withTrashed()
+            ->whereIn('id', $b->lignes->pluck('command_id')->filter())
+            ->get(['id', 'code', 'produit', 'quantite', 'destinataire_nom', 'destinataire_telephone', 'destinataire_adresse', 'destinataire_ville', 'prix_brut', 'state'])
+            ->keyBy('id');
+
+        $lignes = $b->lignes->map(function ($l) use ($colis) {
+            $c = $l->command_id !== null ? ($colis[$l->command_id] ?? null) : null;
+
+            return [
+                'sequence' => $l->sequence,
+                'code' => $l->command_code ?? $l->code ?? $c?->code,
+                'destinataire' => $l->destinataire_nom ?? $l->nom_destinataire ?? $c?->destinataire_nom,
+                'telephone' => $l->destinataire_telephone ?? $l->telephone ?? $c?->destinataire_telephone,
+                'ville' => $l->destinataire_ville ?? $l->ville ?? $c?->destinataire_ville,
+                'adresse' => $c?->destinataire_adresse,
+                'produit' => $c ? trim(($c->produit ?? '').($c->quantite > 1 ? " (×{$c->quantite})" : '')) : ($l->produit ?? null),
+                'montant' => (float) ($l->prix_brut ?? $l->prix ?? $c?->prix_brut ?? 0),
+                'absent' => $l->command_id === null,
+            ];
+        });
+
+        $titre = match ($type) {
+            'livraison' => 'Bon de livraison',
+            'envoi' => 'Bon d’envoi',
+            'ramassage' => 'Bon de ramassage',
+            'retour' => $b->type === 'livreur' ? 'Bon de retour livreur' : 'Bon de retour client',
+        };
+        [$roleTiers, $tiers, $telTiers] = match ($type) {
+            'livraison' => ['Livreur', $b->livreur_nom, $b->livreur_telephone],
+            'envoi' => ['Partenaire', $b->hub ?? $b->livreur_nom, $b->livreur_telephone],
+            'ramassage' => ['Marchand', trim(($b->business_name ?? '').($b->nom_cliente ? ' — '.$b->nom_cliente : ''), ' —'), null],
+            'retour' => $b->type === 'livreur' ? ['Livreur', $b->livreur_nom, null] : ['Marchand', $b->business_name, null],
+        };
+
+        return view('print.bon', [
+            'type' => $type,
+            'titre' => $titre,
+            'bon' => $b,
+            'statut' => $modele::STATUTS[$b->status] ?? $b->status,
+            'lignes' => $lignes,
+            'total' => round((float) $lignes->sum('montant'), 2),
+            'roleTiers' => $roleTiers,
+            'tiers' => $tiers ?: '—',
+            'telTiers' => $telTiers,
+            'agence' => \App\Models\Agence::principale(),
+            'codeBarres' => \App\Domain\Documents\Code128::svg((string) $b->code),
+            'imprimePar' => request()->user()?->nom_complet,
+        ]);
+    }
+
     public function show(string $type, int $bon): Response
     {
         abort_unless(array_key_exists($type, self::TYPES), 404);

@@ -132,4 +132,25 @@ class CircuitColisPagesTest extends TestCase
         DB::table('commands')->where('id', 104)->update(['client_id' => 1]);
         $this->actingAs($this->client)->getJson('/colis/104/suivi')->assertForbidden();
     }
+
+    public function test_impression_des_bons(): void
+    {
+        foreach (['bons_livraison' => 'livraison', 'bons_envoi' => 'envoi', 'bon_ramassage' => 'ramassage', 'bons_retour' => 'retour'] as $table => $type) {
+            $bon = DB::table($table)->orderBy('id')->first();
+            $html = $this->actingAs($this->admin)->get("/bons/{$type}/{$bon->id}/imprimer")->assertOk()->getContent();
+            $this->assertStringContainsString($bon->code, $html);
+            $this->assertStringContainsString('<svg', $html);              // code-barres du bon
+            $this->assertStringContainsString('Signature', $html);
+        }
+
+        $bl = DB::table('bons_livraison')->where('source_bls_id', 1)->value('id');
+        $html = $this->actingAs($this->admin)->get("/bons/livraison/{$bl}/imprimer")->getContent();
+        $this->assertStringContainsString('Bon de livraison', $html);
+        $this->assertStringContainsString('Mbarek livreur', $html);
+        $this->assertStringContainsString('OIS-100', $html);
+        $this->assertStringContainsString('Colis absent de l’ancienne base', $html); // colis #99999
+
+        $this->actingAs($this->client)->get("/bons/livraison/{$bl}/imprimer")->assertForbidden();
+        $this->actingAs($this->admin)->get('/bons/inconnu/1/imprimer')->assertNotFound();
+    }
 }

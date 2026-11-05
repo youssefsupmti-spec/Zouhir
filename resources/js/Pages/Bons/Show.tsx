@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, Database, FileText, Package } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Database, FileText, Package, Printer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ApercuImpression } from '@/components/bons/ApercuImpression';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BadgeStatutBon, dateBon, montant } from '@/components/bons/partage';
@@ -38,7 +41,8 @@ const GROUPE: Record<string, string> = {
   livre: 'text-emerald-700 dark:text-emerald-400', retour_agence: 'text-[#c26200] dark:text-[#ff8806]', retour_stock: 'text-amber-800 dark:text-amber-300', retour_client: 'text-purple-700 dark:text-purple-300', echec: 'text-destructive', planifie: 'text-violet-700 dark:text-violet-300', en_cours: 'text-sky-700 dark:text-sky-300', nouveau: 'text-muted-foreground',
 };
 
-export default function BonShow({ libelleType, urlListe, bon, statuts, lignes, anomalies }: Props) {
+export default function BonShow({ type, libelleType, urlListe, bon, statuts, lignes, anomalies }: Props) {
+  const [apercu, setApercu] = useState(false);
   const absents = lignes.filter((l) => l.command_id === null).length;
   const parGroupe = lignes.reduce<Record<string, number>>((acc, l) => {
     if (l.groupe_actuel) acc[l.groupe_actuel] = (acc[l.groupe_actuel] ?? 0) + 1;
@@ -63,6 +67,9 @@ export default function BonShow({ libelleType, urlListe, bon, statuts, lignes, a
             </div>
             <div className="flex flex-col items-end gap-2">
               <BadgeStatutBon statut={bon.status} libelle={statuts[bon.status] ?? bon.status} />
+              <Button size="sm" variant="outline" className="h-8 border-white/30 bg-white/10 text-xs text-white hover:bg-white/20" onClick={() => setApercu(true)}>
+                <Printer className="size-3.5" /> Imprimer
+              </Button>
               {bon.supprime && <span className="rounded bg-white/15 px-2 py-0.5 text-[10px]">En corbeille depuis le {dateBon(bon.deleted_at)}</span>}
             </div>
           </div>
@@ -152,6 +159,7 @@ export default function BonShow({ libelleType, urlListe, bon, statuts, lignes, a
           </aside>
         </div>
       </div>
+      <ApercuImpression url={apercu ? `/bons/${type}/${bon.id}/imprimer` : null} titre={`${libelleType} ${bon.code}`} onClose={() => setApercu(false)} />
     </AuthenticatedLayout>
   );
 }

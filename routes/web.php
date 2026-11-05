@@ -95,6 +95,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/'.$pageBons, [\App\Http\Controllers\BonController::class, 'index'])->defaults('page', $pageBons)->name($pageBons.'.index');
     }
     Route::post('/bons/{type}/groupe', [\App\Http\Controllers\BonController::class, 'groupe'])->whereIn('type', ['livraison', 'envoi', 'ramassage', 'retour'])->name('bons.groupe');
+    Route::get('/bons/{type}/{bon}/imprimer', [\App\Http\Controllers\BonController::class, 'imprimer'])->whereIn('type', ['livraison', 'envoi', 'ramassage', 'retour'])->whereNumber('bon')->name('bons.imprimer');
     Route::get('/bons/{type}/{bon}', [\App\Http\Controllers\BonController::class, 'show'])->whereIn('type', ['livraison', 'envoi', 'ramassage', 'retour'])->whereNumber('bon')->name('bons.show');
     Route::get('/statuts', [\App\Http\Controllers\StatutController::class, 'index'])->name('statuts.index');
     Route::put('/statuts/{statut}', [\App\Http\Controllers\StatutController::class, 'update'])->name('statuts.update');

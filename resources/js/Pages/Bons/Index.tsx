@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { Boxes, Eye, FileStack, Package, PackageCheck, RotateCcw, Send, Trash2, Truck, Undo2 } from 'lucide-react';
+import { Boxes, Eye, FileStack, Printer, Package, PackageCheck, RotateCcw, Send, Trash2, Truck, Undo2 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ChargementTableau, useChargementPage } from '@/components/common/ChargementTableau';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
 import { BadgeStatutBon, montant, dateBon } from '@/components/bons/partage';
+import { ApercuImpression } from '@/components/bons/ApercuImpression';
 
 type TypeBon = 'livraison' | 'envoi' | 'ramassage' | 'retour';
 
@@ -48,6 +49,7 @@ export default function BonsIndex({ type, page, bons, stats, statuts, filters }:
   const chargement = useChargementPage();
   const [confirmation, setConfirmation] = useState<{ action: 'corbeille' | 'restaurer'; ids: number[]; libelle: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [impression, setImpression] = useState<{ url: string; titre: string } | null>(null);
   const params = { ...filters, corbeille: filters.corbeille ? 1 : undefined };
   const naviguer = (changes: Record<string, unknown>) =>
     router.get(page.url, { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true, only: ['bons', 'stats', 'filters'] });
@@ -125,6 +127,7 @@ export default function BonsIndex({ type, page, bons, stats, statuts, filters }:
                   <TableCell className="text-muted-foreground">{dateBon(b.date)}</TableCell>
                   <TableCell className="pr-4 text-right">
                     <span className="inline-flex gap-0.5">
+                      <Button size="icon" variant="ghost" className="size-7" title="Imprimer le bon" aria-label={`Imprimer ${b.code}`} onClick={() => setImpression({ url: `/bons/${type}/${b.id}/imprimer`, titre: `${page.titre.replace(/s/g, '')} ${b.code}` })}><Printer className="size-3.5 text-[#004c68] dark:text-cyan-300" /></Button>
                       <Button size="icon" variant="ghost" className="size-7" title="Voir le bon" aria-label={`Voir ${b.code}`} onClick={() => router.visit(`/bons/${type}/${b.id}`)}><Eye className="size-3.5" /></Button>
                       {filters.corbeille
                         ? <Button size="icon" variant="ghost" className="size-7" title="Restaurer" aria-label={`Restaurer ${b.code}`} onClick={() => setConfirmation({ action: 'restaurer', ids: [b.id], libelle: b.code })}><RotateCcw className="size-3.5 text-emerald-600" /></Button>
@@ -143,6 +146,7 @@ export default function BonsIndex({ type, page, bons, stats, statuts, filters }:
         {bons.total > 0 && <DataTablePagination meta={bons} currentParams={params} pageSizeOptions={[25, 50, 100]} />}
       </div>
 
+      <ApercuImpression url={impression?.url ?? null} titre={impression?.titre ?? ''} onClose={() => setImpression(null)} />
       <ConfirmDeleteDialog
         open={confirmation !== null}
         onOpenChange={(o) => !o && !busy && setConfirmation(null)}
