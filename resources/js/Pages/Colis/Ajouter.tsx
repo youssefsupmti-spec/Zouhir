@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, ChevronsUpDown, Loader2, MapPin, Minus, Package, PackageOpen, Plus, Repeat, Search, User } from 'lucide-react';
+import { ArrowLeft, Check, ChevronsUpDown, Loader2, MapPin, Minus, Package, PackageOpen, Plus, Repeat, Search, Shirt, User } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,13 +12,12 @@ interface Ville { id: number; name_fr: string; name_ar?: string | null; code_zon
 interface Props {
   clients: Client[];
   villes: Ville[];
-  livreurs: { id: number; nom_complet: string; telephone?: string | null }[];
   estAdmin: boolean;
 }
 interface Estimation { manquant: boolean; type: string; livraison: string | null }
 
 const dh = (v: number) => v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const TARIF_APPLIQUE: Record<string, string> = { client: 'Négocié (marchand)', standard: 'Standard (ville)', manual: 'Saisi', missing: 'Aucun tarif' };
+const TARIF_APPLIQUE: Record<string, string> = { client: 'Négocié (client)', standard: 'Standard (ville)', manual: 'Saisi', missing: 'Aucun tarif' };
 const TYPE_TARIF: Record<string, string> = { client: 'tarif négocié', standard: 'tarif standard', manual: 'saisi', missing: 'aucun tarif' };
 
 /** Étape numérotée du formulaire ; coche verte quand elle est complète. */
@@ -102,10 +101,10 @@ function ChoixVille({ villes, valeur, onChange, erreur }: { villes: Ville[]; val
 }
 
 /** Option à bascule, présentée comme une carte. */
-function Bascule({ actif, onChange, icone, titre, aide }: { actif: boolean; onChange: (v: boolean) => void; icone: ReactNode; titre: string; aide: string }) {
+function Bascule({ actif, onChange, icone, titre, aide, desactive = false }: { actif: boolean; onChange: (v: boolean) => void; icone: ReactNode; titre: string; aide: string; desactive?: boolean }) {
   return (
-    <button type="button" role="switch" aria-checked={actif} onClick={() => onChange(!actif)}
-      className={`flex items-start gap-3 rounded-lg border p-3 text-left ${actif ? 'border-[#004c68] bg-[#004c68]/5 dark:border-[#ff8806] dark:bg-[#ff8806]/10' : 'border-border'}`}>
+    <button type="button" role="switch" aria-checked={actif} disabled={desactive} onClick={() => onChange(!actif)}
+      className={`flex items-start gap-3 rounded-lg border p-3 text-left disabled:opacity-50 ${actif ? 'border-[#004c68] bg-[#004c68]/5 dark:border-[#ff8806] dark:bg-[#ff8806]/10' : 'border-border'}`}>
       <span className={`mt-0.5 ${actif ? 'text-[#004c68] dark:text-[#ff8806]' : 'text-muted-foreground'}`}>{icone}</span>
       <span className="flex-1">
         <span className="block text-sm font-medium">{titre}</span>
@@ -118,7 +117,7 @@ function Bascule({ actif, onChange, icone, titre, aide }: { actif: boolean; onCh
   );
 }
 
-export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Props) {
+export default function AjouterColis({ clients, villes, estAdmin }: Props) {
   const premier = clients.length === 1 ? clients[0] : null;
   const form = useForm({
     client_id: premier ? String(premier.id) : '',
@@ -131,9 +130,10 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
     quantite: 1,
     prix_brut: '',
     frais_livraison_client: '',
-    livreur_id: '',
     ouverture_autorisee: false,
+    essayage_autorise: false,
     echange: false,
+    ancien_colis: '',
     note: '',
     depuis_page: true,
     apres: 'liste' as 'liste' | 'nouveau',
@@ -168,7 +168,7 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
     form.transform((x) => ({ ...x, apres }));
     form.post('/colis', {
       preserveScroll: true,
-      onSuccess: () => { if (apres === 'nouveau') form.reset('destinataire_nom', 'destinataire_telephone', 'destinataire_ville_id', 'destinataire_adresse', 'produit', 'quantite', 'prix_brut', 'frais_livraison_client', 'note', 'ouverture_autorisee', 'echange'); },
+      onSuccess: () => { if (apres === 'nouveau') form.reset('destinataire_nom', 'destinataire_telephone', 'destinataire_ville_id', 'destinataire_adresse', 'produit', 'quantite', 'prix_brut', 'frais_livraison_client', 'note', 'ouverture_autorisee', 'essayage_autorise', 'echange', 'ancien_colis'); },
     });
   };
 
@@ -191,7 +191,7 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
                 ['Montant à encaisser', `${dh(crbt)} DH`, 'text-foreground'],
                 ['Frais de livraison', calcul ? '…' : estimation?.manquant && d.frais_livraison_client === '' ? 'À définir' : `${dh(frais)} DH`, estimation?.manquant && d.frais_livraison_client === '' ? 'text-[#c26200]' : 'text-foreground'],
                 ['Tarif appliqué', d.frais_livraison_client !== '' ? 'Saisi' : estimation ? (TARIF_APPLIQUE[estimation.type] ?? estimation.type) : 'Choisir une ville', 'text-foreground'],
-                ['Net reversé au marchand', `${dh(crbt - frais)} DH`, 'text-emerald-700 dark:text-emerald-400'],
+                ['Net reversé au client', `${dh(crbt - frais)} DH`, 'text-emerald-700 dark:text-emerald-400'],
               ].map(([k, v, c]) => (
                 <div key={k} className="px-5 py-3">
                   <p className="text-[11px] text-muted-foreground">{k}</p>
@@ -199,17 +199,17 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
                 </div>
               ))}
             </div>
-            <Etape n={1} titre="Expéditeur" aide="Le marchand qui envoie le colis" complete={complet.expediteur}>
+            <Etape n={1} titre="Expéditeur" aide="Le client qui envoie le colis" complete={complet.expediteur}>
               {estAdmin ? (
-                <Champ label="Marchand" erreur={form.errors.client_id} requis>
+                <Champ label="Client" erreur={form.errors.client_id} requis>
                   <select value={d.client_id} onChange={(e) => { const c = clients.find((x) => String(x.id) === e.target.value); form.setData((x) => ({ ...x, client_id: e.target.value, business_id: c?.businesses?.[0] ? String(c.businesses[0].id) : '' })); }}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm dark:bg-input/30">
-                    <option value="">Choisir le marchand…</option>
+                    <option value="">Choisir le client…</option>
                     {clients.map((c) => <option key={c.id} value={c.id}>{c.businesses?.[0]?.name ? `${c.businesses[0].name} — ${c.nom_complet}` : c.nom_complet}</option>)}
                   </select>
                 </Champ>
               ) : (
-                <Champ label="Marchand"><div className="flex h-9 items-center gap-2 rounded-md bg-muted/50 px-3 text-sm"><User className="size-3.5" />{client?.nom_complet}</div></Champ>
+                <Champ label="Client"><div className="flex h-9 items-center gap-2 rounded-md bg-muted/50 px-3 text-sm"><User className="size-3.5" />{client?.nom_complet}</div></Champ>
               )}
               <Champ label="Business" erreur={form.errors.business_id}>
                 <select value={d.business_id} onChange={(e) => form.setData('business_id', e.target.value)} disabled={enseignes.length === 0}
@@ -235,9 +235,9 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
               </Champ>
             </Etape>
 
-            <Etape n={3} titre="Colis et encaissement" aide="Contenu et montant à encaisser auprès du destinataire" complete={complet.colis}>
-              <Champ label="Contenu" erreur={form.errors.produit} large>
-                <Input value={d.produit} onChange={(e) => form.setData('produit', e.target.value)} placeholder="Ex. Robe en lin taille M" />
+            <Etape n={3} titre="Colis et encaissement" aide="Produit et montant à encaisser auprès du destinataire" complete={complet.colis}>
+              <Champ label="Produit" erreur={form.errors.produit} large>
+                <Textarea rows={3} maxLength={255} value={d.produit} onChange={(e) => form.setData('produit', e.target.value)} placeholder="Ex. Robe en lin taille M, couleur sable" />
               </Champ>
               <Champ label="Quantité" erreur={form.errors.quantite}>
                 <div className="flex h-9 items-center rounded-md border border-input">
@@ -258,19 +258,26 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
                     <Input value={d.frais_livraison_client} onChange={(e) => form.setData('frais_livraison_client', e.target.value.replace(/[^\d.,]/g, ''))}
                       placeholder={estimation?.livraison ? `${estimation.livraison} (${TYPE_TARIF[estimation.type] ?? estimation.type})` : 'Selon le tarif'} inputMode="decimal" className="text-right tabular-nums" />
                   </Champ>
-                  <Champ label="Livreur (facultatif)" erreur={form.errors.livreur_id}>
-                    <select value={d.livreur_id} onChange={(e) => form.setData('livreur_id', e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm dark:bg-input/30">
-                      <option value="">Non assigné</option>
-                      {livreurs.map((l) => <option key={l.id} value={l.id}>{l.nom_complet}</option>)}
-                    </select>
-                  </Champ>
                 </>
               )}
             </Etape>
 
             <Etape n={4} titre="Options et consignes" aide="Ce que le livreur doit savoir" complete={d.ouverture_autorisee || d.echange || d.note.trim() !== ''}>
-              <Bascule actif={d.ouverture_autorisee} onChange={(v) => form.setData('ouverture_autorisee', v)} icone={<PackageOpen className="size-4" />} titre="Ouverture autorisée" aide="Le destinataire peut ouvrir avant de payer" />
-              <Bascule actif={d.echange} onChange={(v) => form.setData('echange', v)} icone={<Repeat className="size-4" />} titre="Échange" aide="Un article est à reprendre au destinataire" />
+              <Bascule actif={d.ouverture_autorisee}
+                onChange={(v) => form.setData((x) => ({ ...x, ouverture_autorisee: v, essayage_autorise: v ? x.essayage_autorise : false }))}
+                icone={<PackageOpen className="size-4" />} titre="Ouverture autorisée" aide="Le destinataire peut ouvrir avant de payer" />
+              <Bascule actif={d.essayage_autorise} desactive={!d.ouverture_autorisee}
+                onChange={(v) => form.setData('essayage_autorise', v)}
+                icone={<Shirt className="size-4" />} titre="Essayage"
+                aide={d.ouverture_autorisee ? 'Le destinataire peut essayer l’article' : 'Possible seulement si l’ouverture est autorisée'} />
+              <Bascule actif={d.echange}
+                onChange={(v) => form.setData((x) => ({ ...x, echange: v, ancien_colis: v ? x.ancien_colis : '' }))}
+                icone={<Repeat className="size-4" />} titre="Échange" aide="Un ancien colis est à reprendre au destinataire" />
+              {d.echange ? (
+                <Champ label="Ancien colis à reprendre (code ou numéro)" erreur={form.errors.ancien_colis} requis>
+                  <Input value={d.ancien_colis} onChange={(e) => form.setData('ancien_colis', e.target.value.trim())} placeholder="Ex. OIS-01112026-48511 ou 93120" className="font-mono" autoFocus />
+                </Champ>
+              ) : <div className="hidden sm:block" />}
               <Champ label="Note pour le livreur" erreur={form.errors.note} large>
                 <Textarea rows={2} maxLength={2000} value={d.note} onChange={(e) => form.setData('note', e.target.value)} placeholder="Ex. appeler avant 18 h, livrer au bureau…" />
               </Champ>

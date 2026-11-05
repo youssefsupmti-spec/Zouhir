@@ -137,7 +137,8 @@
         <footer class="pied">
             <span class="options">
                 <span class="{{ $e['ouverture'] ? 'oui' : '' }}">Ouverture</span>
-                <span class="{{ $e['echange'] ? 'oui' : '' }}">Échange</span>
+                <span class="{{ $e['essayage'] ? 'oui' : '' }}">Essayage</span>
+                <span class="{{ $e['echange'] ? 'oui' : '' }}">Échange{{ $e['code_echange'] ? ' '.$e['code_echange'] : '' }}</span>
             </span>
             <span>{{ $agence?->telephone ? 'SAV '.$agence->telephone.' · ' : '' }}ouaissexpress.com</span>
             <span class="mono">{{ $loop->iteration }}/{{ $loop->count }}</span>

@@ -31,7 +31,7 @@ class ColisController extends Controller
         'livreur_id', 'livreur_nom', 'livreur_telephone', 'destinataire_nom', 'destinataire_telephone',
         'destinataire_adresse', 'destinataire_ville', 'destinataire_ville_id', 'destinataire_zone_code',
         'prix_brut', 'frais_livraison_client', 'type_tarif_client', 'montant_supplementaire', 'montant_emballage',
-        'frais_livraison_livreur', 'state', 'state_group', 'statut_id', 'ouverture_autorisee', 'echange',
+        'frais_livraison_livreur', 'state', 'state_group', 'statut_id', 'ouverture_autorisee', 'essayage_autorise', 'echange', 'code_echange',
         'created_at', 'updated_at', 'livre_at', 'deleted_at',
     ];
 
@@ -212,6 +212,8 @@ class ColisController extends Controller
                 'produit' => $c->produit,
                 'quantite' => (int) $c->quantite,
                 'ouverture' => (bool) $c->ouverture_autorisee,
+                'essayage' => (bool) $c->essayage_autorise,
+                'code_echange' => $c->code_echange,
                 'echange' => (bool) $c->echange,
                 'date' => $c->created_at,
             ]),
@@ -315,7 +317,6 @@ class ColisController extends Controller
             'villes' => Ville::query()->leftJoin('zones', 'zones.id', '=', 'villes.zone_id')
                 ->where('villes.name_fr', '<>', \App\Domain\Villes\Support\VilleInconnue::NOM_VILLE)
                 ->orderBy('villes.name_fr')->get(['villes.id', 'villes.name_fr', 'villes.name_ar', 'villes.code_zone', 'zones.name as zone']),
-            'livreurs' => $user->isAdmin() ? User::drivers()->select('id', 'nom_complet', 'telephone')->orderBy('nom_complet')->get() : [],
             'estAdmin' => $user->isAdmin(),
         ]);
     }
@@ -366,10 +367,13 @@ class ColisController extends Controller
             'frais_livraison_livreur' => ['nullable', 'numeric', 'min:0'],
             'livreur_id' => ['nullable', 'exists:users,id'],
             'ouverture_autorisee' => ['nullable', 'boolean'],
+            'essayage_autorise' => ['nullable', 'boolean'],
             'echange' => ['nullable', 'boolean'],
+            'ancien_colis' => ['nullable', 'string', 'max:255', 'required_if_accepted:echange'],
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $echange = $this->ancienColis($request, $validated);
         $client = User::find($validated['client_id']);
         $ville = Ville::find($validated['destinataire_ville_id']);
         // L'enseigne doit appartenir au client expéditeur.
@@ -408,6 +412,10 @@ class ColisController extends Controller
             'agence_id' => \App\Models\Agence::principale()?->id,
             'ouverture_autorisee' => (bool) ($validated['ouverture_autorisee'] ?? false),
             'echange' => (bool) ($validated['echange'] ?? false),
+            // Essayage seulement si l'ouverture est autorisée.
+            'essayage_autorise' => (bool) ($validated['ouverture_autorisee'] ?? false) && (bool) ($validated['essayage_autorise'] ?? false),
+            'parent_echange_id' => $echange['id'],
+            'code_echange' => $echange['code'],
         ];
         $noteCreation = trim((string) ($validated['note'] ?? ''));
 
@@ -467,10 +475,13 @@ class ColisController extends Controller
             'frais_livraison_livreur' => ['nullable', 'numeric', 'min:0'],
             'livreur_id' => ['nullable', 'exists:users,id'],
             'ouverture_autorisee' => ['nullable', 'boolean'],
+            'essayage_autorise' => ['nullable', 'boolean'],
             'echange' => ['nullable', 'boolean'],
+            'ancien_colis' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string'],
         ]);
 
+        $echange = $this->ancienColis($request, $validated, $coli);
         $ville = Ville::find($validated['destinataire_ville_id']);
         // Hors administration, l'affectation du livreur reste inchangée.
         $livreur = $isAdmin
@@ -492,6 +503,10 @@ class ColisController extends Controller
             'livreur_telephone' => $livreur?->telephone,
             'ouverture_autorisee' => (bool) ($validated['ouverture_autorisee'] ?? false),
             'echange' => (bool) ($validated['echange'] ?? false),
+            // Essayage seulement si l'ouverture est autorisée.
+            'essayage_autorise' => (bool) ($validated['ouverture_autorisee'] ?? false) && (bool) ($validated['essayage_autorise'] ?? false),
+            'parent_echange_id' => $echange['id'],
+            'code_echange' => $echange['code'],
             'note' => $validated['note'] ?? null,
         ]);
 
@@ -642,6 +657,40 @@ class ColisController extends Controller
         $coli->delete();
 
         return back()->with('success', "Colis #{$coli->code} archivé avec succès.");
+    }
+
+    /**
+     * Échange : l'ancien colis repris au destinataire, saisi par son code ou son numéro.
+     * Il doit exister, être visible par l'utilisateur et ne pas être le colis lui-même ; un code
+     * porté par plusieurs colis est refusé (il faut alors saisir le numéro).
+     *
+     * @return array{id: ?int, code: ?string}
+     */
+    private function ancienColis(Request $request, array $validated, ?Command $soi = null): array
+    {
+        if (! ($validated['echange'] ?? false)) {
+            return ['id' => null, 'code' => null];
+        }
+
+        $saisie = trim((string) ($validated['ancien_colis'] ?? ''));
+        if ($saisie === '' && $soi !== null) {
+            // Modification sans nouvelle saisie : l'ancien colis déjà lié est conservé.
+            return ['id' => $soi->parent_echange_id, 'code' => $soi->code_echange];
+        }
+        $requete = Command::withTrashed()->visibleTo($request->user())
+            ->when($soi !== null, fn ($q) => $q->whereKeyNot($soi->id));
+        $trouves = ctype_digit($saisie)
+            ? (clone $requete)->where(fn ($q) => $q->whereKey((int) $saisie)->orWhere('code', $saisie))->get(['id', 'code'])
+            : (clone $requete)->where('code', $saisie)->get(['id', 'code']);
+
+        if ($trouves->isEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['ancien_colis' => "Aucun colis « {$saisie} » trouvé."]);
+        }
+        if ($trouves->count() > 1) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['ancien_colis' => "Le code « {$saisie} » est porté par plusieurs colis : saisissez son numéro (".$trouves->pluck('id')->implode(', ').').']);
+        }
+
+        return ['id' => (int) $trouves->first()->id, 'code' => (string) $trouves->first()->code];
     }
 
     /**

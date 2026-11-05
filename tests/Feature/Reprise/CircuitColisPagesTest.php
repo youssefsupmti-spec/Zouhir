@@ -211,4 +211,37 @@ class CircuitColisPagesTest extends TestCase
             'destinataire_ville_id' => $temara, 'prix_brut' => 90, 'depuis_page' => true, 'apres' => 'nouveau',
         ])->assertRedirect('/colis/ajouter');
     }
+
+    public function test_options_essayage_et_echange_a_la_creation(): void
+    {
+        $temara = DB::table('villes')->where('name_fr', 'Temara')->value('id');
+        $base = ['client_id' => 45, 'destinataire_telephone' => '0611223344', 'destinataire_ville_id' => $temara, 'prix_brut' => 100, 'depuis_page' => true];
+
+        // Essayage sans ouverture : refusé par la règle (enregistré à faux).
+        $this->actingAs($this->admin)->post('/colis', $base + ['destinataire_nom' => 'A', 'essayage_autorise' => true, 'ouverture_autorisee' => false])->assertSessionHasNoErrors();
+        $this->assertFalse((bool) DB::table('commands')->where('destinataire_nom', 'A')->value('essayage_autorise'));
+        $this->actingAs($this->admin)->post('/colis', $base + ['destinataire_nom' => 'B', 'essayage_autorise' => true, 'ouverture_autorisee' => true])->assertSessionHasNoErrors();
+        $this->assertTrue((bool) DB::table('commands')->where('destinataire_nom', 'B')->value('essayage_autorise'));
+
+        // Échange : l'ancien colis est obligatoire, doit exister, et un code en double est refusé.
+        $this->actingAs($this->admin)->post('/colis', $base + ['destinataire_nom' => 'C', 'echange' => true])->assertSessionHasErrors('ancien_colis');
+        $this->actingAs($this->admin)->post('/colis', $base + ['destinataire_nom' => 'C', 'echange' => true, 'ancien_colis' => 'INCONNU'])->assertSessionHasErrors('ancien_colis');
+        $this->actingAs($this->admin)->post('/colis', $base + ['destinataire_nom' => 'C', 'echange' => true, 'ancien_colis' => 'CODE1'])->assertSessionHasErrors('ancien_colis');
+        $this->actingAs($this->admin)->post('/colis', $base + ['destinataire_nom' => 'C', 'echange' => true, 'ancien_colis' => 'OIS-100'])->assertSessionHasNoErrors();
+        $c = DB::table('commands')->where('destinataire_nom', 'C')->first();
+        $this->assertSame(100, (int) $c->parent_echange_id);
+        $this->assertSame('OIS-100', $c->code_echange);
+        $this->actingAs($this->admin)->post('/colis', $base + ['destinataire_nom' => 'D', 'echange' => true, 'ancien_colis' => '102'])->assertSessionHasNoErrors();
+        $this->assertSame(102, (int) DB::table('commands')->where('destinataire_nom', 'D')->value('parent_echange_id'));
+
+        // Un marchand ne peut pas désigner le colis d'un autre.
+        DB::table('commands')->where('id', 104)->update(['client_id' => 1]);
+        $this->actingAs($this->client)->post('/colis', $base + ['destinataire_nom' => 'E', 'echange' => true, 'ancien_colis' => 'OIS-104'])->assertSessionHasErrors('ancien_colis');
+
+        // Modification d'un échange sans ressaisie : l'ancien colis lié est conservé.
+        $this->actingAs($this->admin)->put("/colis/{$c->id}", [
+            'client_id' => 45, 'destinataire_nom' => 'C2', 'destinataire_telephone' => '0611223344', 'destinataire_ville_id' => $temara, 'prix_brut' => 100, 'echange' => true,
+        ])->assertSessionHasNoErrors();
+        $this->assertSame(100, (int) DB::table('commands')->find($c->id)->parent_echange_id);
+    }
 }

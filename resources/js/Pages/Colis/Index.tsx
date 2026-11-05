@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Ban, CalendarClock, CheckCircle2, Clock, Edit, History, MapPin, Package, PackageOpen,
-  Layers, MessageSquareText, Phone, Plus, Printer, RefreshCw, Repeat, RotateCcw, Store, Trash2, Truck, Undo2, Wallet, Warehouse, XCircle,
+  Layers, MessageSquareText, Phone, Plus, Printer, RefreshCw, Repeat, RotateCcw, Shirt, Store, Trash2, Truck, Undo2, Wallet, Warehouse, XCircle,
 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -56,7 +56,9 @@ interface ColisItem {
   livreur_nom?: string;
   livreur_telephone?: string;
   ouverture_autorisee: boolean;
+  essayage_autorise?: boolean;
   echange: boolean;
+  code_echange?: string | null;
   note?: string;
   created_at: string;
   updated_at?: string;
@@ -266,10 +268,11 @@ export default function ColisIndex({ vue, colis, clients = [], villes = [], livr
                     <TableCell className={canBulk ? '' : 'pl-4'}>
                       <Copiable valeur={c.code} className="font-mono text-[12.5px] font-bold text-[#004c68] dark:text-cyan-300" />
                       <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground" title={c.produit}>{c.produit || 'Produit non renseigné'} <span className="text-foreground/70">×{c.quantite}</span></p>
-                      {(c.echange || c.ouverture_autorisee) && (
+                      {(c.echange || c.ouverture_autorisee || c.essayage_autorise) && (
                         <div className="mt-1 flex flex-wrap gap-1">
-                          {c.echange && <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300"><Repeat className="size-2.5" /> Échange</span>}
+                          {c.echange && <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300" title={c.code_echange ? `Reprend le colis ${c.code_echange}` : undefined}><Repeat className="size-2.5" /> Échange{c.code_echange ? ` · ${c.code_echange}` : ''}</span>}
                           {c.ouverture_autorisee && <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-sky-700 dark:text-sky-300"><PackageOpen className="size-2.5" /> Ouverture</span>}
+                          {c.essayage_autorise && <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400"><Shirt className="size-2.5" /> Essayage</span>}
                         </div>
                       )}
                     </TableCell>
