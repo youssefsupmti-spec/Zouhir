@@ -18,6 +18,7 @@ interface Props {
 interface Estimation { manquant: boolean; type: string; livraison: string | null }
 
 const dh = (v: number) => v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const TARIF_APPLIQUE: Record<string, string> = { client: 'Négocié (marchand)', standard: 'Standard (ville)', manual: 'Saisi', missing: 'Aucun tarif' };
 const TYPE_TARIF: Record<string, string> = { client: 'tarif négocié', standard: 'tarif standard', manual: 'saisi', missing: 'aucun tarif' };
 
 /** Étape numérotée du formulaire ; coche verte quand elle est complète. */
@@ -182,8 +183,22 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
           <p className="text-xs text-muted-foreground">Expéditeur, destinataire, colis et encaissement, puis options.</p>
         </div>
 
-        <div className="mx-auto max-w-4xl">
+        <div>
           <div className="divide-y divide-border rounded-lg border border-border bg-card">
+            {/* Récapitulatif des montants, en tête de la carte */}
+            <div className="grid grid-cols-2 divide-x divide-border sm:grid-cols-4">
+              {[
+                ['Montant à encaisser', `${dh(crbt)} DH`, 'text-foreground'],
+                ['Frais de livraison', calcul ? '…' : estimation?.manquant && d.frais_livraison_client === '' ? 'À définir' : `${dh(frais)} DH`, estimation?.manquant && d.frais_livraison_client === '' ? 'text-[#c26200]' : 'text-foreground'],
+                ['Tarif appliqué', d.frais_livraison_client !== '' ? 'Saisi' : estimation ? (TARIF_APPLIQUE[estimation.type] ?? estimation.type) : 'Choisir une ville', 'text-foreground'],
+                ['Net reversé au marchand', `${dh(crbt - frais)} DH`, 'text-emerald-700 dark:text-emerald-400'],
+              ].map(([k, v, c]) => (
+                <div key={k} className="px-5 py-3">
+                  <p className="text-[11px] text-muted-foreground">{k}</p>
+                  <p className={`mt-0.5 text-base font-semibold tabular-nums ${c}`}>{v}</p>
+                </div>
+              ))}
+            </div>
             <Etape n={1} titre="Expéditeur" aide="Le marchand qui envoie le colis" complete={complet.expediteur}>
               {estAdmin ? (
                 <Champ label="Marchand" erreur={form.errors.client_id} requis>
@@ -267,17 +282,7 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Pr
         {/* Barre d'actions fixe */}
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur md:left-[var(--sidebar-width,16rem)]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
-            <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5"><Package className="size-4" /> {[complet.expediteur, complet.destinataire, complet.colis].filter(Boolean).length}/3 étapes obligatoires</span>
-              <span>CRBT <b className="tabular-nums text-foreground">{dh(crbt)} DH</b></span>
-              <span>
-                Frais {calcul ? <Loader2 className="inline size-3 animate-spin" /> : estimation?.manquant && d.frais_livraison_client === ''
-                  ? <b className="text-[#c26200]">à définir</b>
-                  : <b className="tabular-nums text-foreground">{dh(frais)} DH</b>}
-                {estimation && d.frais_livraison_client === '' && !estimation.manquant && <span> ({TYPE_TARIF[estimation.type] ?? estimation.type})</span>}
-              </span>
-              <span>Net <b className="tabular-nums text-emerald-700 dark:text-emerald-400">{dh(crbt - frais)} DH</b></span>
-            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Package className="size-4" /> {[complet.expediteur, complet.destinataire, complet.colis].filter(Boolean).length}/3 étapes obligatoires complètes</span>
             <div className="flex gap-2">
               <Button type="button" variant="ghost" size="sm" render={<Link href="/colis" />}>Annuler</Button>
               <Button type="button" variant="outline" size="sm" disabled={form.processing} onClick={() => enregistrer('nouveau')()}>Enregistrer et ajouter un autre</Button>
