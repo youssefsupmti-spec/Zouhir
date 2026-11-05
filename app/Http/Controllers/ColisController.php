@@ -317,7 +317,6 @@ class ColisController extends Controller
                 ->orderBy('villes.name_fr')->get(['villes.id', 'villes.name_fr', 'villes.name_ar', 'villes.code_zone', 'zones.name as zone']),
             'livreurs' => $user->isAdmin() ? User::drivers()->select('id', 'nom_complet', 'telephone')->orderBy('nom_complet')->get() : [],
             'estAdmin' => $user->isAdmin(),
-            'agence' => \App\Models\Agence::principale()?->only(['nom', 'telephone']),
         ]);
     }
 

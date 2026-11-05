@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, ChevronsUpDown, Loader2, MapPin, Minus, Package, PackageOpen, Plus, Repeat, Search, Store, User } from 'lucide-react';
+import { ArrowLeft, Check, ChevronsUpDown, Loader2, MapPin, Minus, Package, PackageOpen, Plus, Repeat, Search, User } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,6 @@ interface Props {
   villes: Ville[];
   livreurs: { id: number; nom_complet: string; telephone?: string | null }[];
   estAdmin: boolean;
-  agence: { nom: string; telephone: string | null } | null;
 }
 interface Estimation { manquant: boolean; type: string; livraison: string | null }
 
@@ -24,8 +23,8 @@ const TYPE_TARIF: Record<string, string> = { client: 'tarif négocié', standard
 /** Étape numérotée du formulaire ; coche verte quand elle est complète. */
 function Etape({ n, titre, aide, complete, children }: { n: number; titre: string; aide: string; complete: boolean; children: ReactNode }) {
   return (
-    <section className="rounded-lg border border-border bg-card">
-      <header className="flex items-center gap-3 border-b border-border px-5 py-3">
+    <section>
+      <header className="flex items-center gap-3 px-5 pt-5">
         <span className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${complete ? 'bg-emerald-600 text-white' : 'bg-[#004c68]/10 text-[#004c68] dark:bg-[#ff8806]/15 dark:text-[#ff8806]'}`}>
           {complete ? <Check className="size-3.5" /> : n}
         </span>
@@ -34,7 +33,7 @@ function Etape({ n, titre, aide, complete, children }: { n: number; titre: strin
           <p className="text-[11px] text-muted-foreground">{aide}</p>
         </div>
       </header>
-      <div className="grid gap-4 p-5 sm:grid-cols-2">{children}</div>
+      <div className="grid gap-4 px-5 pb-5 pt-4 sm:grid-cols-2">{children}</div>
     </section>
   );
 }
@@ -118,7 +117,7 @@ function Bascule({ actif, onChange, icone, titre, aide }: { actif: boolean; onCh
   );
 }
 
-export default function AjouterColis({ clients, villes, livreurs, estAdmin, agence }: Props) {
+export default function AjouterColis({ clients, villes, livreurs, estAdmin }: Props) {
   const premier = clients.length === 1 ? clients[0] : null;
   const form = useForm({
     client_id: premier ? String(premier.id) : '',
@@ -180,11 +179,11 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin, agen
         <div>
           <Link href="/colis" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3.5" /> Colis</Link>
           <h1 className="mt-1 text-xl font-bold tracking-tight">Ajouter un colis</h1>
-          <p className="text-xs text-muted-foreground">Quatre étapes ; l’étiquette se construit à droite au fur et à mesure.</p>
+          <p className="text-xs text-muted-foreground">Expéditeur, destinataire, colis et encaissement, puis options.</p>
         </div>
 
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="space-y-5">
+        <div className="mx-auto max-w-4xl">
+          <div className="divide-y divide-border rounded-lg border border-border bg-card">
             <Etape n={1} titre="Expéditeur" aide="Le marchand qui envoie le colis" complete={complet.expediteur}>
               {estAdmin ? (
                 <Champ label="Marchand" erreur={form.errors.client_id} requis>
@@ -197,10 +196,10 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin, agen
               ) : (
                 <Champ label="Marchand"><div className="flex h-9 items-center gap-2 rounded-md bg-muted/50 px-3 text-sm"><User className="size-3.5" />{client?.nom_complet}</div></Champ>
               )}
-              <Champ label="Enseigne" erreur={form.errors.business_id}>
+              <Champ label="Business" erreur={form.errors.business_id}>
                 <select value={d.business_id} onChange={(e) => form.setData('business_id', e.target.value)} disabled={enseignes.length === 0}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm disabled:opacity-60 dark:bg-input/30">
-                  {enseignes.length === 0 && <option value="">Aucune enseigne</option>}
+                  {enseignes.length === 0 && <option value="">Aucun business</option>}
                   {enseignes.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </Champ>
@@ -263,69 +262,21 @@ export default function AjouterColis({ clients, villes, livreurs, estAdmin, agen
             </Etape>
           </div>
 
-          {/* Aperçu de l'étiquette + récapitulatif */}
-          <aside className="space-y-4 lg:sticky lg:top-4">
-            <div className="rounded-lg border border-border bg-card p-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Aperçu de l’étiquette</p>
-              <div className="mx-auto aspect-square w-full max-w-[300px] rounded-md border-2 border-foreground/80 bg-white p-3 text-[10px] text-black">
-                <div className="flex items-end justify-between border-b-2 border-black pb-1">
-                  <span className="text-[12px] font-extrabold"><span className="text-[#004c68]">OUAISS</span> <span className="text-[#ff8806]">EXPRESS</span></span>
-                  <span className="text-[8px]">{agence?.nom ?? ''}</span>
-                </div>
-                <div className="mt-2 grid grid-cols-[1fr_88px] gap-1.5">
-                  <div className="rounded border-2 border-black px-1.5 py-1">
-                    <p className="text-[6px] font-bold uppercase tracking-widest">Destination</p>
-                    <p className="truncate text-[13px] font-extrabold uppercase leading-tight">{ville?.name_fr ?? '—'}</p>
-                    {ville?.code_zone && <span className="rounded border border-black px-1 text-[7px] font-bold">Zone {ville.code_zone}</span>}
-                  </div>
-                  <div className="flex flex-col items-center justify-center rounded bg-black px-1 text-white">
-                    <p className="text-[6px] font-bold uppercase tracking-widest">À encaisser</p>
-                    <p className="text-[12px] font-extrabold leading-tight">{dh(crbt)}</p>
-                    <p className="text-[7px] font-bold">DH</p>
-                  </div>
-                </div>
-                <div className="mt-2 flex h-9 items-center justify-center rounded border border-dashed border-black/40 text-[8px] text-black/60">
-                  Code-barres attribué à l’enregistrement
-                </div>
-                <div className="mt-2 border-t border-black pt-1">
-                  <p className="text-[6px] font-bold uppercase tracking-widest">Destinataire</p>
-                  <p className="truncate text-[11px] font-extrabold">{d.destinataire_nom || '—'}</p>
-                  <p className="font-mono text-[10px] font-bold">{d.destinataire_telephone || '—'}</p>
-                  <p className="truncate text-[8px]">{d.destinataire_adresse}</p>
-                </div>
-                <div className="mt-1 grid grid-cols-2 gap-2 border-t border-black pt-1 text-[8px]">
-                  <div><p className="text-[6px] font-bold uppercase tracking-widest">Expéditeur</p><p className="truncate font-bold">{enseignes.find((b) => String(b.id) === d.business_id)?.name ?? client?.nom_complet ?? '—'}</p></div>
-                  <div><p className="text-[6px] font-bold uppercase tracking-widest">Contenu</p><p className="truncate font-bold">{d.produit || 'Non précisé'} ×{d.quantite}</p></div>
-                </div>
-                <div className="mt-1 flex gap-3 text-[7px] font-semibold">
-                  <span>{d.ouverture_autorisee ? '■' : '□'} Ouverture</span><span>{d.echange ? '■' : '□'} Échange</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-border bg-card p-4 text-xs">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Récapitulatif</p>
-              <dl className="space-y-1.5">
-                <div className="flex justify-between"><dt>Montant à encaisser</dt><dd className="font-semibold tabular-nums">{dh(crbt)} DH</dd></div>
-                <div className="flex justify-between">
-                  <dt>Frais de livraison {estimation && d.frais_livraison_client === '' && <span className="text-muted-foreground">({TYPE_TARIF[estimation.type] ?? estimation.type})</span>}</dt>
-                  <dd className="tabular-nums">{calcul ? <Loader2 className="size-3 animate-spin" /> : estimation?.manquant && d.frais_livraison_client === '' ? <span className="text-[#c26200]">à définir</span> : `− ${dh(frais)} DH`}</dd>
-                </div>
-                <div className="flex justify-between border-t border-border pt-1.5 text-sm"><dt className="font-semibold">Net reversé au marchand</dt><dd className="font-bold tabular-nums text-emerald-700 dark:text-emerald-400">{dh(crbt - frais)} DH</dd></div>
-              </dl>
-              {estimation?.manquant && d.frais_livraison_client === '' && (
-                <p className="mt-2 rounded bg-[#ff8806]/10 p-2 text-[11px] text-[#c26200]">Aucun tarif pour cette ville : les frais seront à compléter.</p>
-              )}
-            </div>
-          </aside>
         </div>
 
         {/* Barre d'actions fixe */}
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur md:left-[var(--sidebar-width,16rem)]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Package className="size-4" /> {[complet.expediteur, complet.destinataire, complet.colis].filter(Boolean).length}/3 étapes obligatoires complètes
-              {client && <span className="inline-flex items-center gap-1"><Store className="size-3.5" />{client.nom_complet}</span>}
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5"><Package className="size-4" /> {[complet.expediteur, complet.destinataire, complet.colis].filter(Boolean).length}/3 étapes obligatoires</span>
+              <span>CRBT <b className="tabular-nums text-foreground">{dh(crbt)} DH</b></span>
+              <span>
+                Frais {calcul ? <Loader2 className="inline size-3 animate-spin" /> : estimation?.manquant && d.frais_livraison_client === ''
+                  ? <b className="text-[#c26200]">à définir</b>
+                  : <b className="tabular-nums text-foreground">{dh(frais)} DH</b>}
+                {estimation && d.frais_livraison_client === '' && !estimation.manquant && <span> ({TYPE_TARIF[estimation.type] ?? estimation.type})</span>}
+              </span>
+              <span>Net <b className="tabular-nums text-emerald-700 dark:text-emerald-400">{dh(crbt - frais)} DH</b></span>
             </span>
             <div className="flex gap-2">
               <Button type="button" variant="ghost" size="sm" render={<Link href="/colis" />}>Annuler</Button>
