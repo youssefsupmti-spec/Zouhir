@@ -79,7 +79,8 @@ Route::middleware('auth')->group(function () {
 
     // Colis & Expéditions (Sprint 3)
     Route::get('/colis', [\App\Http\Controllers\ColisController::class, 'index'])->name('colis.index');
-    Route::get('/colis/ajouter', [\App\Http\Controllers\ColisController::class, 'index'])->defaults('vue', 'ajouter')->name('colis.ajouter');
+    Route::get('/colis/ajouter', [\App\Http\Controllers\ColisController::class, 'creer'])->name('colis.ajouter');
+    Route::get('/colis/estimation', [\App\Http\Controllers\ColisController::class, 'estimation'])->name('colis.estimation');
     Route::get('/colis/nouveaux', [\App\Http\Controllers\ColisController::class, 'index'])->defaults('vue', 'nouveaux')->name('colis.nouveaux');
     Route::post('/colis', [\App\Http\Controllers\ColisController::class, 'store'])->name('colis.store');
     Route::put('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'update'])->name('colis.update');

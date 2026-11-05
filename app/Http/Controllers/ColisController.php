@@ -302,6 +302,44 @@ class ColisController extends Controller
         return back()->with('success', "{$faits} colis {$verbe}.".($refuses > 0 ? " {$refuses} ignoré(s) (hors de votre périmètre)." : ''));
     }
 
+    /** Page « Ajouter un colis » (formulaire en étapes + aperçu de l'étiquette). */
+    public function creer(Request $request): Response
+    {
+        Gate::authorize('create', Command::class);
+        $user = $request->user();
+
+        return Inertia::render('Colis/Ajouter', [
+            'clients' => User::clients()
+                ->when(! $user->isAdmin(), fn ($q) => $q->whereKey($user->id))
+                ->with(['businesses:id,user_id,name'])->select('id', 'nom_complet', 'telephone')->orderBy('nom_complet')->get(),
+            'villes' => Ville::query()->leftJoin('zones', 'zones.id', '=', 'villes.zone_id')
+                ->where('villes.name_fr', '<>', \App\Domain\Villes\Support\VilleInconnue::NOM_VILLE)
+                ->orderBy('villes.name_fr')->get(['villes.id', 'villes.name_fr', 'villes.name_ar', 'villes.code_zone', 'zones.name as zone']),
+            'livreurs' => $user->isAdmin() ? User::drivers()->select('id', 'nom_complet', 'telephone')->orderBy('nom_complet')->get() : [],
+            'estAdmin' => $user->isAdmin(),
+            'agence' => \App\Models\Agence::principale()?->only(['nom', 'telephone']),
+        ]);
+    }
+
+    /** Frais de livraison prévus pour un expéditeur et une ville (tarif négocié → standard). */
+    public function estimation(Request $request): JsonResponse
+    {
+        Gate::authorize('create', Command::class);
+        $user = $request->user();
+        $data = $request->validate(['client_id' => ['nullable', 'integer'], 'ville_id' => ['required', 'integer', 'exists:villes,id']]);
+        $clientId = $user->isAdmin() ? ($data['client_id'] ?? null) : $user->id;
+
+        $tarif = app(\App\Domain\Tarifs\Commun\Services\FeeResolutionService::class)->clientFees($clientId ? (int) $clientId : null, (int) $data['ville_id']);
+
+        return response()->json([
+            'manquant' => $tarif->estManquant(),
+            'type' => $tarif->type->value,
+            'livraison' => $tarif->livraison,
+            'refus' => $tarif->refus,
+            'retour' => $tarif->retour,
+        ]);
+    }
+
     /**
      * Enregistrer un nouveau colis express.
      */
@@ -330,7 +368,7 @@ class ColisController extends Controller
             'livreur_id' => ['nullable', 'exists:users,id'],
             'ouverture_autorisee' => ['nullable', 'boolean'],
             'echange' => ['nullable', 'boolean'],
-            'note' => ['nullable', 'string'],
+            'note' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $client = User::find($validated['client_id']);
@@ -364,12 +402,15 @@ class ColisController extends Controller
             'destinataire_ville_id' => $ville->id,
             'destinataire_zone_code' => $ville->code_zone,
             'prix_brut' => $validated['prix_brut'],
-            'state' => 'Nouveau Colis',
+            // Statut du référentiel (« Ajouté »), jamais un libellé inventé.
+            'state' => \App\Domain\Colis\Support\GroupesColis::STATUT_PAR_DEFAUT['nouveau'],
             'state_group' => 'nouveau',
+            'statut_id' => Statut::query()->where('libelle', \App\Domain\Colis\Support\GroupesColis::STATUT_PAR_DEFAUT['nouveau'])->orderByDesc('actif')->orderBy('id')->value('id'),
+            'agence_id' => \App\Models\Agence::principale()?->id,
             'ouverture_autorisee' => (bool) ($validated['ouverture_autorisee'] ?? false),
             'echange' => (bool) ($validated['echange'] ?? false),
-            'note' => $validated['note'] ?? null,
         ];
+        $noteCreation = trim((string) ($validated['note'] ?? ''));
 
         // Snapshot tarifaire (Sprint 28) : tarif négocié → standard → anomalie « missing ».
         // Seule l'administration peut imposer un montant manuel ; aucune valeur par défaut inventée.
@@ -377,15 +418,34 @@ class ColisController extends Controller
         $tarif = app(FigerTarifClientColis::class)->aLaCreation($colis, $this->montantManuel($request, $validated));
         // Commission livreur (Sprint 29) : snapshot séparé, aucune valeur par défaut inventée.
         app(FigerCommissionLivreurColis::class)->aLaCreation($colis, $this->commissionManuelle($request, $validated));
-        $colis->save();
+
+        DB::transaction(function () use ($colis, $user, $noteCreation) {
+            $colis->save();
+            $type = $user->isAdmin() ? 'moderateur' : ($user->isDriver() ? 'livreur' : ($user->isClient() ? 'client' : null));
+            CommandStatusHistory::create([
+                'command_id' => $colis->id, 'command_code' => $colis->code, 'from_state' => null, 'to_state' => $colis->state,
+                'to_statut_id' => $colis->statut_id, 'changed_by_type' => $type, 'changed_by_id' => $user->id,
+                'changed_by_nom' => $user->nom_complet, 'change_source' => 'application', 'created_at' => now(),
+            ]);
+            if ($noteCreation !== '') {
+                NoteMessage::create([
+                    'command_id' => $colis->id, 'user_id' => $user->id, 'role' => $type ?? 'inconnu', 'auteur_nom' => $user->nom_complet,
+                    'message' => $noteCreation, 'position' => 1, 'source' => 'application', 'date_exacte' => true,
+                ]);
+            }
+        });
 
         $message = "Colis #{$code} créé avec succès.";
-        if ($tarif->estManquant()) {
-            return back()->with('success', $message)
-                ->with('error', "Aucun tarif négocié ni standard pour {$ville->name_fr} : frais client à compléter (anomalie « missing »).");
-        }
+        $alerte = $tarif->estManquant()
+            ? "Aucun tarif négocié ni standard pour {$ville->name_fr} : frais client à compléter (anomalie « missing »)."
+            : null;
 
-        return back()->with('success', $message);
+        // Depuis la page « Ajouter un colis » : retour à la liste, ou formulaire vide pour enchaîner.
+        $reponse = $request->boolean('depuis_page')
+            ? redirect()->to($request->input('apres') === 'nouveau' ? '/colis/ajouter' : '/colis')
+            : back();
+
+        return $alerte ? $reponse->with('success', $message)->with('error', $alerte) : $reponse->with('success', $message)->with('colis_cree', $colis->code);
     }
 
     /**

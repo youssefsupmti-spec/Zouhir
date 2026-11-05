@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { FileStack, History, Loader2, MessageSquareText } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { dateBon } from '@/components/bons/partage';
 
 interface Suivi {
@@ -35,19 +35,20 @@ export function SuiviColisDialog({ colisId, onClose }: { colisId: number | null;
   }, [colisId]);
 
   return (
-    <Dialog open={colisId !== null} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-mono">{suivi?.colis.code ?? 'Suivi du colis'}</DialogTitle>
-          <DialogDescription className="text-xs">{suivi ? `État actuel : ${suivi.colis.state}` : 'Historique, notes et bons du colis.'}</DialogDescription>
-        </DialogHeader>
+    <Sheet open={colisId !== null} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg">
+        <SheetHeader className="border-b border-border px-5 py-4">
+          <SheetTitle className="font-mono text-sm">{suivi?.colis.code ?? 'Suivi du colis'}</SheetTitle>
+          <SheetDescription className="text-xs">{suivi ? `État actuel : ${suivi.colis.state}` : 'Historique, notes et bons du colis.'}</SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
 
         {!suivi && !erreur && <div className="flex justify-center py-10"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div>}
         {erreur && <p className="py-6 text-center text-sm text-destructive">Suivi indisponible.</p>}
 
         {suivi && (
           <div className="space-y-5 text-xs">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {JALONS.map(([k, l]) => (
                 <div key={k} className={`rounded-md border p-2 ${suivi.colis.jalons[k] ? 'border-[#004c68]/25 bg-[#004c68]/5' : 'border-dashed border-border text-muted-foreground'}`}>
                   <p className="text-[10px]">{l}</p>
@@ -97,7 +98,8 @@ export function SuiviColisDialog({ colisId, onClose }: { colisId: number | null;
             </section>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
  * « Imprimer » lance l'impression du document seul ; « Enregistrer en PDF » ouvre la même boîte
  * d'impression, où l'on choisit « Enregistrer au format PDF ».
  */
-export function ApercuImpression({ url, titre, onClose, format = 'A4' }: { url: string | null; titre: string; onClose: () => void; format?: string }) {
+export function ApercuImpression({ url, titre, onClose, format = 'A4', taille = 'a4' }: { url: string | null; titre: string; onClose: () => void; format?: string; taille?: 'a4' | 'etiquette' }) {
   const cadre = useRef<HTMLIFrameElement>(null);
   const [charge, setCharge] = useState(false);
 
@@ -16,13 +16,13 @@ export function ApercuImpression({ url, titre, onClose, format = 'A4' }: { url: 
 
   return (
     <Dialog open={url !== null} onOpenChange={(o) => { if (!o) { setCharge(false); onClose(); } }}>
-      <DialogContent className="flex h-[92vh] w-[min(1040px,96vw)] max-w-none flex-col gap-0 p-0 sm:max-w-none">
+      <DialogContent className={`flex max-w-none flex-col gap-0 p-0 sm:max-w-none ${taille === 'etiquette' ? 'h-[min(640px,92vh)] w-[min(560px,96vw)]' : 'h-[92vh] w-[min(1040px,96vw)]'}`}>
         <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-border px-4 py-3">
           <div className="min-w-0">
             <DialogTitle className="truncate text-sm">{titre}</DialogTitle>
             <DialogDescription className="text-[11px]">Aperçu avant impression ({format})</DialogDescription>
           </div>
-          <div className="flex shrink-0 gap-2 pr-8">
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 pr-8">
             <Button size="sm" variant="outline" className="h-8 text-xs" disabled={!url} render={<a href={url ?? '#'} target="_blank" rel="noopener" />}>
               <ExternalLink className="size-3.5" /> Nouvel onglet
             </Button>

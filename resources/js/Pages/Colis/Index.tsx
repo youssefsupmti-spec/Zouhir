@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { useState, type ReactNode } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Ban, CalendarClock, CheckCircle2, Clock, Edit, History, MapPin, Package, PackageOpen,
   Layers, MessageSquareText, Phone, Plus, Printer, RefreshCw, Repeat, RotateCcw, Store, Trash2, Truck, Undo2, Wallet, Warehouse, XCircle,
@@ -134,13 +134,7 @@ export default function ColisIndex({ vue, colis, clients = [], villes = [], livr
 
   const corbeille = filters.onglet === 'corbeille';
 
-  // « Ajouter un colis » : le formulaire s'ouvre à l'arrivée sur /colis/ajouter.
-  useEffect(() => {
-    if (vue.ouvrir_ajout && canCreate) {
-      setEditingColis(null);
-      setFormOpen(true);
-    }
-  }, [vue.ouvrir_ajout, canCreate]);
+
   const params: Record<string, unknown> = { ...filters };
   const selection = useSelection(colis.data.map((c) => c.id));
 
@@ -180,8 +174,8 @@ export default function ColisIndex({ vue, colis, clients = [], villes = [], livr
             : 'Tous les colis, de l’enregistrement à la livraison ou au retour, avec le détail du CRBT.'}
           icon={Package}
           actions={canCreate && (
-            <Button onClick={() => { setEditingColis(null); setFormOpen(true); }} size="sm" className="h-8 bg-[#004c68] text-xs text-white hover:bg-[#00384d]">
-              <Plus className="size-3.5" /> Nouveau colis
+            <Button render={<Link href="/colis/ajouter" />} size="sm" className="h-8 bg-[#004c68] text-xs text-white hover:bg-[#00384d]">
+              <Plus className="size-3.5" /> Ajouter un colis
             </Button>
           )}
         />
@@ -378,6 +372,7 @@ export default function ColisIndex({ vue, colis, clients = [], villes = [], livr
         url={etiquettes ? `/colis/etiquettes?ids=${etiquettes.ids.join(',')}` : null}
         titre={etiquettes?.titre ?? ''}
         format="étiquette 10 × 10 cm"
+        taille="etiquette"
         onClose={() => setEtiquettes(null)}
       />
       <ConfirmDeleteDialog

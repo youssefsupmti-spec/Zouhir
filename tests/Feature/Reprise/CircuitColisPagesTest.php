@@ -187,6 +187,28 @@ class CircuitColisPagesTest extends TestCase
             ->where('colis.data', fn ($lignes) => collect($lignes)->every(fn ($c) => $c['state_group'] === 'nouveau')));
 
         $this->actingAs($this->admin)->get('/colis/ajouter')->assertOk()->assertInertia(fn (Assert $p) => $p
-            ->where('vue.ouvrir_ajout', true)->where('vue.url', '/colis'));
+            ->component('Colis/Ajouter')->where('estAdmin', true)->has('villes')->has('clients'));
+
+        // Estimation des frais (aucun tarif dans cette base miniature → manquant).
+        $temara = DB::table('villes')->where('name_fr', 'Temara')->value('id');
+        $this->actingAs($this->admin)->getJson("/colis/estimation?ville_id={$temara}&client_id=45")->assertOk()->assertJsonPath('manquant', true);
+
+        // Création depuis la page : statut du référentiel, historique, note en message, retour à la liste.
+        $this->actingAs($this->admin)->post('/colis', [
+            'client_id' => 45, 'destinataire_nom' => 'Salma', 'destinataire_telephone' => '0611223344',
+            'destinataire_ville_id' => $temara, 'prix_brut' => 150, 'note' => 'Appeler avant 18 h', 'depuis_page' => true, 'apres' => 'liste',
+        ])->assertRedirect('/colis');
+        $c = DB::table('commands')->where('destinataire_nom', 'Salma')->first();
+        $this->assertSame('Ajouté', $c->state);
+        $this->assertSame('nouveau', $c->state_group);
+        $this->assertNotNull($c->statut_id);
+        $this->assertTrue(DB::table('command_status_histories')->where('command_id', $c->id)->where('to_state', 'Ajouté')->exists());
+        $this->assertSame('Appeler avant 18 h', DB::table('note_messages')->where('command_id', $c->id)->value('message'));
+
+        // « Enregistrer et ajouter un autre » : retour sur le formulaire.
+        $this->actingAs($this->admin)->post('/colis', [
+            'client_id' => 45, 'destinataire_nom' => 'Karim', 'destinataire_telephone' => '0611223355',
+            'destinataire_ville_id' => $temara, 'prix_brut' => 90, 'depuis_page' => true, 'apres' => 'nouveau',
+        ])->assertRedirect('/colis/ajouter');
     }
 }
