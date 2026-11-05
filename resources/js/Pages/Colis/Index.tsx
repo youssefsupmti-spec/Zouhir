@@ -13,7 +13,7 @@ import { DataTablePagination, type LaravelPaginationMeta } from '@/components/co
 import { ActionGroupee, BarreSelection, CaseACocher, useSelection } from '@/components/common/SelectionGroupee';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FiltreGroupes } from '@/components/common/FiltreGroupes';
+import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
 import { ChargementTableau, useChargementPage } from '@/components/common/ChargementTableau';
 import { Copiable } from '@/components/common/Copiable';
 import { ColisFormDialog } from './ColisFormDialog';
@@ -187,12 +187,20 @@ export default function ColisIndex({ vue, colis, clients = [], villes = [], livr
         />
 
         {vue.code !== 'nouveaux' && (
-          <FiltreGroupes
+          <TarifsTabs
+            label="Groupes de colis"
             value={filters.onglet}
-            tous={onglets.tous ?? 0}
-            corbeille={onglets.corbeille ?? 0}
-            groupes={groupes.map((g) => ({ value: g.code, label: g.nom, count: onglets[g.code] ?? 0, couleur: g.couleur, description: g.description }))}
-            onChange={(v) => naviguer({ onglet: v })}
+            onValueChange={(v) => naviguer({ onglet: v })}
+            onglets={[
+              { value: 'tous', label: 'Tous les colis', count: onglets.tous ?? 0, icon: <Package className="size-3.5" /> },
+              ...groupes.map((g) => ({
+                value: g.code,
+                label: g.nom,
+                count: onglets[g.code] ?? 0,
+                icon: <span className="size-2 rounded-full ring-1 ring-white/60" style={{ background: g.couleur ?? '#94a3b8' }} aria-hidden />,
+              })),
+              { value: 'corbeille', label: 'Corbeille', count: onglets.corbeille ?? 0, icon: <Trash2 className="size-3.5" />, tone: 'danger' as const },
+            ]}
           />
         )}
 

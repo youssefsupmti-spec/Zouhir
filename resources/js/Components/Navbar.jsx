@@ -136,29 +136,29 @@ export default function Navbar({ onOpenTracking }) {
                             {/* Left Side: Logo & Desktop Menu */}
                             <div className="flex items-center">
                                 
-                                {/* Desktop Logo with Hexagon-Right (.hexagon-right) */}
+                                {/* Desktop Logo with Hexagon-Right (.hexagon-right) on Vibrant Orange #f78304 */}
                                 <Link 
                                     href="/"
-                                    className="cursor-pointer bg-[#05161f] hidden lg:flex items-center justify-center ps-6 lg:ps-10 pe-10 lg:pe-16 py-4 lg:py-5 hexagon-right shrink-0 transition-transform duration-200 hover:brightness-110"
+                                    className="cursor-pointer bg-[#f78304] hidden lg:flex items-center justify-center ps-6 lg:ps-10 pe-12 lg:pe-18 py-3.5 lg:py-4.5 hexagon-right shrink-0 transition-transform duration-200 hover:brightness-105 shadow-md"
                                     title="OUAISS EXPRESS - Accueil"
                                 >
                                     <img 
                                         src="/images/logo-full-dark.png" 
                                         alt="OUAISS EXPRESS" 
-                                        className="h-8 lg:h-9 w-auto max-w-[180px] lg:max-w-[205px] object-contain drop-shadow-sm"
+                                        className="h-9.5 lg:h-11 w-auto max-w-[210px] lg:max-w-[245px] object-contain drop-shadow-sm"
                                     />
                                 </Link>
 
                                 {/* Mobile Logo (Without Hexagon, Direct on Nav Parent) */}
                                 <Link 
                                     href="/"
-                                    className="lg:hidden flex items-center justify-center py-1 ps-1"
+                                    className="lg:hidden flex items-center justify-center py-1.5 ps-1"
                                     title="OUAISS EXPRESS - Accueil"
                                 >
                                     <img 
                                         src="/images/logo-full-dark.png" 
                                         alt="OUAISS EXPRESS" 
-                                        className="h-7.5 sm:h-8 w-auto max-w-[155px] sm:max-w-[175px] object-contain"
+                                        className="h-8.5 sm:h-9.5 w-auto max-w-[170px] sm:max-w-[195px] object-contain"
                                     />
                                 </Link>
 
@@ -480,7 +480,7 @@ export default function Navbar({ onOpenTracking }) {
                                 <img 
                                     src="/images/logo-full-dark.png" 
                                     alt="OUAISS EXPRESS" 
-                                    className="h-8.5 w-auto max-w-[190px] object-contain" 
+                                    className="h-9.5 w-auto max-w-[210px] object-contain" 
                                 />
                                 <button
                                     type="button"

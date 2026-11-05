@@ -77,23 +77,16 @@ export default function BonsIndex({ type, page, sousTypes, bons, stats, statuts,
         <PageHeader title={page.titre} description={page.description} icon={T.icone} />
 
         {sousTypes && (
-          <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs" role="tablist" aria-label="Type de retour">
-            {([['tous', 'Tous les retours', sousTypes.tous], ['client', 'Retour client', sousTypes.client], ['livreur', 'Retour livreur', sousTypes.livreur]] as const).map(([v, l, n]) => {
-              const actif = (page.sous_type ?? 'tous') === v;
-              return (
-                <button key={v} type="button" role="tab" aria-selected={actif}
-                  onClick={() => router.get(page.url, v === 'tous' ? {} : { sous_type: v }, { preserveScroll: true })}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium ${actif ? 'bg-[#004c68] text-white dark:bg-[#ff8806] dark:text-[#05161f]' : 'text-muted-foreground hover:text-foreground'}`}>
-                  {l}
-                  <span className={`min-w-5 rounded-full px-1.5 py-px text-center text-[10px] font-semibold tabular-nums ${actif
-                    ? 'bg-white/20 text-white dark:bg-[#05161f]/15 dark:text-[#05161f]'
-                    : 'bg-[#004c68]/10 text-[#004c68] dark:bg-[#ff8806]/15 dark:text-[#ff8806]'}`}>
-                    {n.toLocaleString('fr-FR')}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <TarifsTabs
+            label="Type de retour"
+            value={page.sous_type ?? 'tous'}
+            onValueChange={(v) => router.get(page.url, v === 'tous' ? {} : { sous_type: v }, { preserveScroll: true })}
+            onglets={[
+              { value: 'tous', label: 'Tous les retours', count: sousTypes.tous, icon: <Undo2 className="size-3.5" /> },
+              { value: 'client', label: 'Retour client', count: sousTypes.client },
+              { value: 'livreur', label: 'Retour livreur', count: sousTypes.livreur },
+            ]}
+          />
         )}
 
         <TarifsTabs

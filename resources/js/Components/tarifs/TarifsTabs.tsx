@@ -24,11 +24,11 @@ interface Props {
  */
 const BADGE: Record<NonNullable<OngletTarif['tone']>, string> = {
   default:
-    'bg-foreground/[0.06] text-muted-foreground group-hover/onglet:text-foreground group-data-active/onglet:bg-[#004c68] group-data-active/onglet:text-white dark:group-data-active/onglet:bg-[#ff8806] dark:group-data-active/onglet:text-[#05161f]',
+    'bg-[#004c68]/10 text-[#004c68] dark:bg-[#ff8806]/15 dark:text-[#ff8806] group-data-active/onglet:bg-white/20 group-data-active/onglet:text-white dark:group-data-active/onglet:bg-[#05161f]/15 dark:group-data-active/onglet:text-[#05161f]',
   danger:
-    'bg-destructive/10 text-destructive group-data-active/onglet:bg-destructive group-data-active/onglet:text-white',
+    'bg-destructive/10 text-destructive group-data-active/onglet:bg-white/20 group-data-active/onglet:text-white',
   muted:
-    'bg-foreground/[0.06] text-muted-foreground group-hover/onglet:text-foreground group-data-active/onglet:bg-foreground/80 group-data-active/onglet:text-background',
+    'bg-foreground/[0.06] text-muted-foreground group-data-active/onglet:bg-white/20 group-data-active/onglet:text-white dark:group-data-active/onglet:text-[#05161f]',
 };
 
 /**
@@ -45,28 +45,26 @@ export function TarifsTabs({ value, onValueChange, onglets, label }: Props) {
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <TabsList
           aria-label={label}
-          className="h-auto w-max gap-1 rounded-lg group-data-horizontal/tabs:h-auto border border-border/70 bg-muted/60 p-1 shadow-inner shadow-black/[0.03] dark:bg-[#0a2533]/60"
+          className="h-auto w-max gap-0.5 rounded-lg border border-border bg-card p-0.5 shadow-none group-data-horizontal/tabs:h-auto"
         >
           {onglets.map((o) => (
             <TabsTrigger
               key={o.value}
               value={o.value}
               className={[
-                'group/onglet h-8 flex-none gap-2 rounded-md px-3 text-xs font-medium text-muted-foreground',
-                'transition-[background-color,color,box-shadow] duration-200 ease-out',
-                'hover:bg-background/60 hover:text-foreground',
-                // État actif : surface élevée et couleur de marque.
-                'data-active:bg-background data-active:font-semibold data-active:text-[#004c68] data-active:shadow-sm data-active:ring-1 data-active:ring-border/80',
-                'dark:data-active:border-transparent dark:data-active:bg-[#05161f] dark:data-active:text-[#ff8806] dark:data-active:ring-white/10',
-                // Icône : atténuée au repos, colorée à l'état actif.
-                '[&_svg]:opacity-60 data-active:[&_svg]:opacity-100',
-                o.tone === 'danger' ? 'data-active:text-destructive dark:data-active:text-red-400' : '',
+                'group/onglet h-8 flex-none gap-1.5 rounded-md border-0 px-3 text-xs font-medium text-muted-foreground shadow-none',
+                'transition-colors duration-150 hover:text-foreground after:hidden',
+                // Onglet actif : fond plein de la marque (orange en mode sombre), sans ombre.
+                'data-active:bg-[#004c68] data-active:text-white data-active:shadow-none data-active:hover:text-white',
+                'dark:data-active:bg-[#ff8806] dark:data-active:text-[#05161f] dark:data-active:hover:text-[#05161f]',
+                '[&_svg]:opacity-70 data-active:[&_svg]:opacity-100',
+                o.tone === 'danger' ? 'data-active:bg-destructive dark:data-active:bg-destructive dark:data-active:text-white' : '',
               ].join(' ')}
             >
               {o.icon}
               <span>{o.label}</span>
               <span
-                className={`inline-flex h-[18px] min-w-[22px] items-center justify-center rounded-full px-1.5 font-mono text-[10px] font-semibold tabular-nums transition-colors duration-200 ${BADGE[o.tone ?? 'default']}`}
+                className={`inline-flex h-[18px] min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums transition-colors duration-150 ${BADGE[o.tone ?? 'default']}`}
                 aria-label={`${o.count} élément(s)`}
               >
                 {o.count.toLocaleString('fr-FR')}
