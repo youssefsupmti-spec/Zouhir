@@ -14,7 +14,8 @@ import {
     ShieldCheck,
     CheckCircle2,
     Clock,
-    Globe
+    Globe,
+    ChevronDown
 } from 'lucide-react';
 
 export default function Navbar({ onOpenTracking }) {
@@ -33,7 +34,7 @@ export default function Navbar({ onOpenTracking }) {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Social media icons data
+    // Social media links data
     const socialLinks = [
         { name: 'Twitter', icon: '𝕏', href: 'https://twitter.com' },
         { name: 'Facebook', icon: 'f', href: 'https://facebook.com' },
@@ -52,7 +53,7 @@ export default function Navbar({ onOpenTracking }) {
                 <div className={`transition-all duration-300 overflow-hidden ${
                     scrolled 
                         ? 'max-h-0 opacity-0 pointer-events-none' 
-                        : 'max-h-16 opacity-100 bg-[#05161f]/85 backdrop-blur-md border-b border-white/10 text-white'
+                        : 'max-h-16 opacity-100 bg-[#05161f]/90 backdrop-blur-md border-b border-white/10 text-white'
                 }`}>
                     <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between h-10 text-xs">
@@ -124,187 +125,220 @@ export default function Navbar({ onOpenTracking }) {
                 </div>
 
                 {/* ============================================================== */}
-                {/* 2. MAIN HEADER NAVIGATION (Inspired by Envato Header Three)    */}
+                {/* 2. HEADER START (Strict Structure Index-3.html lines 283-475)  */}
                 {/* ============================================================== */}
-                <header className="transition-all duration-300">
-                    <div className="max-w-[1760px] mx-auto px-2 sm:px-4 lg:px-6 mt-1 sm:mt-2">
-                        <nav className={`flex items-center justify-between rounded-lg sm:rounded-xl transition-all duration-300 border border-white/10 shadow-2xl ${
-                            scrolled
-                                ? 'bg-[#004c68]/95 backdrop-blur-xl shadow-slate-950/40 py-2 sm:py-2.5 px-3 sm:px-6'
-                                : 'bg-[#004c68] py-2 sm:py-3 px-3 sm:px-6'
+                <header className="transition-all duration-300 links-white">
+                    <div className="max-w-[1760px] mx-auto px-4 lg:pe-0">
+                        <nav className={`bg-[#07485e] flex items-center justify-between ps-3 pe-4 sm:pe-8 lg:pe-[100px] py-3 lg:py-0 transition-all duration-300 shadow-xl ${
+                            scrolled ? 'bg-[#07485e]/95 backdrop-blur-md shadow-2xl' : ''
                         }`}>
 
-                            {/* Left Side: Hexagon Logo Container + Desktop Navigation */}
-                            <div className="flex items-center gap-4 lg:gap-8">
+                            {/* Left Side: Logo & Desktop Menu */}
+                            <div className="flex items-center">
                                 
-                                {/* Hexagon-Right Pointed Brand Logo Container (.hexagon-right) */}
+                                {/* Desktop Logo with Hexagon-Right (.hexagon-right) */}
                                 <Link 
                                     href="/"
-                                    className="hexagon-right bg-gradient-to-r from-[#ff8806] via-[#ff8806] to-[#e07400] flex items-center justify-center pl-4 sm:pl-7 pr-8 sm:pr-12 py-2 sm:py-2.5 transition-transform duration-200 hover:scale-[1.02] shadow-md group"
+                                    className="cursor-pointer bg-[#05161f] hidden lg:flex items-center justify-center ps-6 lg:ps-10 pe-10 lg:pe-16 py-4 lg:py-5 hexagon-right shrink-0 transition-transform duration-200 hover:brightness-110"
                                     title="OUAISS EXPRESS - Accueil"
                                 >
                                     <img 
-                                        src="/images/logo-full-white.png" 
+                                        src="/images/logo-full-dark.png" 
                                         alt="OUAISS EXPRESS" 
-                                        className="h-7 sm:h-8.5 w-auto max-w-[150px] sm:max-w-[185px] object-contain drop-shadow-sm"
+                                        className="h-8 lg:h-9 w-auto max-w-[180px] lg:max-w-[205px] object-contain drop-shadow-sm"
                                     />
                                 </Link>
 
-                                {/* Desktop Navigation Menu */}
-                                <div className="hidden xl:flex items-center gap-6 text-sm font-semibold text-white">
-                                    
-                                    {/* Item 1: Solutions + */}
-                                    <div 
-                                        className="relative group py-2"
-                                        onMouseEnter={() => setHomeSubmenuOpen(true)}
-                                        onMouseLeave={() => setHomeSubmenuOpen(false)}
-                                    >
-                                        <button 
-                                            type="button" 
-                                            className="flex items-center gap-1 hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                {/* Mobile Logo (Without Hexagon, Direct on Nav Parent) */}
+                                <Link 
+                                    href="/"
+                                    className="lg:hidden flex items-center justify-center py-1 ps-1"
+                                    title="OUAISS EXPRESS - Accueil"
+                                >
+                                    <img 
+                                        src="/images/logo-full-dark.png" 
+                                        alt="OUAISS EXPRESS" 
+                                        className="h-7.5 sm:h-8 w-auto max-w-[155px] sm:max-w-[175px] object-contain"
+                                    />
+                                </Link>
+
+                                {/* Desktop Navigation Menu (with .ps-108-px offset after hexagon point) */}
+                                <div className="header-menu hidden lg:block ps-108-px">
+                                    <ul className="flex items-center gap-4 xl:gap-8 text-sm font-semibold text-white">
+                                        
+                                        {/* Item 1: Solutions + Dropdown */}
+                                        <li 
+                                            className="relative group py-5"
+                                            onMouseEnter={() => setHomeSubmenuOpen(true)}
+                                            onMouseLeave={() => setHomeSubmenuOpen(false)}
                                         >
-                                            <span>Solutions</span>
-                                            <span className="text-[#ff8806] font-bold text-xs transition-transform duration-200 group-hover:rotate-45">+</span>
-                                        </button>
+                                            <a 
+                                                href="#services"
+                                                className="flex items-center gap-1 hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                            >
+                                                <span>Solutions</span>
+                                                <span className="text-[#ff8806] font-bold text-xs transition-transform duration-200 group-hover:rotate-45">+</span>
+                                            </a>
 
-                                        {/* Dropdown Submenu */}
-                                        {homeSubmenuOpen && (
-                                            <div className="absolute left-0 top-full pt-2 w-56 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                                                <div className="bg-[#05161f] border border-white/10 rounded-xl shadow-2xl p-2 text-xs space-y-1">
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Marchands & E-commerce
-                                                    </a>
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Ramassage 100% Gratuit
-                                                    </a>
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Confirmation WhatsApp
-                                                    </a>
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Virement CRBT à J+2
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                            {/* Submenu Dropdown */}
+                                            {homeSubmenuOpen && (
+                                                <ul className="absolute left-0 top-full pt-2 w-56 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                                                    <li className="bg-[#05161f] border border-white/10 rounded-xl shadow-2xl p-2 text-xs space-y-1">
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Marchands & E-commerce
+                                                        </a>
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Ramassage 100% Gratuit
+                                                        </a>
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Confirmation WhatsApp
+                                                        </a>
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Virement CRBT à J+2
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            )}
+                                        </li>
 
-                                    {/* Item 2: Services + */}
-                                    <div 
-                                        className="relative group py-2"
-                                        onMouseEnter={() => setServicesSubmenuOpen(true)}
-                                        onMouseLeave={() => setServicesSubmenuOpen(false)}
-                                    >
-                                        <button 
-                                            type="button" 
-                                            className="flex items-center gap-1 hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                        {/* Item 2: Services + Dropdown */}
+                                        <li 
+                                            className="relative group py-5"
+                                            onMouseEnter={() => setServicesSubmenuOpen(true)}
+                                            onMouseLeave={() => setServicesSubmenuOpen(false)}
                                         >
-                                            <span>Services</span>
-                                            <span className="text-[#ff8806] font-bold text-xs transition-transform duration-200 group-hover:rotate-45">+</span>
-                                        </button>
+                                            <a 
+                                                href="#services"
+                                                className="flex items-center gap-1 hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                            >
+                                                <span>Services</span>
+                                                <span className="text-[#ff8806] font-bold text-xs transition-transform duration-200 group-hover:rotate-45">+</span>
+                                            </a>
 
-                                        {/* Dropdown Submenu */}
-                                        {servicesSubmenuOpen && (
-                                            <div className="absolute left-0 top-full pt-2 w-60 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                                                <div className="bg-[#05161f] border border-white/10 rounded-xl shadow-2xl p-2 text-xs space-y-1">
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Livraison Express 24/48h
-                                                    </a>
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Cash on Delivery (CRBT)
-                                                    </a>
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Gestion des Retours
-                                                    </a>
-                                                    <a 
-                                                        href="#services" 
-                                                        className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                                                    >
-                                                        Stockage & Fulfillment
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                            {/* Submenu Dropdown */}
+                                            {servicesSubmenuOpen && (
+                                                <ul className="absolute left-0 top-full pt-2 w-60 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                                                    <li className="bg-[#05161f] border border-white/10 rounded-xl shadow-2xl p-2 text-xs space-y-1">
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Livraison Express 24/48h
+                                                        </a>
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Cash on Delivery (CRBT)
+                                                        </a>
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Gestion des Retours
+                                                        </a>
+                                                        <a 
+                                                            href="#services" 
+                                                            className="block px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            Stockage & Fulfillment
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            )}
+                                        </li>
 
-                                    {/* Item 3: Comment ça marche */}
-                                    <a 
-                                        href="#comment-ca-marche" 
-                                        className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
-                                    >
-                                        Comment ça marche
-                                    </a>
+                                        {/* Item 3: Comment ça marche */}
+                                        <li className="py-5">
+                                            <a 
+                                                href="#comment-ca-marche" 
+                                                className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                            >
+                                                Comment ça marche
+                                            </a>
+                                        </li>
 
-                                    {/* Item 4: Simulateur de Tarifs */}
-                                    <a 
-                                        href="#calculateur" 
-                                        className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
-                                    >
-                                        Simulateur Tarifs
-                                    </a>
+                                        {/* Item 4: Simulateur de Tarifs */}
+                                        <li className="py-5">
+                                            <a 
+                                                href="#calculateur" 
+                                                className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                            >
+                                                Simulateur Tarifs
+                                            </a>
+                                        </li>
 
-                                    {/* Item 5: Pourquoi Nous */}
-                                    <a 
-                                        href="#pourquoi-nous" 
-                                        className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
-                                    >
-                                        Pourquoi Nous
-                                    </a>
+                                        {/* Item 5: Pourquoi Nous */}
+                                        <li className="py-5">
+                                            <a 
+                                                href="#pourquoi-nous" 
+                                                className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                            >
+                                                Pourquoi Nous
+                                            </a>
+                                        </li>
 
-                                    {/* Item 6: Contact */}
-                                    <a 
-                                        href="#contact" 
-                                        className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
-                                    >
-                                        Contact
-                                    </a>
+                                        {/* Item 6: Contact */}
+                                        <li className="py-5">
+                                            <a 
+                                                href="#contact" 
+                                                className="hover:text-[#ff8806] transition-all hover:-translate-y-0.5"
+                                            >
+                                                Contact
+                                            </a>
+                                        </li>
 
+                                    </ul>
                                 </div>
 
                             </div>
 
-                            {/* Right Side: Offcanvas 9-dots + Auth Button */}
-                            <div className="flex items-center gap-3 sm:gap-4">
-                                
-                                {/* 3x3 Dots Offcanvas Menu Button (bars-two.svg) */}
-                                <button
-                                    type="button"
-                                    onClick={() => setOffcanvasOpen(true)}
-                                    className="flex items-center justify-center p-2 rounded-lg hover:bg-white/10 transition-transform hover:scale-110"
-                                    title="Menu latéral & Informations"
-                                >
-                                    <img 
-                                        src="/images/landing/icons/bars-two.svg" 
-                                        alt="Menu" 
-                                        className="w-5 h-5 object-contain" 
-                                    />
-                                </button>
+                            {/* Header Right (Matches index-3.html gap-xxl-5 gap-3) */}
+                            <div className="flex items-center gap-3 xl:gap-6">
+                                <div className="flex items-center gap-3 xl:gap-6 flex-shrink-0">
+                                    
+                                    {/* Suivi Colis Quick Action (Styled like Cart / Tracker in Envato) */}
+                                    <button
+                                        type="button"
+                                        onClick={() => onOpenTracking()}
+                                        className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#ff8806] text-white text-xs font-semibold transition-all hover:-translate-y-0.5 group"
+                                        title="Suivre un colis OUAISS EXPRESS en direct"
+                                    >
+                                        <PackageSearch className="w-4 h-4 text-[#ff8806] group-hover:text-white transition-colors" />
+                                        <span className="hidden xl:inline">Suivi Colis</span>
+                                        <span className="w-2 h-2 rounded-full bg-[#ff8806] group-hover:bg-white animate-pulse" />
+                                    </button>
 
-                                {/* Vertical Separator Line */}
-                                <span className="h-6 w-px bg-white/20 hidden sm:block" />
+                                    {/* Line Separator: matches index-3.html <span class="line light-white h-100 d-xl-block d-none"></span> */}
+                                    <span className="h-8 w-px bg-white/20 hidden xl:block" />
 
-                                {/* 5. Espace Client Button (Direct CTA) */}
-                                <div className="hidden md:flex items-center">
+                                    {/* Offcanvas Bar Icon: matches index-3.html <button class="offcanvas-bar-icon ..."><img src="...bars-two.svg"></button> */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setOffcanvasOpen(true)}
+                                        className="p-2 rounded-lg hover:bg-white/10 transition-transform hover:scale-110 hidden sm:flex items-center justify-center cursor-pointer"
+                                        title="Menu latéral & Informations Hub"
+                                    >
+                                        <img 
+                                            src="/images/landing/icons/bars-two.svg" 
+                                            alt="Menu" 
+                                            className="w-5 h-5 object-contain" 
+                                        />
+                                    </button>
+
+                                    {/* Espace Client CTA Button */}
                                     {auth?.user ? (
                                         <Link 
                                             href="/dashboard"
@@ -316,19 +350,20 @@ export default function Navbar({ onOpenTracking }) {
                                     ) : (
                                         <Link 
                                             href="/login"
-                                            className="px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+                                            className="px-4 py-2 rounded-lg bg-[#ff8806] hover:bg-[#e07400] text-white text-xs font-bold transition-all shadow-md shadow-[#ff8806]/20 flex items-center gap-1.5"
                                         >
                                             <User className="w-3.5 h-3.5" />
                                             <span>Espace Client</span>
                                         </Link>
                                     )}
+
                                 </div>
 
-                                {/* Mobile Hamburger Toggle */}
+                                {/* Mobile Hamburger Button: matches index-3.html <button class="toggle-mobileMenu leading-none d-lg-none text-white tw-text-9"> */}
                                 <button
                                     type="button"
                                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                    className="xl:hidden p-2 text-white hover:text-[#ff8806] transition-colors"
+                                    className="lg:hidden p-2 text-white hover:text-[#ff8806] transition-colors"
                                     aria-label="Menu Mobile"
                                 >
                                     {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -340,9 +375,9 @@ export default function Navbar({ onOpenTracking }) {
                     </div>
                 </header>
 
-                {/* Mobile Dropdown Menu */}
+                {/* Mobile Dropdown Menu (matches index-3.html mobile nav drawer) */}
                 {mobileMenuOpen && (
-                    <div className="xl:hidden max-w-[1760px] mx-auto px-2 sm:px-4 mt-2">
+                    <div className="lg:hidden max-w-[1760px] mx-auto px-4 mt-2">
                         <div className="bg-[#05161f]/98 backdrop-blur-2xl border border-white/10 rounded-2xl p-5 shadow-2xl text-white space-y-3 animate-in fade-in slide-in-from-top-4 duration-200">
                             <a 
                                 href="#services"
@@ -440,12 +475,12 @@ export default function Navbar({ onOpenTracking }) {
                     <div className="fixed inset-y-0 right-0 w-full max-w-sm sm:max-w-md bg-[#05161f] text-white shadow-2xl p-6 sm:p-8 flex flex-col justify-between overflow-y-auto z-50 animate-in slide-in-from-right duration-300 border-l border-white/10">
                         
                         <div className="space-y-8">
-                            {/* Header: Logo + Close Button */}
+                            {/* Header: Logo Adapted + Close Button */}
                             <div className="flex items-center justify-between">
                                 <img 
-                                    src="/images/logo-full-white.png" 
+                                    src="/images/logo-full-dark.png" 
                                     alt="OUAISS EXPRESS" 
-                                    className="h-8 w-auto max-w-[180px] object-contain" 
+                                    className="h-8.5 w-auto max-w-[190px] object-contain" 
                                 />
                                 <button
                                     type="button"
@@ -522,7 +557,7 @@ export default function Navbar({ onOpenTracking }) {
                                         setOffcanvasOpen(false);
                                         onOpenTracking();
                                     }}
-                                    className="w-full py-2.5 px-4 rounded-xl bg-[#ff8806] hover:bg-[#e07400] text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-[#ff8806]/20"
+                                    className="w-full py-2.5 px-4 rounded-xl bg-[#ff8806] hover:bg-[#e07400] text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-[#ff8806]/20 cursor-pointer"
                                 >
                                     <PackageSearch className="w-4 h-4" />
                                     <span>Suivre un Colis Express</span>

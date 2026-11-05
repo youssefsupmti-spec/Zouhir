@@ -252,3 +252,12 @@
     transform: scale(1.2);
     transition: transform 0.2s ease;
 }
+
+
+.ps-108-px {
+    padding-inline-start: clamp(1.5rem, -16.8619rem + 21vw, 6.75rem);
+}
+
+.bg-green {
+    background-color: #07485e;
+}
