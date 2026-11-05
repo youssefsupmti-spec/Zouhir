@@ -46,6 +46,31 @@
   html {
     @apply font-sans;
     }
+
+    /*
+     * Tailwind v4 laisse le curseur par défaut sur les boutons : tout élément cliquable affiche la
+     * main (cursor-pointer), sauf s'il est désactivé.
+     */
+    button:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]),
+    [role="tab"]:not([aria-disabled="true"]),
+    [role="menuitem"]:not([data-disabled]),
+    [role="option"]:not([data-disabled]),
+    a[href],
+    label[for],
+    summary,
+    select:not(:disabled),
+    input[type="checkbox"]:not(:disabled),
+    input[type="radio"]:not(:disabled),
+    input[type="color"]:not(:disabled) {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [aria-disabled="true"],
+    [data-disabled] {
+        cursor: not-allowed;
+    }
 }
 
 /* Glassmorphism & Custom Effects */

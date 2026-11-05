@@ -84,6 +84,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/colis/{coli}/state', [\App\Http\Controllers\ColisController::class, 'updateState'])->name('colis.state');
     Route::delete('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'destroy'])->name('colis.destroy');
     Route::post('/colis/groupe', [\App\Http\Controllers\ColisController::class, 'groupe'])->name('colis.groupe');
+    Route::get('/colis/etiquettes', [\App\Http\Controllers\ColisController::class, 'etiquettes'])->name('colis.etiquettes');
     Route::get('/colis/{coli}/notes', [\App\Http\Controllers\ColisController::class, 'notes'])->name('colis.notes');
     Route::post('/colis/{coli}/notes', [\App\Http\Controllers\ColisController::class, 'ajouterNote'])->middleware('throttle:60,1')->name('colis.notes.store');
     Route::get('/colis/{coli}/suivi', [\App\Http\Controllers\ColisController::class, 'suivi'])->name('colis.suivi');

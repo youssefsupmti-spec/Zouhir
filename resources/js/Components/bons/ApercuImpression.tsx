@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
  * « Imprimer » lance l'impression du document seul ; « Enregistrer en PDF » ouvre la même boîte
  * d'impression, où l'on choisit « Enregistrer au format PDF ».
  */
-export function ApercuImpression({ url, titre, onClose }: { url: string | null; titre: string; onClose: () => void }) {
+export function ApercuImpression({ url, titre, onClose, format = 'A4' }: { url: string | null; titre: string; onClose: () => void; format?: string }) {
   const cadre = useRef<HTMLIFrameElement>(null);
   const [charge, setCharge] = useState(false);
 
@@ -20,7 +20,7 @@ export function ApercuImpression({ url, titre, onClose }: { url: string | null; 
         <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-border px-4 py-3">
           <div className="min-w-0">
             <DialogTitle className="truncate text-sm">{titre}</DialogTitle>
-            <DialogDescription className="text-[11px]">Aperçu avant impression (A4)</DialogDescription>
+            <DialogDescription className="text-[11px]">Aperçu avant impression ({format})</DialogDescription>
           </div>
           <div className="flex shrink-0 gap-2 pr-8">
             <Button size="sm" variant="outline" className="h-8 text-xs" disabled={!url} render={<a href={url ?? '#'} target="_blank" rel="noopener" />}>

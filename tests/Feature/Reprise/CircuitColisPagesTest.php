@@ -153,4 +153,24 @@ class CircuitColisPagesTest extends TestCase
         $this->actingAs($this->client)->get("/bons/livraison/{$bl}/imprimer")->assertForbidden();
         $this->actingAs($this->admin)->get('/bons/inconnu/1/imprimer')->assertNotFound();
     }
+
+    public function test_etiquettes_colis(): void
+    {
+        $html = $this->actingAs($this->admin)->get('/colis/etiquettes?ids=104,100,abc,100')->assertOk()->getContent();
+        $this->assertSame(2, substr_count($html, 'class="etiquette"'));
+        $this->assertLessThan(strpos($html, 'OIS-100'), strpos($html, 'OIS-104')); // ordre demandé
+        $this->assertStringContainsString('À encaisser', $html);
+        $this->assertStringContainsString('Anouar', $html);                        // enseigne expéditrice
+        $this->assertStringContainsString('<svg', $html);
+
+        // Périmètre : un marchand n'imprime que ses colis.
+        DB::table('commands')->where('id', 104)->update(['client_id' => 1]);
+        $html = $this->actingAs($this->client)->get('/colis/etiquettes?ids=104,100')->assertOk()->getContent();
+        $this->assertSame(1, substr_count($html, 'class="etiquette"'));
+        $this->actingAs($this->client)->get('/colis/etiquettes?ids=104')->assertForbidden();
+        $this->actingAs($this->admin)->get('/colis/etiquettes')->assertNotFound();
+        if (getenv('APERCU_ETIQUETTE')) {
+            file_put_contents(getenv('APERCU_ETIQUETTE'), $this->actingAs($this->admin)->get('/colis/etiquettes?ids=103,100')->getContent());
+        }
+    }
 }

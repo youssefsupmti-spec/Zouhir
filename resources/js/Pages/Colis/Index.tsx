@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Head, router } from '@inertiajs/react';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Ban, CalendarClock, CheckCircle2, Clock, Edit, History, MapPin, Package, PackageOpen,
-  Layers, MessageSquareText, Phone, Plus, RefreshCw, Repeat, RotateCcw, Store, Trash2, Truck, Undo2, Wallet, Warehouse, XCircle,
+  Layers, MessageSquareText, Phone, Plus, Printer, RefreshCw, Repeat, RotateCcw, Store, Trash2, Truck, Undo2, Wallet, Warehouse, XCircle,
 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -19,6 +19,7 @@ import { ChargementTableau, useChargementPage } from '@/components/common/Charge
 import { Copiable } from '@/components/common/Copiable';
 import { ColisFormDialog } from './ColisFormDialog';
 import { NotesColisPanel } from './NotesColisPanel';
+import { ApercuImpression } from '@/components/bons/ApercuImpression';
 import { ChangeStatutDialog } from './ChangeStatutDialog';
 import { SuiviColisDialog } from './SuiviColisDialog';
 
@@ -124,6 +125,7 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
   const [statutColis, setStatutColis] = useState<ColisItem | null>(null);
   const [suiviId, setSuiviId] = useState<number | null>(null);
   const [notesId, setNotesId] = useState<number | null>(null);
+  const [etiquettes, setEtiquettes] = useState<{ ids: number[]; titre: string } | null>(null);
   const chargement = useChargementPage();
   const [confirmation, setConfirmation] = useState<{ action: 'corbeille' | 'restaurer'; ids: number[]; libelle: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -215,6 +217,7 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
 
         {canBulk && (
           <BarreSelection taille={selection.taille} onVider={selection.vider}>
+            <ActionGroupee icone={<Printer className="size-3.5" />} onClick={() => setEtiquettes({ ids: selection.ids, titre: `${selection.taille} étiquette(s) colis` })}>Imprimer les étiquettes</ActionGroupee>
             {corbeille
               ? <ActionGroupee icone={<RotateCcw className="size-3.5" />} onClick={() => setConfirmation({ action: 'restaurer', ids: selection.ids, libelle: `${selection.taille} colis` })}>Restaurer</ActionGroupee>
               : <ActionGroupee danger icone={<Trash2 className="size-3.5" />} onClick={() => setConfirmation({ action: 'corbeille', ids: selection.ids, libelle: `${selection.taille} colis` })}>Mettre en corbeille</ActionGroupee>}
@@ -238,7 +241,7 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
                 <TableHead className="w-48">Statut · livreur</TableHead>
                 <TableHead className="w-56">Notes</TableHead>
                 <TableHead className="w-32"><Tri col="updated_at">Mise à jour</Tri></TableHead>
-                <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
+                <TableHead className="w-32 pr-4 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -333,6 +336,7 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
 
                     <TableCell className="pr-4 text-right">
                       <span className="inline-flex gap-0.5">
+                        <Button size="icon" variant="ghost" className="size-7" title="Imprimer l’étiquette" aria-label={`Étiquette de ${c.code}`} onClick={() => setEtiquettes({ ids: [c.id], titre: `Étiquette ${c.code}` })}><Printer className="size-3.5 text-[#004c68] dark:text-cyan-300" /></Button>
                         <Button size="icon" variant="ghost" className="size-7" title="Suivi & historique" aria-label={`Suivi de ${c.code}`} onClick={() => setSuiviId(c.id)}><History className="size-3.5" /></Button>
                         {c.can?.updateState && <Button size="icon" variant="ghost" className="size-7" title="Changer le statut" aria-label={`Statut de ${c.code}`} onClick={() => setStatutColis(c)}><RefreshCw className="size-3.5 text-[#004c68] dark:text-cyan-300" /></Button>}
                         {c.can?.update && <Button size="icon" variant="ghost" className="size-7" title="Modifier" aria-label={`Modifier ${c.code}`} onClick={() => { setEditingColis(c); setFormOpen(true); }}><Edit className="size-3.5 text-[#ff8806]" /></Button>}
@@ -362,6 +366,12 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
       <ChangeStatutDialog open={statutColis !== null} onOpenChange={(o) => !o && setStatutColis(null)} colis={statutColis} livreurs={livreurs} />
       <SuiviColisDialog colisId={suiviId} onClose={() => setSuiviId(null)} />
       <NotesColisPanel colisId={notesId} onClose={() => setNotesId(null)} />
+      <ApercuImpression
+        url={etiquettes ? `/colis/etiquettes?ids=${etiquettes.ids.join(',')}` : null}
+        titre={etiquettes?.titre ?? ''}
+        format="étiquette 100 × 150 mm"
+        onClose={() => setEtiquettes(null)}
+      />
       <ConfirmDeleteDialog
         open={confirmation !== null}
         onOpenChange={(o) => !o && !busy && setConfirmation(null)}

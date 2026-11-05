@@ -165,6 +165,47 @@ class ColisController extends Controller
         ]);
     }
 
+    /**
+     * Étiquettes colis (100 × 150 mm, une par page) pour une sélection : `?ids=1,2,3` (500 au plus).
+     * Seuls les colis visibles par l'utilisateur sont imprimés (périmètre), dans l'ordre demandé.
+     */
+    public function etiquettes(Request $request): \Illuminate\Contracts\View\View
+    {
+        Gate::authorize('viewAny', Command::class);
+
+        $ids = collect(explode(',', (string) $request->query('ids', '')))
+            ->map(fn ($v) => (int) trim($v))->filter(fn ($v) => $v > 0)->unique()->take(500)->values();
+        abort_if($ids->isEmpty(), 404);
+
+        $colis = Command::withTrashed()->visibleTo($request->user())->whereIn('id', $ids)
+            ->with(['business:id,name', 'client:id,nom_complet,telephone', 'ville:id,name_fr,code_zone', 'zone:id,code,name'])
+            ->get()->sortBy(fn (Command $c) => $ids->search($c->id))->values();
+        abort_if($colis->isEmpty(), 403);
+
+        $agence = \App\Models\Agence::principale();
+
+        return view('print.etiquettes', [
+            'etiquettes' => $colis->map(fn (Command $c) => [
+                'code' => $c->code,
+                'codeBarres' => \App\Domain\Documents\Code128::svg((string) $c->code, 64, 1.55),
+                'montant' => (float) $c->prix_brut,
+                'ville' => $c->ville?->name_fr ?? $c->destinataire_ville,
+                'zone' => $c->destinataire_zone_code ?? $c->zone?->code,
+                'destinataire' => $c->destinataire_nom,
+                'telephone' => $c->destinataire_telephone,
+                'adresse' => $c->destinataire_adresse,
+                'expediteur' => $c->business?->name ?? $c->business_name ?? $c->client?->nom_complet ?? $c->nom_cliente,
+                'telephone_expediteur' => $c->client?->telephone,
+                'produit' => $c->produit,
+                'quantite' => (int) $c->quantite,
+                'ouverture' => (bool) $c->ouverture_autorisee,
+                'echange' => (bool) $c->echange,
+                'date' => $c->created_at,
+            ]),
+            'agence' => $agence,
+        ]);
+    }
+
     /** Fil des notes d'un colis (JSON), du plus ancien au plus récent. */
     public function notes(Command $coli): JsonResponse
     {
