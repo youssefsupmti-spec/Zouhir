@@ -40,7 +40,11 @@ class ColisController extends Controller
      * Tri par défaut : date de mise à jour, la plus récente d'abord (index deleted_at + updated_at).
      * Compteurs et statistiques : UNE requête agrégée (corbeille comprise) au lieu de huit.
      */
-    public function index(Request $request): Response
+    /**
+     * Vues de la page Colis : `tous` (/colis), `ajouter` (/colis/ajouter : formulaire ouvert),
+     * `nouveaux` (/colis/nouveaux : colis au groupe « nouveau » seulement).
+     */
+    public function index(Request $request, string $vue = 'tous'): Response
     {
         Gate::authorize('viewAny', Command::class);
         $user = $request->user();
@@ -50,6 +54,9 @@ class ColisController extends Controller
         $onglet = (string) $request->input('onglet', $request->input('state_group', 'tous'));
         $groupes = ClassificationEtats::groupes(actifsSeulement: true);
         $onglet = in_array($onglet, ['tous', 'corbeille', ...$groupes->pluck('code')->all()], true) ? $onglet : 'tous';
+        if ($vue === 'nouveaux') {
+            $onglet = 'nouveau';
+        }
         $villeId = $request->input('ville_id');
         $clientId = $request->input('client_id');
         $livreurId = $request->input('livreur_id');
@@ -113,15 +120,15 @@ class ColisController extends Controller
             ->groupBy('state_group', DB::raw('(deleted_at IS NULL)'))
             ->get();
         $tout = $agregat($scoped());
-        $vue = $filtre ? $agregat($scoped()->tap($filtres)) : $tout;
+        $agregatVue = $filtre ? $agregat($scoped()->tap($filtres)) : $tout;
 
         $actifs = fn ($lignes) => $lignes->filter(fn ($l) => (int) $l->actif === 1);
-        $parGroupe = $actifs($vue)->pluck('n', 'state_group');
+        $parGroupe = $actifs($agregatVue)->pluck('n', 'state_group');
         $onglets = ['tous' => (int) $parGroupe->sum()];
         foreach ($groupes as $g) {
             $onglets[$g->code] = (int) ($parGroupe[$g->code] ?? 0);
         }
-        $onglets['corbeille'] = (int) $vue->filter(fn ($l) => (int) $l->actif === 0)->sum('n');
+        $onglets['corbeille'] = (int) $agregatVue->filter(fn ($l) => (int) $l->actif === 0)->sum('n');
 
         $stat = $actifs($tout)->keyBy('state_group');
         $compte = fn (array $codes) => (int) collect($codes)->sum(fn ($c) => (int) ($stat[$c]->n ?? 0));
@@ -152,6 +159,12 @@ class ColisController extends Controller
                 'taux_livraison' => $totalColis > 0 ? round(($livresColis / $totalColis) * 100, 1) : 0,
                 'total_crbt' => (float) ($stat['livre']->crbt ?? 0),
             ],
+            'vue' => [
+                'code' => $vue,
+                'url' => match ($vue) { 'nouveaux' => '/colis/nouveaux', default => '/colis' },
+                'titre' => $vue === 'nouveaux' ? 'Nouveaux colis' : 'Colis',
+                'ouvrir_ajout' => $vue === 'ajouter',
+            ],
             'filters' => [
                 'search' => $search,
                 'onglet' => $onglet,
@@ -166,7 +179,7 @@ class ColisController extends Controller
     }
 
     /**
-     * Étiquettes colis (100 × 150 mm, une par page) pour une sélection : `?ids=1,2,3` (500 au plus).
+     * Étiquettes colis (10 × 10 cm, une par page) pour une sélection : `?ids=1,2,3` (500 au plus).
      * Seuls les colis visibles par l'utilisateur sont imprimés (périmètre), dans l'ordre demandé.
      */
     public function etiquettes(Request $request): \Illuminate\Contracts\View\View
@@ -187,7 +200,7 @@ class ColisController extends Controller
         return view('print.etiquettes', [
             'etiquettes' => $colis->map(fn (Command $c) => [
                 'code' => $c->code,
-                'codeBarres' => \App\Domain\Documents\Code128::svg((string) $c->code, 64, 1.55),
+                'codeBarres' => \App\Domain\Documents\Code128::svg((string) $c->code, 48, 1.55),
                 'montant' => (float) $c->prix_brut,
                 'ville' => $c->ville?->name_fr ?? $c->destinataire_ville,
                 'zone' => $c->destinataire_zone_code ?? $c->zone?->code,

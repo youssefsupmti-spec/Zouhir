@@ -39,6 +39,8 @@ export default function AuthenticatedLayout({ children, title }) {
     const getPageTitle = () => {
         if (title) return title;
         const pathname = url.split('?')[0].split('#')[0];
+        if (pathname.startsWith('/colis/ajouter')) return 'Ajouter un colis';
+        if (pathname.startsWith('/colis/nouveaux')) return 'Nouveaux colis';
         if (pathname.startsWith('/colis')) return 'Colis';
         if (pathname.startsWith('/businesses')) return 'Enseignes & Boutiques';
         if (pathname.startsWith('/clients')) return 'Clients Marchands';
@@ -49,8 +51,7 @@ export default function AuthenticatedLayout({ children, title }) {
         if (pathname.startsWith('/bons-livraison')) return 'Bons de livraison';
         if (pathname.startsWith('/bons-envoi')) return 'Bons d’envoi';
         if (pathname.startsWith('/bons-ramassage')) return 'Bons de ramassage';
-        if (pathname.startsWith('/bons-retour-client')) return 'Bons de retour client';
-        if (pathname.startsWith('/bons-retour-livreur')) return 'Bons de retour livreur';
+        if (pathname.startsWith('/bons-retour')) return 'Bons de retour';
         if (pathname.startsWith('/bons')) return 'Bons';
         if (pathname.startsWith('/statuts')) return 'Statuts colis';
         if (pathname.startsWith('/etat-groupes')) return 'Groupes d’état';

@@ -33,6 +33,7 @@ interface Props {
   type: TypeBon;
   bons: LaravelPaginationMeta & { data: Bon[] };
   page: { url: string; titre: string; description: string; sous_type: 'client' | 'livreur' | null };
+  sousTypes: { tous: number; client: number; livreur: number } | null;
   stats: { total: number; par_statut: Record<string, number>; colis: number; corbeille: number };
   statuts: Record<string, string>;
   filters: { statut: string; search: string; per_page: number; corbeille: boolean };
@@ -45,12 +46,12 @@ const TYPES: Record<TypeBon, { label: string; court: string; icone: typeof Truck
   retour: { label: 'Retour', court: 'BRC', icone: Undo2, titulaire: 'Enseigne / livreur', aide: 'Restitués ou déchargés', couleur: '#F97316' },
 };
 
-export default function BonsIndex({ type, page, bons, stats, statuts, filters }: Props) {
+export default function BonsIndex({ type, page, sousTypes, bons, stats, statuts, filters }: Props) {
   const chargement = useChargementPage();
   const [confirmation, setConfirmation] = useState<{ action: 'corbeille' | 'restaurer'; ids: number[]; libelle: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [impression, setImpression] = useState<{ url: string; titre: string } | null>(null);
-  const params = { ...filters, corbeille: filters.corbeille ? 1 : undefined };
+  const params = { ...filters, corbeille: filters.corbeille ? 1 : undefined, sous_type: sousTypes ? (page.sous_type ?? undefined) : undefined };
   const naviguer = (changes: Record<string, unknown>) =>
     router.get(page.url, { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true, only: ['bons', 'stats', 'filters'] });
   const T = TYPES[type];
@@ -74,6 +75,21 @@ export default function BonsIndex({ type, page, bons, stats, statuts, filters }:
 
       <div className="space-y-6">
         <PageHeader title={page.titre} description={page.description} icon={T.icone} />
+
+        {sousTypes && (
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs" role="tablist" aria-label="Type de retour">
+            {([['tous', 'Tous les retours', sousTypes.tous], ['client', 'Retour client', sousTypes.client], ['livreur', 'Retour livreur', sousTypes.livreur]] as const).map(([v, l, n]) => {
+              const actif = (page.sous_type ?? 'tous') === v;
+              return (
+                <button key={v} type="button" role="tab" aria-selected={actif}
+                  onClick={() => router.get(page.url, v === 'tous' ? {} : { sous_type: v }, { preserveScroll: true })}
+                  className={`rounded-md px-3 py-1.5 font-medium ${actif ? 'bg-[#004c68] text-white dark:bg-[#ff8806] dark:text-[#05161f]' : 'text-muted-foreground hover:text-foreground'}`}>
+                  {l} <span className="ml-1 tabular-nums opacity-80">{n.toLocaleString('fr-FR')}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <TarifsTabs
           label="Statut des bons"

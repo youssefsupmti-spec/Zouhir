@@ -26,6 +26,10 @@ import {
   KeyRoundIcon,
   DatabaseZapIcon,
   TagsIcon,
+  MapPinnedIcon,
+  SendIcon,
+  PackageCheckIcon,
+  Undo2Icon,
 } from "lucide-react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -51,15 +55,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Colis",
       icon: <PackageIcon />,
       items: [
-        { title: "Tous les colis", url: "/colis" },
-        { title: "Bons de livraison", url: "/bons-livraison" },
-        { title: "Bons d’envoi", url: "/bons-envoi" },
-        { title: "Bons de ramassage", url: "/bons-ramassage" },
-        { title: "Bons de retour client", url: "/bons-retour-client" },
-        { title: "Bons de retour livreur", url: "/bons-retour-livreur" },
-        { title: "Statuts colis", url: "/statuts" },
-        { title: "Groupes d’état", url: "/etat-groupes" },
+        { title: "Colis", url: "/colis" },
+        { title: "Ajouter un colis", url: "/colis/ajouter" },
+        { title: "Nouveaux colis", url: "/colis/nouveaux" },
       ],
+    },
+    {
+      // Couloir régional (Agence Témara) : tournées des livreurs.
+      title: "Bons régionaux",
+      icon: <MapPinnedIcon />,
+      items: [{ title: "Bons de livraison", url: "/bons-livraison" }],
+    },
+    {
+      // Réseau national : remises aux partenaires.
+      title: "Bons nationaux",
+      icon: <SendIcon />,
+      items: [{ title: "Bons d’envoi", url: "/bons-envoi" }],
+    },
+    {
+      title: "Ramassage",
+      icon: <PackageCheckIcon />,
+      items: [
+        { title: "Bons de réception", badge: SOON, disabled: true },
+        { title: "Bons de ramassage", url: "/bons-ramassage" },
+      ],
+    },
+    {
+      title: "Retours",
+      icon: <Undo2Icon />,
+      items: [{ title: "Bons de retour", url: "/bons-retour" }],
     },
     {
       title: "Référentiels Métier",
@@ -69,6 +93,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: "Clients Marchands", url: "/clients" },
         { title: "Livreurs (DLM)", url: "/livreurs" },
         { title: "Réseau & partenaires", url: "/reseau" },
+        { title: "Statuts colis", url: "/statuts" },
+        { title: "Groupes d’état", url: "/etat-groupes" },
         { title: "Zones logistiques", url: "/zones" },
         { title: "Banques", url: "/banks" },
         { title: "Villes", url: "/villes" },
@@ -123,8 +149,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/bons-livraison": "bons",
     "/bons-envoi": "bons",
     "/bons-ramassage": "bons",
-    "/bons-retour-client": "bons",
-    "/bons-retour-livreur": "bons",
+    "/bons-retour": "bons",
+    "/colis/nouveaux": "colis",
+    "/colis/ajouter": "colisCreate",
     "/statuts": "statuts",
     "/etat-groupes": "statuts",
     "/reseau": "reseau",

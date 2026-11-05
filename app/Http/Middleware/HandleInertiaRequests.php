@@ -89,6 +89,7 @@ class HandleInertiaRequests extends Middleware
                     'banks' => $user->can('viewAny', \App\Models\Bank::class),
                     'comptesBancaires' => $user->can('viewAny', CompteBancaire::class),
                     'bons' => $user->can('viewAny', \App\Models\BonLivraison::class),
+                    'colisCreate' => $user->can('create', \App\Models\Command::class),
                     'statuts' => $user->can('viewAny', \App\Models\Statut::class),
                     'reseau' => $user->can('viewAny', \App\Models\Agence::class),
                     'reprise' => $user->can('viewAny', \App\Models\RepriseAnomalie::class),

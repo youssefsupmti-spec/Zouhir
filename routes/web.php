@@ -79,6 +79,8 @@ Route::middleware('auth')->group(function () {
 
     // Colis & Expéditions (Sprint 3)
     Route::get('/colis', [\App\Http\Controllers\ColisController::class, 'index'])->name('colis.index');
+    Route::get('/colis/ajouter', [\App\Http\Controllers\ColisController::class, 'index'])->defaults('vue', 'ajouter')->name('colis.ajouter');
+    Route::get('/colis/nouveaux', [\App\Http\Controllers\ColisController::class, 'index'])->defaults('vue', 'nouveaux')->name('colis.nouveaux');
     Route::post('/colis', [\App\Http\Controllers\ColisController::class, 'store'])->name('colis.store');
     Route::put('/colis/{coli}', [\App\Http\Controllers\ColisController::class, 'update'])->name('colis.update');
     Route::patch('/colis/{coli}/state', [\App\Http\Controllers\ColisController::class, 'updateState'])->name('colis.state');
@@ -92,6 +94,8 @@ Route::middleware('auth')->group(function () {
     // Circuit colis : bons, statuts, réseau (agences, livreurs, partenaires)
     // Une page par liste de bons (comme WinningExpress) ; /bons renvoie vers les bons de livraison.
     Route::redirect('/bons', '/bons-livraison')->name('bons.index');
+    Route::get('/bons-retour-client', fn () => redirect('/bons-retour?sous_type=client'));
+    Route::get('/bons-retour-livreur', fn () => redirect('/bons-retour?sous_type=livreur'));
     foreach (array_keys(\App\Http\Controllers\BonController::PAGES) as $pageBons) {
         Route::get('/'.$pageBons, [\App\Http\Controllers\BonController::class, 'index'])->defaults('page', $pageBons)->name($pageBons.'.index');
     }

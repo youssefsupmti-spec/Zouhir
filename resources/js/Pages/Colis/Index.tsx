@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Head, router } from '@inertiajs/react';
 import {
   ArrowDown, ArrowUp, ArrowUpDown, Ban, CalendarClock, CheckCircle2, Clock, Edit, History, MapPin, Package, PackageOpen,
@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
-import { StatsCard } from '@/components/common/StatsCard';
 import { PageToolbar } from '@/components/common/PageToolbar';
 import { FilterDropdown } from '@/components/common/FilterDropdown';
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
@@ -14,7 +13,7 @@ import { DataTablePagination, type LaravelPaginationMeta } from '@/components/co
 import { ActionGroupee, BarreSelection, CaseACocher, useSelection } from '@/components/common/SelectionGroupee';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CartesOnglets } from '@/components/common/CartesOnglets';
+import { FiltreGroupes } from '@/components/common/FiltreGroupes';
 import { ChargementTableau, useChargementPage } from '@/components/common/ChargementTableau';
 import { Copiable } from '@/components/common/Copiable';
 import { ColisFormDialog } from './ColisFormDialog';
@@ -72,7 +71,10 @@ interface ColisItem {
   ville?: { id: number; name_fr: string; code_zone?: string };
 }
 
+interface Vue { code: 'tous' | 'ajouter' | 'nouveaux'; url: string; titre: string; ouvrir_ajout: boolean }
+
 interface Props {
+  vue: Vue;
   canCreate?: boolean;
   canSetManualFee?: boolean;
   canBulk?: boolean;
@@ -119,7 +121,7 @@ function depuis(d?: string | null) {
   return dateCourte(d);
 }
 
-export default function ColisIndex({ colis, clients = [], villes = [], livreurs = [], onglets, groupes, stats, filters, canCreate = false, canSetManualFee = false, canBulk = false }: Props) {
+export default function ColisIndex({ vue, colis, clients = [], villes = [], livreurs = [], onglets, groupes, stats, filters, canCreate = false, canSetManualFee = false, canBulk = false }: Props) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingColis, setEditingColis] = useState<ColisItem | null>(null);
   const [statutColis, setStatutColis] = useState<ColisItem | null>(null);
@@ -131,11 +133,19 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
   const [busy, setBusy] = useState(false);
 
   const corbeille = filters.onglet === 'corbeille';
+
+  // « Ajouter un colis » : le formulaire s'ouvre à l'arrivée sur /colis/ajouter.
+  useEffect(() => {
+    if (vue.ouvrir_ajout && canCreate) {
+      setEditingColis(null);
+      setFormOpen(true);
+    }
+  }, [vue.ouvrir_ajout, canCreate]);
   const params: Record<string, unknown> = { ...filters };
   const selection = useSelection(colis.data.map((c) => c.id));
 
   const naviguer = (changes: Record<string, unknown>) =>
-    router.get('/colis', { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true, only: ['colis', 'onglets', 'stats', 'filters'] });
+    router.get(vue.url, { ...params, ...changes, page: 1 }, { preserveState: true, preserveScroll: true, replace: true, only: ['colis', 'onglets', 'stats', 'filters'] });
 
   const trier = (col: string) =>
     naviguer({ sort: col, direction: filters.sort === col && filters.direction === 'desc' ? 'asc' : 'desc' });
@@ -159,13 +169,15 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
   );
 
   return (
-    <AuthenticatedLayout title="Colis">
-      <Head title="Colis - OUAISS EXPRESS" />
+    <AuthenticatedLayout title={vue.titre}>
+      <Head title={`${vue.titre} - OUAISS EXPRESS`} />
 
       <div className="space-y-6">
         <PageHeader
-          title="Colis"
-          description="Tous les colis, de l’enregistrement à la livraison ou au retour, avec le détail du CRBT."
+          title={vue.titre}
+          description={vue.code === 'nouveaux'
+            ? 'Colis enregistrés, pas encore pris en charge : à ramasser ou à affecter.'
+            : 'Tous les colis, de l’enregistrement à la livraison ou au retour, avec le détail du CRBT.'}
           icon={Package}
           actions={canCreate && (
             <Button onClick={() => { setEditingColis(null); setFormOpen(true); }} size="sm" className="h-8 bg-[#004c68] text-xs text-white hover:bg-[#00384d]">
@@ -174,27 +186,15 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
           )}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatsCard title="Colis" value={stats.total.toLocaleString('fr-FR')} description={`${(onglets.corbeille ?? 0).toLocaleString('fr-FR')} en corbeille`} icon={Package} />
-          <StatsCard title="Taux de livraison" value={`${stats.taux_livraison} %`} description={`${stats.livres.toLocaleString('fr-FR')} colis livrés`} icon={CheckCircle2} iconColor="text-emerald-600 dark:text-emerald-400" />
-          <StatsCard title="En cours & planifiés" value={stats.en_cours.toLocaleString('fr-FR')} description={`${stats.retours.toLocaleString('fr-FR')} en retour ou en échec`} icon={Truck} iconColor="text-[#ff8806]" />
-          <StatsCard title="CRBT des colis livrés" value={`${dh(stats.total_crbt)} DH`} description="Montant encaissé auprès des destinataires" icon={Wallet} />
-        </div>
-
-        <CartesOnglets
-          label="Groupes de colis"
-          colonnes="sm:grid-cols-5 2xl:grid-cols-10"
-          value={filters.onglet}
-          onChange={(v) => naviguer({ onglet: v })}
-          onglets={[
-            { value: 'tous', label: 'Tous les colis', count: onglets.tous ?? 0, couleur: '#004c68', icon: <Package />, description: 'Hors corbeille' },
-            ...groupes.map((g) => {
-              const I = GROUPE[g.code]?.icone ?? Layers;
-              return { value: g.code, label: g.nom, count: onglets[g.code] ?? 0, couleur: g.couleur, description: g.description, icon: <I /> };
-            }),
-            { value: 'corbeille', label: 'Corbeille', count: onglets.corbeille ?? 0, couleur: '#64748b', icon: <Trash2 />, description: 'Supprimés, restaurables' },
-          ]}
-        />
+        {vue.code !== 'nouveaux' && (
+          <FiltreGroupes
+            value={filters.onglet}
+            tous={onglets.tous ?? 0}
+            corbeille={onglets.corbeille ?? 0}
+            groupes={groupes.map((g) => ({ value: g.code, label: g.nom, count: onglets[g.code] ?? 0, couleur: g.couleur, description: g.description }))}
+            onChange={(v) => naviguer({ onglet: v })}
+          />
+        )}
 
         <PageToolbar searchPlaceholder="Code, destinataire, téléphone, ville, produit, enseigne…" initialSearch={filters.search ?? ''} currentParams={params}>
           {clients.length > 1 && (
@@ -369,7 +369,7 @@ export default function ColisIndex({ colis, clients = [], villes = [], livreurs 
       <ApercuImpression
         url={etiquettes ? `/colis/etiquettes?ids=${etiquettes.ids.join(',')}` : null}
         titre={etiquettes?.titre ?? ''}
-        format="étiquette 100 × 150 mm"
+        format="étiquette 10 × 10 cm"
         onClose={() => setEtiquettes(null)}
       />
       <ConfirmDeleteDialog

@@ -38,8 +38,7 @@ class BonController extends Controller
         'bons-livraison' => ['livraison', null, 'Bons de livraison', 'Tournées des livreurs de l’agence (dernier kilomètre).'],
         'bons-envoi' => ['envoi', null, 'Bons d’envoi', 'Colis remis au réseau partenaire pour les autres villes du Royaume.'],
         'bons-ramassage' => ['ramassage', null, 'Bons de ramassage', 'Colis des marchands entrés au hub.'],
-        'bons-retour-client' => ['retour', 'client', 'Bons de retour client', 'Colis restitués aux marchands.'],
-        'bons-retour-livreur' => ['retour', 'livreur', 'Bons de retour livreur', 'Colis déchargés par les livreurs à l’agence.'],
+        'bons-retour' => ['retour', null, 'Bons de retour', 'Colis restitués aux marchands ou déchargés par les livreurs à l’agence.'],
     ];
 
     /** Page d'un bon → URL de sa liste. */
@@ -60,6 +59,9 @@ class BonController extends Controller
 
         abort_unless(array_key_exists($page, self::PAGES), 404);
         [$type, $sousType, $titre, $description] = self::PAGES[$page];
+        // Bons de retour : onglets « Client » / « Livreur » sur la même page.
+        $onglet = $type === 'retour' && in_array($request->input('sous_type'), ['client', 'livreur'], true) ? (string) $request->input('sous_type') : null;
+        $sousType ??= $onglet;
         [$modele] = self::TYPES[$type];
         $restreindre = fn ($w) => $w->when($sousType !== null, fn ($x) => $x->where('type', $sousType));
         $statut = (string) $request->input('statut', '');
@@ -91,6 +93,11 @@ class BonController extends Controller
         return Inertia::render('Bons/Index', [
             'type' => $type,
             'page' => ['url' => '/'.$page, 'titre' => $titre, 'description' => $description, 'sous_type' => $sousType],
+            'sousTypes' => $type === 'retour' ? [
+                'tous' => BonRetour::query()->count(),
+                'client' => BonRetour::query()->where('type', 'client')->count(),
+                'livreur' => BonRetour::query()->where('type', 'livreur')->count(),
+            ] : null,
             'bons' => $bons,
             'stats' => $this->stats($modele, $restreindre),
             'statuts' => $modele::STATUTS,

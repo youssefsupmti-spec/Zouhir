@@ -64,11 +64,14 @@ class CircuitColisPagesTest extends TestCase
     {
         $this->actingAs($this->admin)->get('/bons')->assertRedirect('/bons-livraison');
         $total = fn (string $url) => $this->actingAs($this->admin)->get($url)->assertOk()->viewData('page')['props']['stats']['total'];
-        $this->assertSame([2, 1, 1, 1, 1], array_map($total, ['/bons-livraison', '/bons-envoi', '/bons-ramassage', '/bons-retour-client', '/bons-retour-livreur']));
+        $this->assertSame([2, 1, 1, 2, 1, 1], array_map($total, ['/bons-livraison', '/bons-envoi', '/bons-ramassage', '/bons-retour', '/bons-retour?sous_type=client', '/bons-retour?sous_type=livreur']));
+        $this->actingAs($this->admin)->get('/bons-retour-livreur')->assertRedirect('/bons-retour?sous_type=livreur');
+        $this->actingAs($this->admin)->get('/bons-retour')->assertInertia(fn (Assert $p) => $p
+            ->where('sousTypes', ['tous' => 2, 'client' => 1, 'livreur' => 1])->where('page.sous_type', null));
         $this->actingAs($this->admin)->get('/bons-livraison')->assertInertia(fn (Assert $p) => $p
             ->component('Bons/Index')->where('type', 'livraison')->where('page.titre', 'Bons de livraison'));
 
-        $this->actingAs($this->admin)->get('/bons-retour-livreur')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1)->where('bons.data.0.code', 'BRL-05'));
+        $this->actingAs($this->admin)->get('/bons-retour?sous_type=livreur')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1)->where('bons.data.0.code', 'BRL-05'));
         $this->actingAs($this->admin)->get('/bons-livraison?search=OIS-104')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1));
         $this->actingAs($this->admin)->get('/bons-livraison?statut=traite')->assertInertia(fn (Assert $p) => $p->has('bons.data', 1));
 
@@ -172,5 +175,18 @@ class CircuitColisPagesTest extends TestCase
         if (getenv('APERCU_ETIQUETTE')) {
             file_put_contents(getenv('APERCU_ETIQUETTE'), $this->actingAs($this->admin)->get('/colis/etiquettes?ids=103,100')->getContent());
         }
+    }
+
+    public function test_vues_ajouter_et_nouveaux_colis(): void
+    {
+        $this->actingAs($this->admin)->get('/colis/nouveaux')->assertOk()->assertInertia(fn (Assert $p) => $p
+            ->component('Colis/Index')
+            ->where('vue.code', 'nouveaux')
+            ->where('vue.titre', 'Nouveaux colis')
+            ->where('filters.onglet', 'nouveau')
+            ->where('colis.data', fn ($lignes) => collect($lignes)->every(fn ($c) => $c['state_group'] === 'nouveau')));
+
+        $this->actingAs($this->admin)->get('/colis/ajouter')->assertOk()->assertInertia(fn (Assert $p) => $p
+            ->where('vue.ouvrir_ajout', true)->where('vue.url', '/colis'));
     }
 }
