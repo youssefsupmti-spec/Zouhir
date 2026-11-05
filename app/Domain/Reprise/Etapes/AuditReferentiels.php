@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class AuditReferentiels extends EtapeReprise
 {
-    private const CODES = ['enseigne_url', 'client_sans_enseigne_compte', 'zone_sans_ville', 'rib_longueur', 'rib_code_banque', 'rib_sans_banque'];
+    private const CODES = ['colis_hors_listes', 'enseigne_url', 'client_sans_enseigne_compte', 'zone_sans_ville', 'rib_longueur', 'rib_code_banque', 'rib_sans_banque'];
 
     public static function nom(): string
     {
@@ -21,7 +21,7 @@ final class AuditReferentiels extends EtapeReprise
 
     public static function domaines(): array
     {
-        return ['clients', 'zones', 'banques'];
+        return ['clients', 'zones', 'banques', 'commandes'];
     }
 
     public function executer(): array
@@ -67,6 +67,20 @@ final class AuditReferentiels extends EtapeReprise
                     $n++;
                     $this->journal->signaler('banques', 'rib_code_banque', 'attention', "{$libelle} : le RIB commence par ".substr((string) $chiffres, 0, 3)." alors que le code de la banque est {$code}", 'comptes_bancaires', $c->id, null, [], 'comptes_bancaires', (int) $c->id);
                 }
+            }
+        }
+
+        // Colis absents des deux listes « Colis » et « Nouveaux colis » (cf. PerimetreListe).
+        foreach ([
+            'ramasse_mais_nouveau' => ['Colis ramassés mais encore au groupe « nouveau »', fn ($q) => $q->where('is_ramassee', true)->where('state_group', 'nouveau')],
+            'non_ramasse_mais_avance' => ['Colis non ramassés mais déjà en cours, livrés, en retour ou en échec', fn ($q) => $q->where('is_ramassee', false)->where('state_group', '<>', 'nouveau')],
+        ] as $cas => [$libelle, $filtre]) {
+            $ids = $filtre(DB::table('commands'))->orderBy('id')->pluck('id')->map(fn ($i) => (int) $i)->all();
+            if ($ids !== []) {
+                $n++;
+                $this->journal->signaler('commandes', 'colis_hors_listes', 'attention',
+                    count($ids)." {$libelle} : absents des listes « Colis » et « Nouveaux colis » (à corriger)",
+                    'commands', null, $cas, ['colis' => count($ids), 'colis_ids' => $ids]);
             }
         }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Application\Tarifs\Actions\FigerCommissionLivreurColis;
 use App\Application\Tarifs\Actions\FigerTarifClientColis;
 use App\Models\Business;
+use App\Domain\Colis\Support\PerimetreListe;
 use App\Domain\StatutsColis\ClassificationEtats;
 use App\Models\Command;
 use App\Models\CommandStatusHistory;
@@ -52,11 +53,11 @@ class ColisController extends Controller
         $search = trim((string) $request->input('search', ''));
         // `state_group` reste accepté (anciens liens) : il désigne l'onglet du même nom.
         $onglet = (string) $request->input('onglet', $request->input('state_group', 'tous'));
-        $groupes = ClassificationEtats::groupes(actifsSeulement: true);
+        // « Colis » : groupes d'état hors « nouveau » ; « Nouveaux colis » : Tous + Corbeille seulement.
+        $groupes = $vue === 'nouveaux'
+            ? collect()
+            : ClassificationEtats::groupes(actifsSeulement: true)->reject(fn ($g) => $g->code === 'nouveau')->values();
         $onglet = in_array($onglet, ['tous', 'corbeille', ...$groupes->pluck('code')->all()], true) ? $onglet : 'tous';
-        if ($vue === 'nouveaux') {
-            $onglet = 'nouveau';
-        }
         $villeId = $request->input('ville_id');
         $clientId = $request->input('client_id');
         $livreurId = $request->input('livreur_id');
@@ -68,7 +69,10 @@ class ColisController extends Controller
         }
 
         // Data Isolation : liste, onglets ET statistiques sont limités au périmètre.
-        $scoped = fn () => Command::query()->visibleTo($user);
+        // + périmètre de la liste (ramassés hors « nouveau » / nouveaux non ramassés), cf. PerimetreListe.
+        $scoped = fn () => $vue === 'nouveaux'
+            ? PerimetreListe::nouveaux(Command::query()->visibleTo($user))
+            : PerimetreListe::colis(Command::query()->visibleTo($user));
         $filtre = $search !== '' || ($villeId && $villeId !== 'all') || ($clientId && $clientId !== 'all') || ($livreurId && $livreurId !== 'all');
         $filtres = function ($q) use ($search, $villeId, $clientId, $livreurId) {
             $q->when($search !== '', function ($q) use ($search) {
@@ -543,6 +547,11 @@ class ColisController extends Controller
         $group = $validated['state_group'];
         $etatAvant = $coli->state;
         $coli->state_group = $group;
+        // Sortir du groupe « nouveau » = colis pris en charge (il passe dans la liste « Colis »).
+        if ($group !== 'nouveau' && ! $coli->is_ramassee) {
+            $coli->is_ramassee = true;
+            $coli->ramasse_at ??= now();
+        }
         $coli->state = $stateMap[$group] ?? $group;
 
         if ($group === 'livre' && ! $coli->livre_at) {

@@ -95,7 +95,7 @@ class RolesPermissionsAdministrationTest extends TestCase
                 'destinataire_ville' => 'Casablanca', 'destinataire_ville_id' => $ville->id, 'prix_brut' => 10, 'state' => 'Nouveau', 'state_group' => 'nouveau']);
         }
 
-        $this->actingAs($member->fresh())->get('/colis')->assertOk()
+        $this->actingAs($member->fresh())->get('/colis/nouveaux')->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('colis.data', 1)->where('colis.data.0.code', 'OUA-MINE0001'));
         $this->actingAs($member->fresh())->get('/comptes-bancaires')->assertOk();
 
@@ -106,7 +106,7 @@ class RolesPermissionsAdministrationTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertSame('Marchand Partenaire Restreint', $role->fresh()->name);
-        $this->actingAs($member->fresh())->get('/colis')->assertForbidden();
+        $this->actingAs($member->fresh())->get('/colis/nouveaux')->assertForbidden();
         $this->actingAs($member->fresh())->get('/comptes-bancaires')->assertForbidden();
     }
 

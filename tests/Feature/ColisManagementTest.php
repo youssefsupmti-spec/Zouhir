@@ -38,6 +38,7 @@ class ColisManagementTest extends TestCase
             'prix_brut' => 250.00,
             'state' => 'Livré avec succès',
             'state_group' => 'livre',
+            'is_ramassee' => true,
             'livre_at' => now(),
         ]);
 

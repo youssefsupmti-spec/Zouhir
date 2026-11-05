@@ -53,14 +53,14 @@ class GroupesEtCorbeilleTest extends TestCase
     {
         $this->actingAs($this->admin)->get('/colis')->assertOk()->assertInertia(fn (Assert $p) => $p
             ->component('Colis/Index')
-            ->has('groupes', 8)
-            ->where('onglets.tous', 5)       // 6 colis dont 1 en corbeille (trash = 0)
+            ->has('groupes', 7)               // « nouveau » a sa propre page
+            ->where('onglets.tous', 4)        // ramassés hors « nouveau » ; #102 (Ajouté mais ramassé) hors listes
             ->where('onglets.corbeille', 1)
             ->where('onglets.livre', 2)
             ->where('filters.onglet', 'tous')
             ->where('filters.sort', 'updated_at')
             ->where('filters.direction', 'desc')
-            ->has('colis.data', 5));
+            ->has('colis.data', 4));
 
         $this->actingAs($this->admin)->get('/colis?onglet=corbeille')->assertInertia(fn (Assert $p) => $p
             ->has('colis.data', 1)->where('colis.data.0.id', 103));
@@ -119,7 +119,7 @@ class GroupesEtCorbeilleTest extends TestCase
         $livre = DB::table('statuts')->where('libelle', 'Livré')->value('id');
         $this->actingAs($this->admin)->post("/etat-groupes/{$litiges->id}/etats", ['etat_ids' => [$livre]])->assertSessionHas('success');
         $this->assertSame('litiges', DB::table('commands')->find(100)->state_group);
-        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p->has('groupes', 9)->where('onglets.litiges', 2));
+        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p->has('groupes', 8)->where('onglets.litiges', 2));
 
         // Un groupe non vide ou système ne se supprime pas.
         $this->actingAs($this->admin)->delete("/etat-groupes/{$litiges->id}")->assertSessionHas('error');
@@ -130,16 +130,16 @@ class GroupesEtCorbeilleTest extends TestCase
 
         // Un groupe masqué disparaît des cartes de la page Colis.
         $this->actingAs($this->admin)->put("/etat-groupes/{$systeme->id}", ['nom' => 'Livré', 'couleur' => '#10B981', 'sort_order' => 4, 'actif' => false, 'suivi_actif' => false, 'suivi_planifie' => false])->assertSessionHasNoErrors();
-        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p->has('groupes', 7));
+        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p->has('groupes', 6));
 
         $this->actingAs($this->client)->get('/etat-groupes')->assertForbidden();
     }
 
     public function test_liste_triee_par_derniere_mise_a_jour_et_colonne_notes(): void
     {
-        DB::table('commands')->where('id', 102)->update(['updated_at' => now()->addMinute()]);
+        DB::table('commands')->where('id', 101)->update(['updated_at' => now()->addMinute()]);
         $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p
-            ->where('colis.data.0.id', 102)
+            ->where('colis.data.0.id', 101)
             ->where('colis.data.1.notes_count', fn ($n) => is_int($n))
             ->missing('colis.data.0.legacy_brut')
             ->missing('villes'));          // 1 350 villes : chargées en différé
@@ -169,5 +169,25 @@ class GroupesEtCorbeilleTest extends TestCase
         DB::table('commands')->where('id', 104)->update(['client_id' => 1]);
         $this->actingAs($this->client)->getJson('/colis/104/notes')->assertForbidden();
         $this->actingAs($this->client)->postJson('/colis/104/notes', ['message' => 'x'])->assertForbidden();
+    }
+
+    public function test_perimetre_des_listes_colis_et_nouveaux_colis(): void
+    {
+        // #102 : « Ajouté » mais marqué ramassé dans l'ancienne base → dans aucune liste, et signalé.
+        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p
+            ->where('colis.data', fn ($l) => ! collect($l)->contains('id', 102)));
+        $this->actingAs($this->admin)->get('/colis/nouveaux')->assertInertia(fn (Assert $p) => $p
+            ->where('colis.data', fn ($l) => ! collect($l)->contains('id', 102))->has('groupes', 0));
+        $this->assertTrue(DB::table('reprise_anomalies')->where('code', 'colis_hors_listes')->where('valeur_legacy', 'ramasse_mais_nouveau')->exists());
+
+        // Un colis créé dans la plateforme est un « nouveau colis »…
+        DB::table('commands')->where('id', 102)->update(['is_ramassee' => false]);
+        $this->actingAs($this->admin)->get('/colis/nouveaux')->assertInertia(fn (Assert $p) => $p
+            ->has('colis.data', 1)->where('colis.data.0.id', 102)->where('onglets.tous', 1));
+        // … et passe dans « Colis » quand il quitte le groupe « nouveau ».
+        $this->actingAs($this->admin)->patch('/colis/102/state', ['state_group' => 'en_cours'])->assertSessionHasNoErrors();
+        $this->assertTrue((bool) DB::table('commands')->find(102)->is_ramassee);
+        $this->actingAs($this->admin)->get('/colis')->assertInertia(fn (Assert $p) => $p
+            ->where('colis.data', fn ($l) => collect($l)->contains('id', 102)));
     }
 }

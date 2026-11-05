@@ -56,7 +56,7 @@ class DataIsolationAuthorizationTest extends TestCase
 
     public function test_client_lists_only_own_colis_and_scoped_stats(): void
     {
-        $this->actingAs($this->clientA)->get('/colis')
+        $this->actingAs($this->clientA)->get('/colis/nouveaux')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Colis/Index')
@@ -127,7 +127,7 @@ class DataIsolationAuthorizationTest extends TestCase
 
     public function test_driver_sees_and_updates_state_of_assigned_colis_only(): void
     {
-        $this->actingAs($this->driver)->get('/colis')
+        $this->actingAs($this->driver)->get('/colis/nouveaux')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('colis.data', 1)->where('colis.data.0.code', 'OUA-AAAA0001'));
 
@@ -146,7 +146,7 @@ class DataIsolationAuthorizationTest extends TestCase
     {
         $agence = $this->userWithRole('agence', UserRole::AGENCE);
 
-        $this->actingAs($agence)->get('/colis')
+        $this->actingAs($agence)->get('/colis/nouveaux')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('colis.data', 0)->where('stats.total', 0));
         $this->actingAs($agence)->patch("/colis/{$this->colisA->id}/state", ['state_group' => 'livre'])->assertForbidden();
@@ -154,7 +154,7 @@ class DataIsolationAuthorizationTest extends TestCase
 
     public function test_admin_sees_all_colis_and_can_change_any_state(): void
     {
-        $this->actingAs($this->admin)->get('/colis')
+        $this->actingAs($this->admin)->get('/colis/nouveaux')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('colis.data', 2)->where('stats.total', 2));
 
@@ -330,7 +330,7 @@ class DataIsolationAuthorizationTest extends TestCase
         $vip->assignRole('marchand_premium');
         $this->colis($vip, 'OUA-VIP00001');
 
-        $this->actingAs($vip)->get('/colis')
+        $this->actingAs($vip)->get('/colis/nouveaux')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('colis.data', 1)->where('colis.data.0.code', 'OUA-VIP00001'));
         $this->actingAs($vip)->get('/comptes-bancaires')->assertForbidden();
@@ -341,7 +341,7 @@ class DataIsolationAuthorizationTest extends TestCase
 
         // Révocation.
         $role->revokePermissionTo([PermissionEnum::TRACK_COLIS->value, PermissionEnum::VIEW_FINANCES->value]);
-        $this->actingAs($vip->fresh())->get('/colis')->assertForbidden();
+        $this->actingAs($vip->fresh())->get('/colis/nouveaux')->assertForbidden();
         $this->actingAs($vip->fresh())->get('/comptes-bancaires')->assertForbidden();
     }
 

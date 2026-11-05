@@ -183,7 +183,7 @@ class CircuitColisPagesTest extends TestCase
             ->component('Colis/Index')
             ->where('vue.code', 'nouveaux')
             ->where('vue.titre', 'Nouveaux colis')
-            ->where('filters.onglet', 'nouveau')
+            ->where('filters.onglet', 'tous')
             ->where('colis.data', fn ($lignes) => collect($lignes)->every(fn ($c) => $c['state_group'] === 'nouveau')));
 
         $this->actingAs($this->admin)->get('/colis/ajouter')->assertOk()->assertInertia(fn (Assert $p) => $p

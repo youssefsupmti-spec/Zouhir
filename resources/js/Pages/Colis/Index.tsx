@@ -182,13 +182,13 @@ export default function ColisIndex({ vue, colis, clients = [], villes = [], livr
           )}
         />
 
-        {vue.code !== 'nouveaux' && (
+        {(
           <TarifsTabs
             label="Groupes de colis"
             value={filters.onglet}
             onValueChange={(v) => naviguer({ onglet: v })}
             onglets={[
-              { value: 'tous', label: 'Tous les colis', count: onglets.tous ?? 0, icon: <Package className="size-3.5" /> },
+              { value: 'tous', label: vue.code === 'nouveaux' ? 'Nouveaux colis' : 'Tous les colis', count: onglets.tous ?? 0, icon: <Package className="size-3.5" /> },
               ...groupes.map((g) => ({
                 value: g.code,
                 label: g.nom,
