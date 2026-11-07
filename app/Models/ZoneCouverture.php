@@ -14,7 +14,9 @@ class ZoneCouverture extends Model
 
     public const STATUTS = ['optimal' => 'Optimal', 'normal' => 'Normal', 'degrade' => 'Dégradé', 'non_couvert' => 'Non couvert'];
 
-    protected $fillable = ['zone_id', 'type_couverture', 'titulaire_user_id', 'backup_user_id', 'delivery_partner_id', 'statut_couverture', 'notes', 'updated_by'];
+    protected $fillable = ['zone_id', 'type_couverture', 'titulaire_user_id', 'backup_user_id', 'delivery_partner_id', 'statut_couverture', 'capacite_journaliere', 'bascule_at', 'notes', 'updated_by'];
+
+    protected $casts = ['capacite_journaliere' => 'integer', 'bascule_at' => 'datetime'];
 
     public function zone(): BelongsTo
     {
