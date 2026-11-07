@@ -9,7 +9,9 @@ import { ServerDataTable, DataTableFeatures } from '@/components/common/ServerDa
 import { ConfirmDeleteDialog } from '@/components/common/ConfirmDeleteDialog';
 import { LivreurFormDialog } from './LivreurFormDialog';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Truck, CheckCircle2, Package, MapPin, Plus, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Truck, CheckCircle2, Package, MapPin, Plus, MoreHorizontal, Edit, Trash2, Archive, RotateCcw, Users, Map as MapIcon, Tags } from 'lucide-react';
+import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -30,7 +32,11 @@ interface LivreurItem {
   colis_livres_count?: number;
   colis_en_cours_count?: number;
   taux_succes?: number;
+  archive?: boolean;
+  zones?: { id: number; code: string; name: string }[];
 }
+
+type Onglet = 'tous' | 'actifs' | 'archives';
 
 interface LivreursIndexProps {
   livreurs: {
@@ -47,17 +53,40 @@ interface LivreursIndexProps {
     active: number;
     colis_en_cours: number;
     colis_livres_total: number;
+    archives: number;
   };
+  onglet: Onglet;
+  zonesRegionales: { id: number; code: string; name: string }[];
   filters: {
     search?: string;
     status?: string;
     sort?: string;
     direction?: string;
     per_page?: number;
+    onglet?: Onglet;
   };
 }
 
-export default function LivreursIndex({ livreurs, stats, filters }: LivreursIndexProps) {
+export default function LivreursIndex({ livreurs, stats, filters, onglet, zonesRegionales }: LivreursIndexProps) {
+  const [zonesDe, setZonesDe] = useState<LivreurItem | null>(null);
+  const [zonesChoisies, setZonesChoisies] = useState<number[]>([]);
+  const [zonesEnCours, setZonesEnCours] = useState(false);
+
+  const ouvrirZones = (l: LivreurItem) => {
+    setZonesChoisies((l.zones ?? []).map((z) => z.id));
+    setZonesDe(l);
+  };
+  const enregistrerZones = () => {
+    if (!zonesDe) return;
+    setZonesEnCours(true);
+    router.put(`/livreurs/${zonesDe.id}/zones`, { zones: zonesChoisies }, {
+      preserveScroll: true,
+      onSuccess: () => setZonesDe(null),
+      onFinish: () => setZonesEnCours(false),
+    });
+  };
+  const restaurer = (l: LivreurItem) => router.post(`/livreurs/${l.id}/restaurer`, {}, { preserveScroll: true });
+
   const [formOpen, setFormOpen] = useState(false);
   const [editingLivreur, setEditingLivreur] = useState<LivreurItem | null>(null);
 
@@ -132,6 +161,22 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
       ),
     },
     {
+      id: 'zones',
+      header: 'Zones',
+      cell: ({ row }) => {
+        const zones = row.original.zones ?? [];
+        return zones.length === 0
+          ? <span className="text-xs text-muted-foreground">À affecter</span>
+          : (
+            <div className="flex max-w-48 flex-wrap gap-1">
+              {zones.map((z) => (
+                <span key={z.id} title={z.name} className="rounded bg-[#004c68]/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#004c68] dark:bg-[#004c68]/40 dark:text-sky-200">{z.code}</span>
+              ))}
+            </div>
+          );
+      },
+    },
+    {
       id: 'tournee',
       header: 'Progression Tournée',
       cell: ({ row }) => {
@@ -169,18 +214,30 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
     {
       id: 'actions',
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
+      cell: ({ row }) => row.original.archive ? (
+        <div className="flex justify-end">
+          <Button size="sm" variant="outline" className="h-7 cursor-pointer text-xs" onClick={() => restaurer(row.original)}>
+            <RotateCcw className="h-3.5 w-3.5" /> Restaurer
+          </Button>
+        </div>
+      ) : (
         <div className="flex justify-end">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer rounded-md" aria-label="Actions" />}>
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 text-xs">
               <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
                 <Edit className="h-3.5 w-3.5" />
                 Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => ouvrirZones(row.original)} className="gap-2 cursor-pointer">
+                <MapIcon className="h-3.5 w-3.5" />
+                Zones de livraison
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.get('/tarifs-livreurs', { search: row.original.nom_complet })} className="gap-2 cursor-pointer">
+                <Tags className="h-3.5 w-3.5" />
+                Tarifs du coursier
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => handleDeleteClick(row.original)}
@@ -197,14 +254,14 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
   ];
 
   return (
-    <AuthenticatedLayout title="Livreurs (DLM)">
+    <AuthenticatedLayout title="Coursiers d’agence">
       <Head title="Livreurs & Tournées - OUAISS EXPRESS" />
 
       <div className="space-y-6">
         {/* Header */}
         <PageHeader
-          title="Livreurs & Tournées"
-          description="Pilotage de l'équipe du dernier kilomètre, affectation des zones et suivi en direct."
+          title="Coursiers d’agence"
+          description="Flotte régionale (Témara) : coursiers, zones de livraison et tournées. Les transporteurs nationaux ont leur propre section."
           icon={Truck}
           badge={`${stats.total} livreurs`}
           actions={
@@ -249,6 +306,17 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
           />
         </div>
 
+        <TarifsTabs
+          label="Coursiers"
+          value={onglet}
+          onValueChange={(v) => router.get('/livreurs', { ...filters, onglet: v, page: 1 }, { preserveScroll: true })}
+          onglets={[
+            { value: 'tous', label: 'Tous', count: stats.total, icon: <Users className="size-3.5" /> },
+            { value: 'actifs', label: 'Coursiers actifs', count: stats.active, icon: <CheckCircle2 className="size-3.5" /> },
+            { value: 'archives', label: 'Archives', count: stats.archives, icon: <Archive className="size-3.5" />, tone: 'muted' },
+          ]}
+        />
+
         {/* Toolbar & Server Data Table */}
         <div className="space-y-3">
           <PageToolbar
@@ -273,6 +341,33 @@ export default function LivreursIndex({ livreurs, stats, filters }: LivreursInde
         onOpenChange={setFormOpen}
         livreur={editingLivreur}
       />
+
+      <Dialog open={zonesDe !== null} onOpenChange={(o) => !o && setZonesDe(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Zones de livraison — {zonesDe?.nom_complet}</DialogTitle></DialogHeader>
+          {zonesRegionales.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Aucune zone régionale (type « locale ») n’est définie.</p>
+          ) : (
+            <div className="grid max-h-72 grid-cols-2 gap-1.5 overflow-y-auto">
+              {zonesRegionales.map((z) => {
+                const coche = zonesChoisies.includes(z.id);
+                return (
+                  <label key={z.id} className={`flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${coche ? 'border-[#004c68] bg-[#004c68]/5' : 'border-border'}`}>
+                    <input type="checkbox" className="accent-[#004c68]" checked={coche}
+                      onChange={() => setZonesChoisies((v) => (coche ? v.filter((id) => id !== z.id) : [...v, z.id]))} />
+                    <span className="font-mono text-[10px] text-muted-foreground">{z.code}</span>
+                    <span className="truncate">{z.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" className="cursor-pointer" onClick={() => setZonesDe(null)}>Annuler</Button>
+            <Button className="cursor-pointer bg-[#004c68] text-white hover:bg-[#00384d]" disabled={zonesEnCours} onClick={enregistrerZones}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDeleteDialog
         open={deleteOpen}

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { usePage } from "@inertiajs/react"
 
-import { NavMain, type NavItem } from "@/components/nav-main"
+import { NavMain, type NavItem, type NavBadge } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -30,6 +30,7 @@ import {
   SendIcon,
   PackageCheckIcon,
   Undo2Icon,
+  RadarIcon,
 } from "lucide-react"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -44,6 +45,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Badges : uniquement des compteurs réels fournis par le Backend ({ kind: "count" })
   // ou l'état « Bientôt » ({ kind: "soon" }). Aucun compteur fictif.
   const SOON = { kind: "soon" } as const
+  const nav = pageProps?.navCompteurs as { coursiersActifs?: number; partenairesActifs?: number; zonesNonCouvertes?: number } | null
+  const compte = (n?: number): NavBadge | undefined => (n && n > 0 ? { kind: "count", value: n } : undefined)
 
   const navAll: NavItem[] = [
     {
@@ -61,16 +64,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       ],
     },
     {
-      // Couloir régional (Agence Témara) : tournées des livreurs.
-      title: "Bons régionaux",
+      // Couloir régional (Agence Témara) : coursiers d'agence et leurs tournées.
+      title: "Flotte Régionale (Témara)",
       icon: <MapPinnedIcon />,
-      items: [{ title: "Bons de livraison", url: "/bons-livraison" }],
+      items: [
+        { title: "Coursiers d’agence", url: "/livreurs", badge: compte(nav?.coursiersActifs) },
+        { title: "Tarifs livreurs", url: "/tarifs-livreurs" },
+        { title: "Bons de livraison", url: "/bons-livraison" },
+      ],
     },
     {
-      // Réseau national : remises aux partenaires.
-      title: "Bons nationaux",
+      // Réseau national : transporteurs partenaires, remises et échanges API.
+      title: "Réseau National (Partenaires)",
       icon: <SendIcon />,
-      items: [{ title: "Bons d’envoi", url: "/bons-envoi" }],
+      items: [
+        { title: "Transporteurs partenaires", url: "/partenaires", badge: compte(nav?.partenairesActifs) },
+        { title: "Tarifs transit réseau", url: "/partenaires/tarifs" },
+        { title: "Bons d’envoi", url: "/bons-envoi" },
+        { title: "Passerelle API", url: "/partenaires/api" },
+      ],
+    },
+    {
+      title: "Dispatching & Couverture",
+      icon: <RadarIcon />,
+      items: [{ title: "Couverture des zones", url: "/zones/couverture", badge: compte(nav?.zonesNonCouvertes) }],
     },
     {
       title: "Ramassage",
@@ -91,8 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         { title: "Enseignes & Boutiques", url: "/businesses" },
         { title: "Clients Marchands", url: "/clients" },
-        { title: "Livreurs (DLM)", url: "/livreurs" },
-        { title: "Réseau & partenaires", url: "/reseau" },
+        { title: "Agences", url: "/reseau" },
         { title: "Statuts colis", url: "/statuts" },
         { title: "Groupes d’état", url: "/etat-groupes" },
         { title: "Zones logistiques", url: "/zones" },
@@ -129,7 +145,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [
         { title: "Tarifs de livraison", url: "/tarifs-standard" },
         { title: "Tarifs clients", url: "/tarifs-clients" },
-        { title: "Tarifs livreurs", url: "/tarifs-livreurs" },
       ],
     },
   ]
@@ -155,6 +170,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "/statuts": "statuts",
     "/etat-groupes": "statuts",
     "/reseau": "reseau",
+    "/partenaires": "partenaires",
+    "/partenaires/tarifs": "partenaires",
+    "/partenaires/api": "partenaires",
+    "/zones/couverture": "partenaires",
     "/reprise": "reprise",
     "/roles": "roles",
     "/permissions": "permissions",
