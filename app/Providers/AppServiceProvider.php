@@ -76,7 +76,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(\App\Models\Zone::class, \App\Policies\ZonePolicy::class);
         Gate::policy(\App\Models\Bank::class, \App\Policies\BankPolicy::class);
         foreach ([\App\Models\BonLivraison::class, \App\Models\BonEnvoi::class, \App\Models\BonRamassage::class, \App\Models\BonRetour::class,
-            \App\Models\Statut::class, \App\Models\Agence::class, \App\Models\Partenaire::class, \App\Models\RepriseAnomalie::class] as $modele) {
+            \App\Models\Statut::class, \App\Models\Agence::class, \App\Models\DeliveryPartner::class, \App\Models\RepriseAnomalie::class] as $modele) {
             Gate::policy($modele, \App\Policies\CircuitColisPolicy::class);
         }
     }

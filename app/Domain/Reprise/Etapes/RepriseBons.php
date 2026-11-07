@@ -44,7 +44,7 @@ final class RepriseBons extends EtapeReprise
     public function executer(): array
     {
         $agenceId = Agence::principale()?->id;
-        $partenaires = DB::table('partenaires')->whereNotNull('user_id')->pluck('id', 'user_id');
+        $partenaires = DB::table('delivery_partners')->whereNotNull('user_id')->pluck('id', 'user_id');
         $comptesPartenaires = array_map('intval', config('reprise.comptes_partenaires', []));
         $users = DB::table('users')->get(['id', 'nom_complet', 'telephone'])->keyBy('id');
         $business = [];
@@ -137,7 +137,7 @@ final class RepriseBons extends EtapeReprise
                         'status' => $termine ? 'traite' : 'expedie',
                         'expedie_at' => $date,
                         'traite_sans_pointage_historique' => $termine,
-                    ] + ($famille === 'envoi' ? ['partenaire_id' => $partenaires[$dlm] ?? null, 'hub' => $livreur?->nom_complet] : []),
+                    ] + ($famille === 'envoi' ? ['delivery_partner_id' => $partenaires[$dlm] ?? null, 'hub' => $livreur?->nom_complet] : []),
                     'ramassage' => $commun + [
                         'client_id' => $clientUser?->id,
                         'business_id' => $biz?->id,
@@ -213,7 +213,7 @@ final class RepriseBons extends EtapeReprise
         if (! $this->simulation) {
             foreach (array_chunk($envoiParColis, 500, true) as $morceau) {
                 foreach ($morceau as $cid => $pid) {
-                    DB::table('commands')->where('id', $cid)->update(['partenaire_id' => $pid]);
+                    DB::table('commands')->where('id', $cid)->update(['delivery_partner_id' => $pid]);
                 }
             }
         }

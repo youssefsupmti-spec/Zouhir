@@ -101,19 +101,14 @@ class CircuitColisPagesTest extends TestCase
         $this->actingAs($this->client)->get('/statuts')->assertForbidden();
     }
 
-    public function test_page_reseau_agences_livreurs_partenaires(): void
+    public function test_page_reseau_agences_et_livreurs(): void
     {
         $this->actingAs($this->admin)->get('/reseau?onglet=livreurs')->assertOk()->assertInertia(fn (Assert $p) => $p
             ->component('Reseau/Index')
             ->has('agences', 1)
             ->where('agences.0.est_principale', true)
-            ->has('partenaires', 1)
-            ->where('partenaires.0.bons', 1)
+            ->missing('partenaires')
             ->where('membres.0.nom', 'Mbarek livreur'));
-
-        $partenaire = DB::table('partenaires')->value('id');
-        $this->actingAs($this->admin)->put("/reseau/partenaires/{$partenaire}", ['raison_sociale' => 'Réseau national Abdelkrim', 'actif' => true])->assertSessionHasNoErrors();
-        $this->assertSame('Réseau national Abdelkrim', DB::table('partenaires')->value('raison_sociale'));
 
         $this->actingAs($this->client)->get('/reseau')->assertForbidden();
     }

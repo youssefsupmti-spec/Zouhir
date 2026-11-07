@@ -43,13 +43,16 @@ final class RepriseEquipes extends EtapeReprise
                 "Compte « {$user->nom_complet} » (#{$id}) traité comme partenaire national : ses ".((int) ($bonsParCompte[$id] ?? 0)).' bons BL deviennent des bons d’envoi',
                 'users', $id, null, ['bons' => (int) ($bonsParCompte[$id] ?? 0)], 'users', (int) $id);
 
-            if (! $this->simulation) {
-                DB::table('partenaires')->updateOrInsert(['user_id' => $id], [
+            // Créé une seule fois : un nom ou un état modifié dans la plateforme n'est jamais écrasé.
+            if (! $this->simulation && ! DB::table('delivery_partners')->where('user_id', $id)->exists()) {
+                DB::table('delivery_partners')->insert([
+                    'user_id' => $id,
                     'code' => 'PART-'.str_pad((string) $id, 3, '0', STR_PAD_LEFT),
-                    'raison_sociale' => $user->nom_complet,
+                    'name' => $user->nom_complet,
                     'telephone' => $user->telephone,
-                    'actif' => $user->deleted_at === null,
+                    'is_active' => $user->deleted_at === null,
                     'notes' => 'Compte de l’ancien site utilisé pour les envois au réseau national (reprise C140).',
+                    'type_partenaire' => 'transporteur_ligne',
                     'updated_at' => now(),
                     'created_at' => now(),
                 ]);

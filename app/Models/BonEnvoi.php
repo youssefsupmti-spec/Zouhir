@@ -34,8 +34,8 @@ class BonEnvoi extends Model
         return $this->belongsTo(Zone::class);
     }
 
-    public function partenaire(): BelongsTo
+    public function deliveryPartner(): BelongsTo
     {
-        return $this->belongsTo(Partenaire::class);
+        return $this->belongsTo(DeliveryPartner::class);
     }
 }

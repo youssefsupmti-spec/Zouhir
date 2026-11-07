@@ -58,7 +58,8 @@ class Command extends Model
         'retour_agence_at',
         'retour_recu_client_at',
         'agence_id',
-        'partenaire_id',
+        'delivery_partner_id',
+        'partner_tracking_code',
         'facture_client',
         'facture_livreur',
     ];
@@ -121,9 +122,9 @@ class Command extends Model
         return $this->belongsTo(Agence::class);
     }
 
-    public function partenaire(): BelongsTo
+    public function deliveryPartner(): BelongsTo
     {
-        return $this->belongsTo(Partenaire::class);
+        return $this->belongsTo(DeliveryPartner::class);
     }
 
     public function historiques(): HasMany

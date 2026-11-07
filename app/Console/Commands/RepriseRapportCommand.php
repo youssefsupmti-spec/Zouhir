@@ -57,7 +57,7 @@ class RepriseRapportCommand extends Command
         $l[] = '|---|---:|';
         foreach (['commands' => 'Colis', 'statuts' => 'Statuts', 'command_status_histories' => 'Historique', 'note_messages' => 'Messages de notes',
             'bons_livraison' => 'Bons de livraison', 'bons_envoi' => 'Bons d’envoi', 'bon_ramassage' => 'Bons de ramassage', 'bons_retour' => 'Bons de retour',
-            'agence_membres' => 'Livreurs rattachés', 'partenaires' => 'Partenaires'] as $table => $nom) {
+            'agence_membres' => 'Livreurs rattachés', 'delivery_partners' => 'Partenaires'] as $table => $nom) {
             $l[] = "| {$nom} | ".number_format(DB::table($table)->count(), 0, ',', ' ').' |';
         }
         $l[] = '';

@@ -1,29 +1,26 @@
 import { useState, type FormEvent } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Bike, Building2, Handshake, Loader2, MapPin, Network, Pencil, Phone, Star } from 'lucide-react';
+import { Bike, Building2, Loader2, MapPin, Network, Pencil, Phone, Star } from 'lucide-react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageToolbar } from '@/components/common/PageToolbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TarifsTabs } from '@/components/tarifs/TarifsTabs';
 import { dateBon } from '@/components/bons/partage';
 
-type Onglet = 'agences' | 'livreurs' | 'partenaires';
+type Onglet = 'agences' | 'livreurs';
 
 interface AgenceL { id: number; code: string; nom: string; ville: string | null; ville_id: number | null; telephone: string | null; adresse: string | null; est_principale: boolean; actif: boolean; livreurs: number; colis: number }
 interface MembreL { id: number; agence: string | null; role: string; actif: boolean; user_id: number; nom: string | null; telephone: string | null; compte_archive: boolean; bons: number; dernier_bon: string | null; colis: number }
-interface PartenaireL { id: number; code: string; raison_sociale: string; ice: string | null; telephone: string | null; email: string | null; actif: boolean; compte: string | null; notes: string | null; bons: number; colis: number }
 
 interface Props {
   onglet: Onglet;
   agences: AgenceL[];
   membres: MembreL[];
-  partenaires: PartenaireL[];
   villes: { id: number; name_fr: string }[];
   filters: { search: string };
   can: { manage: boolean };
@@ -37,17 +34,15 @@ function Etat({ actif }: { actif: boolean }) {
     : <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Inactif</span>;
 }
 
-export default function ReseauIndex({ onglet, agences, membres, partenaires, villes, filters, can }: Props) {
+export default function ReseauIndex({ onglet, agences, membres, villes, filters, can }: Props) {
   const [agence, setAgence] = useState<AgenceL | null>(null);
   const [membre, setMembre] = useState<MembreL | null>(null);
-  const [partenaire, setPartenaire] = useState<PartenaireL | null>(null);
   const fa = useForm({ nom: '', ville_id: '' as string | number, telephone: '', adresse: '', actif: true });
   const fm = useForm({ role: 'livreur', actif: true });
-  const fp = useForm({ raison_sociale: '', ice: '', telephone: '', email: '', notes: '', actif: true });
   const params = { onglet, ...filters };
   const actifs = membres.filter((m) => m.actif).length;
 
-  const soumettre = (e: FormEvent, f: typeof fa | typeof fm | typeof fp, url: string, fermer: () => void) => {
+  const soumettre = (e: FormEvent, f: typeof fa | typeof fm, url: string, fermer: () => void) => {
     e.preventDefault();
     f.put(url, { preserveScroll: true, onSuccess: fermer });
   };
@@ -56,7 +51,7 @@ export default function ReseauIndex({ onglet, agences, membres, partenaires, vil
     <AuthenticatedLayout title="Réseau">
       <Head title="Réseau - OUAISS EXPRESS" />
       <div className="space-y-6">
-        <PageHeader title="Réseau" description="Agences OUAISS EXPRESS, livreurs rattachés et partenaires du réseau national." icon={Network} />
+        <PageHeader title="Réseau" description="Agences OUAISS EXPRESS et livreurs rattachés. Les partenaires nationaux ont leur propre section." icon={Network} />
 
         <TarifsTabs
           label="Réseau"
@@ -65,7 +60,6 @@ export default function ReseauIndex({ onglet, agences, membres, partenaires, vil
           onglets={[
             { value: 'agences', label: 'Agences', count: agences.length, icon: <Building2 className="size-3.5" /> },
             { value: 'livreurs', label: 'Livreurs rattachés', count: membres.length, icon: <Bike className="size-3.5" /> },
-            { value: 'partenaires', label: 'Partenaires nationaux', count: partenaires.length, icon: <Handshake className="size-3.5" /> },
           ]}
         />
 
@@ -132,34 +126,6 @@ export default function ReseauIndex({ onglet, agences, membres, partenaires, vil
             </div>
           </>
         )}
-
-        {onglet === 'partenaires' && (
-          <div className="grid gap-4 md:grid-cols-2">
-            {partenaires.map((p) => (
-              <article key={p.id} className="rounded-xl border border-border bg-card p-5 shadow-2xs">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-mono text-[11px] text-muted-foreground">{p.code}</p>
-                    <h3 className="text-base font-bold">{p.raison_sociale}</h3>
-                    {p.compte && <p className="text-[11px] text-muted-foreground">Compte de l’ancien site : {p.compte}</p>}
-                  </div>
-                  <Etat actif={p.actif} />
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-                  <div className="rounded-lg bg-muted/50 p-2"><p className="text-lg font-bold tabular-nums">{p.bons}</p><p className="text-[10px] text-muted-foreground">bons d’envoi</p></div>
-                  <div className="rounded-lg bg-muted/50 p-2"><p className="text-lg font-bold tabular-nums">{p.colis.toLocaleString('fr-FR')}</p><p className="text-[10px] text-muted-foreground">colis confiés</p></div>
-                </div>
-                {p.notes && <p className="mt-3 text-[11px] text-muted-foreground">{p.notes}</p>}
-                {can.manage && (
-                  <Button size="sm" variant="outline" className="mt-4 h-7 w-full text-xs" onClick={() => { fp.setData({ raison_sociale: p.raison_sociale, ice: p.ice ?? '', telephone: p.telephone ?? '', email: p.email ?? '', notes: p.notes ?? '', actif: p.actif }); setPartenaire(p); }}>
-                    <Pencil className="size-3.5" /> Modifier
-                  </Button>
-                )}
-              </article>
-            ))}
-            {partenaires.length === 0 && <p className="text-sm text-muted-foreground">Aucun partenaire.</p>}
-          </div>
-        )}
       </div>
 
       <Dialog open={agence !== null} onOpenChange={(o) => !o && setAgence(null)}>
@@ -199,22 +165,6 @@ export default function ReseauIndex({ onglet, agences, membres, partenaires, vil
         </DialogContent>
       </Dialog>
 
-      <Dialog open={partenaire !== null} onOpenChange={(o) => !o && setPartenaire(null)}>
-        <DialogContent className="max-w-md">
-          <form onSubmit={(e) => soumettre(e, fp, `/reseau/partenaires/${partenaire?.id}`, () => setPartenaire(null))} className="space-y-3">
-            <DialogHeader><DialogTitle>Partenaire {partenaire?.code}</DialogTitle></DialogHeader>
-            <div className="space-y-1.5"><Label htmlFor="p-rs">Raison sociale</Label><Input id="p-rs" value={fp.data.raison_sociale} onChange={(e) => fp.setData('raison_sociale', e.target.value)} />{fp.errors.raison_sociale && <p className="text-[11px] text-destructive">{fp.errors.raison_sociale}</p>}</div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5"><Label htmlFor="p-ice">ICE</Label><Input id="p-ice" value={fp.data.ice} onChange={(e) => fp.setData('ice', e.target.value)} /></div>
-              <div className="space-y-1.5"><Label htmlFor="p-tel">Téléphone</Label><Input id="p-tel" value={fp.data.telephone} onChange={(e) => fp.setData('telephone', e.target.value)} /></div>
-            </div>
-            <div className="space-y-1.5"><Label htmlFor="p-mail">E-mail</Label><Input id="p-mail" value={fp.data.email} onChange={(e) => fp.setData('email', e.target.value)} />{fp.errors.email && <p className="text-[11px] text-destructive">{fp.errors.email}</p>}</div>
-            <div className="space-y-1.5"><Label htmlFor="p-notes">Notes</Label><Textarea id="p-notes" rows={3} value={fp.data.notes} onChange={(e) => fp.setData('notes', e.target.value)} /></div>
-            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={fp.data.actif} onChange={(e) => fp.setData('actif', e.target.checked)} className="size-4" /> Partenaire actif</label>
-            <DialogFooter><Button type="submit" size="sm" disabled={fp.processing} className="bg-[#004c68] text-white">Enregistrer</Button></DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </AuthenticatedLayout>
   );
 }

@@ -113,7 +113,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/reseau', [\App\Http\Controllers\ReseauController::class, 'index'])->name('reseau.index');
     Route::put('/reseau/agences/{agence}', [\App\Http\Controllers\ReseauController::class, 'updateAgence'])->name('reseau.agences.update');
     Route::put('/reseau/membres/{membre}', [\App\Http\Controllers\ReseauController::class, 'updateMembre'])->name('reseau.membres.update');
-    Route::put('/reseau/partenaires/{partenaire}', [\App\Http\Controllers\ReseauController::class, 'updatePartenaire'])->name('reseau.partenaires.update');
 
     // Reprise de l'ancienne base : données non reprises exactement, avec décision
     Route::get('/reprise', [\App\Http\Controllers\RepriseAnomalieController::class, 'index'])->name('reprise.index');

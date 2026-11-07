@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Agence;
 use App\Models\AgenceMembre;
-use App\Models\Partenaire;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +19,7 @@ use Inertia\Response;
  */
 class ReseauController extends Controller
 {
-    public const ONGLETS = ['agences', 'livreurs', 'partenaires'];
+    public const ONGLETS = ['agences', 'livreurs'];
 
     public function index(Request $request): Response
     {
@@ -52,20 +51,10 @@ class ReseauController extends Controller
                 'colis' => (int) ($colisLivreur[$m->user_id] ?? 0),
             ])->sortByDesc('bons')->values();
 
-        $partenaires = Partenaire::query()->withTrashed()->with('compte:id,nom_complet')->withCount('bonsEnvoi')
-            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w->where('raison_sociale', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")))
-            ->orderBy('raison_sociale')->get()
-            ->map(fn (Partenaire $p) => [
-                'id' => $p->id, 'code' => $p->code, 'raison_sociale' => $p->raison_sociale, 'ice' => $p->ice, 'telephone' => $p->telephone,
-                'email' => $p->email, 'actif' => $p->actif, 'compte' => $p->compte?->nom_complet, 'notes' => $p->notes,
-                'bons' => $p->bons_envoi_count, 'colis' => DB::table('commands')->where('partenaire_id', $p->id)->count(),
-            ]);
-
         return Inertia::render('Reseau/Index', [
             'onglet' => $onglet,
             'agences' => $agences,
             'membres' => $membres,
-            'partenaires' => $partenaires,
             'villes' => DB::table('villes')->whereNull('deleted_at')->orderBy('name_fr')->get(['id', 'name_fr']),
             'filters' => ['search' => $search],
             'can' => ['manage' => $request->user()->can('update', Agence::class)],
@@ -95,20 +84,5 @@ class ReseauController extends Controller
         ]));
 
         return back()->with('success', 'Rattachement enregistré.');
-    }
-
-    public function updatePartenaire(Request $request, Partenaire $partenaire): RedirectResponse
-    {
-        Gate::authorize('update', $partenaire);
-        $partenaire->update($request->validate([
-            'raison_sociale' => ['required', 'string', 'max:255'],
-            'ice' => ['nullable', 'string', 'max:32'],
-            'telephone' => ['nullable', 'string', 'max:64'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'actif' => ['required', 'boolean'],
-        ]));
-
-        return back()->with('success', "Partenaire « {$partenaire->raison_sociale} » enregistré.");
     }
 }

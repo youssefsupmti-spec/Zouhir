@@ -135,9 +135,9 @@ class RepriseLegacyTest extends TestCase
 
         $be = DB::table('bons_envoi')->where('source_bls_id', 2)->first();
         $this->assertSame('expedie', $be->status);
-        $partenaire = DB::table('partenaires')->where('user_id', 76)->value('id');
-        $this->assertSame($partenaire, (int) $be->partenaire_id);
-        $this->assertSame($partenaire, (int) DB::table('commands')->find(104)->partenaire_id);
+        $partenaire = DB::table('delivery_partners')->where('user_id', 76)->value('id');
+        $this->assertSame($partenaire, (int) $be->delivery_partner_id);
+        $this->assertSame($partenaire, (int) DB::table('commands')->find(104)->delivery_partner_id);
 
         $this->assertSame('valide', DB::table('bon_ramassage')->where('source_bls_id', 3)->value('status'));
         $this->assertSame(2, DB::table('bon_ramassage_lines')->count());

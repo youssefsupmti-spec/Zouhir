@@ -30,7 +30,7 @@ final class ClassificationEtats
     /** Code du groupe d'un état (statut), ou null s'il n'est rattaché à aucun groupe. */
     public static function groupePour(int $statutId): ?string
     {
-        return EtatGroupeEtat::query()->where('axe', EtatGroupe::AXE_FLUX)->where('etat_id', $statutId)
+        return EtatGroupeEtat::query()->where('etat_groupe_etats.axe', EtatGroupe::AXE_FLUX)->where('etat_groupe_etats.etat_id', $statutId)
             ->join('etat_groupes', 'etat_groupes.id', '=', 'etat_groupe_etats.groupe_id')
             ->value('etat_groupes.code');
     }
