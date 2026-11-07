@@ -49,7 +49,7 @@ return new class extends Migration
                 $table->string('notes')->nullable();
                 $table->timestamps();
 
-                $table->unique(['delivery_partner_id', 'partner_status']);
+                $table->unique(['delivery_partner_id', 'partner_status'], 'partner_status_mappings_unique'); // nom court : limite MySQL de 64 caractères
             });
         }
 
