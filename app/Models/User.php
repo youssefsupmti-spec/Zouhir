@@ -239,6 +239,13 @@ class User extends Authenticatable
 
     /* ════════════════════ Rôles & Autorisations Spatie ════════════════════ */
 
+    /** Zones de livraison d'un coursier (table Zakaria2 livreur_zones). */
+    public function livreurZones(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Zone::class, 'livreur_zones', 'user_id', 'zone_id')
+            ->wherePivot('zone_type', 'livraison')->withTimestamps();
+    }
+
     public function isClient(): bool
     {
         return PerimetreColis::compteVendeur($this)

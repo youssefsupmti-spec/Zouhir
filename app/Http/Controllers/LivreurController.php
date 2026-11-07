@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Command;
 use App\Models\User;
+use App\Models\Zone;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
@@ -37,7 +40,16 @@ class LivreurController extends Controller
         }
         $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
 
+        // Onglets : tous (non archivés) · actifs · archives (suppression logique, restaurable).
+        $onglet = in_array($request->input('onglet'), ['tous', 'actifs', 'archives'], true) ? $request->input('onglet') : 'tous';
+        // Les comptes techniques des partenaires nationaux ne sont pas des coursiers d'agence.
+        $comptesPartenaires = DB::table('delivery_partners')->whereNotNull('user_id')->select('user_id');
+
         $query = User::drivers()
+            ->whereNotIn('users.id', $comptesPartenaires)
+            ->when($onglet === 'archives', fn ($q) => $q->onlyTrashed())
+            ->when($onglet === 'actifs', fn ($q) => $q->where('active', true))
+            ->with(['livreurZones:id,code,name'])
             ->withCount([
                 'driverCommands as total_colis_count',
                 'driverCommands as colis_livres_count' => function ($q) {
@@ -67,12 +79,17 @@ class LivreurController extends Controller
             $total = (int) $livreur->total_colis_count;
             $livres = (int) $livreur->colis_livres_count;
             $livreur->taux_succes = $total > 0 ? round(($livres / $total) * 100, 1) : 0;
+            $livreur->archive = $livreur->deleted_at !== null;
+            $livreur->zones = $livreur->livreurZones->map(fn ($z) => ['id' => $z->id, 'code' => $z->code, 'name' => $z->name])->values();
+            $livreur->unsetRelation('livreurZones');
+
             return $livreur;
         });
 
         // Métriques de pilotage opérationnel MariaDB
-        $totalLivreurs = User::drivers()->count();
-        $activeLivreurs = User::drivers()->where('active', true)->count();
+        $totalLivreurs = User::drivers()->whereNotIn('users.id', $comptesPartenaires)->count();
+        $activeLivreurs = User::drivers()->whereNotIn('users.id', $comptesPartenaires)->where('active', true)->count();
+        $archives = User::drivers()->onlyTrashed()->whereNotIn('users.id', $comptesPartenaires)->count();
         $colisInDistribution = Command::where('state_group', 'en_cours')->count();
         $colisDeliveredTotal = Command::where('state_group', 'livre')->count();
 
@@ -83,13 +100,17 @@ class LivreurController extends Controller
                 'active' => $activeLivreurs,
                 'colis_en_cours' => $colisInDistribution,
                 'colis_livres_total' => $colisDeliveredTotal,
+                'archives' => $archives,
             ],
+            'onglet' => $onglet,
+            'zonesRegionales' => Zone::query()->where('type', 'locale')->orderBy('code')->get(['id', 'code', 'name']),
             'filters' => [
                 'search' => $search,
                 'status' => $status ?? 'all',
                 'sort' => $sort,
                 'direction' => $direction,
                 'per_page' => $perPage,
+                'onglet' => $onglet,
             ],
         ]);
     }
@@ -179,6 +200,34 @@ class LivreurController extends Controller
         $livreur->delete();
 
         return back()->with('success', 'Livreur archivé avec succès.');
+    }
+
+    /** Restaure un coursier archivé (aucune suppression physique). */
+    public function restaurer(int $livreur): RedirectResponse
+    {
+        $cible = User::onlyTrashed()->findOrFail($livreur);
+        Gate::authorize('viewAny', User::class);
+        Gate::authorize('update', $cible);
+        abort_unless(User::drivers()->onlyTrashed()->whereKey($cible->getKey())->exists(), 404);
+        $cible->restore();
+
+        return back()->with('success', "Coursier « {$cible->nom_complet} » restauré.");
+    }
+
+    /** Édition rapide des zones de livraison d'un coursier (table Zakaria2 livreur_zones). */
+    public function zones(Request $request, User $livreur): RedirectResponse
+    {
+        $this->authorizeManaged('update', $livreur);
+        $ids = array_values(array_unique(array_map('intval', $request->validate(['zones' => ['present', 'array', 'max:100'], 'zones.*' => ['integer', 'exists:zones,id']])['zones'])));
+
+        DB::transaction(function () use ($livreur, $ids) {
+            DB::table('livreur_zones')->where('user_id', $livreur->id)->where('zone_type', 'livraison')->whereNotIn('zone_id', $ids)->delete();
+            foreach ($ids as $z) {
+                DB::table('livreur_zones')->insertOrIgnore(['user_id' => $livreur->id, 'zone_id' => $z, 'zone_type' => 'livraison', 'created_at' => now(), 'updated_at' => now()]);
+            }
+        });
+
+        return back()->with('success', 'Zones du coursier enregistrées.');
     }
 
     /**

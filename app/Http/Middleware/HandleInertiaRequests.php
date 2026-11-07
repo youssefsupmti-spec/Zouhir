@@ -98,8 +98,16 @@ class HandleInertiaRequests extends Middleware
                     'tarifsClients' => $user->can('viewAny', \App\Models\ClientTarif::class),
                     'tarifsStandard' => $user->can('viewAny', \App\Models\StandardTarif::class),
                     'tarifsLivreurs' => $user->can('viewAny', \App\Models\LivreurTarif::class),
+                    'partenaires' => $user->can('viewAny', \App\Models\DeliveryPartner::class),
                 ] : [],
             ],
+            // Compteurs réels des badges de la barre latérale (calculés à la demande).
+            'navCompteurs' => $user ? fn () => [
+                'coursiersActifs' => User::drivers()->where('active', true)
+                    ->whereNotIn('users.id', \Illuminate\Support\Facades\DB::table('delivery_partners')->whereNotNull('user_id')->select('user_id'))->count(),
+                'partenairesActifs' => \App\Models\DeliveryPartner::query()->where('is_active', true)->count(),
+                'zonesNonCouvertes' => \App\Models\ZoneCouverture::query()->where('statut_couverture', 'non_couvert')->whereHas('zone')->count(),
+            ] : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
