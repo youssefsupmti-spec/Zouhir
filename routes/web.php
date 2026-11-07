@@ -46,6 +46,27 @@ Route::middleware('auth')->group(function () {
     Route::post('/livreurs', [\App\Http\Controllers\LivreurController::class, 'store'])->name('livreurs.store');
     Route::put('/livreurs/{livreur}', [\App\Http\Controllers\LivreurController::class, 'update'])->name('livreurs.update');
     Route::delete('/livreurs/{livreur}', [\App\Http\Controllers\LivreurController::class, 'destroy'])->name('livreurs.destroy');
+    Route::post('/livreurs/{livreur}/restaurer', [\App\Http\Controllers\LivreurController::class, 'restaurer'])->whereNumber('livreur')->name('livreurs.restaurer');
+    Route::put('/livreurs/{livreur}/zones', [\App\Http\Controllers\LivreurController::class, 'zones'])->name('livreurs.zones');
+
+    // Réseau national (C132) : transporteurs partenaires, tarifs de transit, passerelle API.
+    Route::get('/partenaires', [\App\Http\Controllers\PartenaireController::class, 'index'])->name('partenaires.index');
+    Route::post('/partenaires', [\App\Http\Controllers\PartenaireController::class, 'store'])->name('partenaires.store');
+    Route::get('/partenaires/tarifs', [\App\Http\Controllers\PartenaireController::class, 'tarifs'])->name('partenaires.tarifs');
+    Route::put('/partenaires/tarifs', [\App\Http\Controllers\PartenaireController::class, 'enregistrerTarifs'])->name('partenaires.tarifs.update');
+    Route::get('/partenaires/api', [\App\Http\Controllers\PartenaireController::class, 'api'])->name('partenaires.api');
+    Route::delete('/partenaires/correspondances/{correspondance}', [\App\Http\Controllers\PartenaireController::class, 'supprimerCorrespondance'])->name('partenaires.correspondances.destroy');
+    Route::put('/partenaires/{partenaire}', [\App\Http\Controllers\PartenaireController::class, 'update'])->whereNumber('partenaire')->name('partenaires.update');
+    Route::delete('/partenaires/{partenaire}', [\App\Http\Controllers\PartenaireController::class, 'destroy'])->whereNumber('partenaire')->name('partenaires.destroy');
+    Route::post('/partenaires/{partenaire}/restaurer', [\App\Http\Controllers\PartenaireController::class, 'restaurer'])->whereNumber('partenaire')->name('partenaires.restaurer');
+    Route::post('/partenaires/{partenaire}/cle', [\App\Http\Controllers\PartenaireController::class, 'regenererCle'])->whereNumber('partenaire')->name('partenaires.cle');
+    Route::put('/partenaires/{partenaire}/api', [\App\Http\Controllers\PartenaireController::class, 'configurerApi'])->whereNumber('partenaire')->name('partenaires.api.update');
+    Route::post('/partenaires/{partenaire}/correspondances', [\App\Http\Controllers\PartenaireController::class, 'ajouterCorrespondance'])->whereNumber('partenaire')->name('partenaires.correspondances.store');
+
+    // Dispatching : Coverage Board des zones.
+    Route::get('/zones/couverture', [\App\Http\Controllers\CouvertureController::class, 'index'])->name('zones.couverture');
+    Route::put('/zones/couverture/{couverture}', [\App\Http\Controllers\CouvertureController::class, 'update'])->whereNumber('couverture')->name('zones.couverture.update');
+    Route::post('/zones/couverture/{couverture}/basculer', [\App\Http\Controllers\CouvertureController::class, 'basculer'])->whereNumber('couverture')->name('zones.couverture.basculer');
 
     Route::get('/villes', [\App\Http\Controllers\VilleController::class, 'index'])->name('villes.index');
     Route::post('/villes', [\App\Http\Controllers\VilleController::class, 'store'])->name('villes.store');
