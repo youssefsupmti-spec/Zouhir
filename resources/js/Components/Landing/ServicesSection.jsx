@@ -1,19 +1,15 @@
-﻿import React, { useState } from 'react';
+﻿import React from 'react';
 import { 
     PackageOpen, 
     Truck, 
     Zap, 
     Banknote, 
     ArrowRight, 
-    ChevronLeft, 
-    ChevronRight,
     Sparkles,
     CheckCircle2
 } from 'lucide-react';
 
 export default function ServicesSection() {
-    const [currentIndex, setCurrentIndex] = useState(0);
-
     const steps = [
         {
             step: "01",
@@ -22,7 +18,7 @@ export default function ServicesSection() {
             icon: PackageOpen,
             description: "Saisissez les détails de la commande dans votre tableau de bord marchand.",
             details: "Import Excel en 1 clic ou saisie directe avec génération immédiate de bordereaux AWB code-barres.",
-            img: "/images/landing/thumbs/service-three-img1.png",
+            img: "/images/landing/thumbs/ouaiss-service-1-envoi.png",
             cta: "Créer un envoi",
             href: "/register"
         },
@@ -33,7 +29,7 @@ export default function ServicesSection() {
             icon: Truck,
             description: "Notre livreur collecte les colis depuis votre localisation.",
             details: "Collecte quotidienne gratuite dès votre 1er colis, directement à votre entrepôt, boutique ou domicile.",
-            img: "/images/landing/thumbs/service-three-img2.png",
+            img: "/images/landing/thumbs/ouaiss-service-2-ramassage.png",
             cta: "Demander un ramassage",
             href: "#calculateur"
         },
@@ -44,7 +40,7 @@ export default function ServicesSection() {
             icon: Zap,
             description: "Nous livrons à votre client à domicile.",
             details: "Distribution express 24h/48h partout au Maroc avec géolocalisation et confirmation WhatsApp destinataire.",
-            img: "/images/landing/thumbs/service-three-img3.png",
+            img: "/images/landing/thumbs/ouaiss-service-3-livraison.png",
             cta: "Suivre la livraison",
             href: "#calculateur"
         },
@@ -55,19 +51,11 @@ export default function ServicesSection() {
             icon: Banknote,
             description: "Nous transférons vos fonds PAD régulièrement.",
             details: "Encaissement scrupuleux du cash à la livraison (CRBT) et versement direct sur votre compte bancaire à J+2.",
-            img: "/images/landing/thumbs/quote-three-img.png",
+            img: "/images/landing/thumbs/ouaiss-service-4-paiement.png",
             cta: "Consulter les tarifs",
             href: "#calculateur"
         }
     ];
-
-    const nextSlide = () => {
-        setCurrentIndex((prev) => (prev + 1) % steps.length);
-    };
-
-    const prevSlide = () => {
-        setCurrentIndex((prev) => (prev - 1 + steps.length) % steps.length);
-    };
 
     return (
         <section id="services" className="py-24 bg-white relative overflow-hidden">
@@ -96,7 +84,7 @@ export default function ServicesSection() {
                     </p>
                 </div>
 
-                {/* Cards Container with Navigation Controls */}
+                {/* Cards Container */}
                 <div className="relative">
                     
                     {/* Responsive Grid: 4 Columns on Desktop, 2 on Tablet, 1 on Mobile */}
@@ -109,30 +97,29 @@ export default function ServicesSection() {
                                     className="group relative flex flex-col justify-between transition-all duration-300"
                                 >
                                     {/* Top Image Box with triangle-before Cutout */}
-                                    <div className="triangle-before relative w-full h-56 sm:h-60 overflow-hidden rounded-2xl bg-slate-100 shadow-md">
+                                    <div className="triangle-before relative w-full aspect-[16/10] overflow-hidden rounded-2xl bg-[#004c68] shadow-md">
                                         <img 
                                             src={item.img} 
                                             alt={item.title} 
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#05161f]/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
 
                                         {/* Step Floating Badge Top-Right */}
-                                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-[#004c68] px-3 py-1 rounded-full text-xs font-black shadow-md border border-slate-200/60 flex items-center gap-1.5 z-20">
+                                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-[#004c68] px-2.5 py-1 rounded-full text-xs font-black shadow-md border border-slate-200/60 flex items-center gap-1.5 z-20">
                                             <span className="w-2 h-2 rounded-full bg-[#ff8806] animate-pulse" />
                                             <span>{item.step}</span>
                                         </div>
                                     </div>
 
                                     {/* Bottom Floating Content with triangle-two-before & Shadow */}
-                                    <div className="relative -mt-14 mx-3 sm:mx-4 z-10 flex-1 flex flex-col">
+                                    <div className="relative -mt-6 mx-2.5 sm:mx-3 z-10 flex-1 flex flex-col">
                                         <div className="bg-white triangle-two-before common-shadow-five border-b-4 border-[#ff8806] rounded-xl p-5 pt-6 flex-1 flex flex-col justify-between transition-transform duration-300 group-hover:-translate-y-1">
                                             
                                             <div>
-                                                {/* Floating Icon Box (Envato -85px square shape with offset) */}
-                                                <div className="flex items-start gap-4 mb-3">
-                                                    <div className="w-16 h-16 -ml-7 -mt-3 bg-[#ff8806] text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:bg-[#004c68] group-hover:scale-105 transition-all duration-300">
-                                                        <IconComponent className="w-8 h-8 text-white" />
+                                                {/* Floating Icon Box (Envato square shape with offset) */}
+                                                <div className="flex items-start gap-3.5 mb-3">
+                                                    <div className="w-15 h-15 -ml-6 -mt-3 bg-[#ff8806] text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:bg-[#004c68] group-hover:scale-105 transition-all duration-300">
+                                                        <IconComponent className="w-7 h-7 text-white" />
                                                     </div>
                                                     <div className="pt-0.5">
                                                         <span className="text-[11px] font-bold text-[#ff8806] uppercase tracking-wide">
