@@ -1,8 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { 
-    PackageOpen, 
-    Truck, 
-    Zap, 
+    ShoppingCart, 
+    MapPin, 
+    Timer, 
     Banknote, 
     ArrowLeft, 
     ArrowRight 
@@ -12,36 +12,41 @@ export default function ServicesSection() {
     const [activeIndex, setActiveIndex] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
 
+    // Ordre et textes 100% adaptés au contenu visuel et arabe de chacune des 4 images
     const steps = [
         {
             step: "01",
             title: "Créer un Envoi",
-            icon: PackageOpen,
-            description: "Saisissez les détails de la commande dans votre tableau de bord marchand.",
+            subtitle: "Intégration E-Commerce",
+            icon: ShoppingCart,
+            description: "Intégration fluide avec votre boutique en ligne : saisissez vos commandes et profitez de solutions logistiques complètes pour développer votre activité.",
             img: "/images/landing/thumbs/ouaiss-service-1-envoi.png",
             href: "/register"
         },
         {
             step: "02",
-            title: "Ramassage",
-            icon: Truck,
-            description: "Notre livreur collecte les colis depuis votre localisation.",
+            title: "Ramassage & Suivi",
+            subtitle: "Du Départ à l'Arrivée",
+            icon: MapPin,
+            description: "Notre livreur collecte les colis depuis votre localisation. Suivez vos commandes en toute simplicité de l'instant du départ jusqu'à l'arrivée.",
             img: "/images/landing/thumbs/ouaiss-service-2-ramassage.png",
             href: "#calculateur"
         },
         {
             step: "03",
             title: "Livraison Rapide",
-            icon: Zap,
-            description: "Nous livrons à votre client à domicile.",
+            subtitle: "Partout au Maroc",
+            icon: Timer,
+            description: "Livraison express dans toutes les villes et régions du Maroc : nous livrons vos colis rapidement et en toute sécurité à votre client à domicile.",
             img: "/images/landing/thumbs/ouaiss-service-3-livraison.png",
             href: "#calculateur"
         },
         {
             step: "04",
             title: "Recevoir le Paiement",
+            subtitle: "Paiement à la Livraison (PAD)",
             icon: Banknote,
-            description: "Nous transférons vos fonds PAD régulièrement.",
+            description: "Confort et sécurité dans vos transactions : encaissement à la remise du colis et transfert régulier de vos fonds PAD sur votre compte.",
             img: "/images/landing/thumbs/ouaiss-service-4-paiement.png",
             href: "#calculateur"
         }
@@ -59,11 +64,10 @@ export default function ServicesSection() {
         if (isHovered) return;
         const timer = setInterval(() => {
             setActiveIndex((prev) => (prev + 1) % steps.length);
-        }, 3500);
+        }, 4000);
         return () => clearInterval(timer);
     }, [isHovered, steps.length]);
 
-    // Display 3 cards in a loop on desktop, 2 on tablet, 1 on mobile
     const visibleCards = [
         steps[activeIndex % steps.length],
         steps[(activeIndex + 1) % steps.length],
@@ -115,43 +119,49 @@ export default function ServicesSection() {
                                     key={`${item.step}-${activeIndex}-${idx}`} 
                                     className={`${visibilityClass} transition-all duration-500`}
                                 >
-                                    <div className="service-three-item pb-[52px] overflow-hidden relative group">
-                                        {/* Top Image with White Frame & Triangle-Before Cutout */}
+                                    {/* pb-[84px] laisse 100% du texte arabe de l'image dégagé au repos, et l'accordéon remonte par-dessus au survol */}
+                                    <div className="service-three-item pb-[84px] overflow-hidden relative group">
+                                        {/* Top Image au ratio exact 5:3 de la vignette pour ne rien couper */}
                                         <a 
                                             href={item.href} 
-                                            className="triangle-before relative block w-full h-[342px] p-2 bg-white overflow-hidden"
+                                            className="triangle-before relative block w-full aspect-[5/3] p-2 bg-white overflow-hidden shadow-xs"
                                         >
                                             <img 
                                                 src={item.img} 
                                                 alt={item.title} 
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                                className="w-full h-full object-fill transition-transform duration-700 group-hover:scale-105"
                                             />
                                         </a>
 
                                         {/* Bottom Accordion Content: 103px default -> 300px on hover */}
                                         <div className="service-three-item__content ps-4 absolute bottom-0 start-0 end-0 w-full">
-                                            <div className="bg-white triangle-two-before relative z-10 border-b-2 border-[#f78304] common-shadow-five py-[18px] mx-[24px] sm:mx-[32px] flex items-start gap-[18px] pe-6">
+                                            <div className="bg-white triangle-two-before relative z-10 border-b-2 border-[#f78304] common-shadow-five py-[18px] mx-[20px] sm:mx-[28px] flex items-start gap-[18px] pe-5">
                                                 {/* 85x85 Icon Box offset by -16px */}
-                                                <span className="h-[85px] w-[85px] bg-[#f78304] rounded-[4px] flex justify-center items-center -ms-[16px] flex-shrink-0 group-hover:bg-[#004c68] transition-colors duration-500">
+                                                <span className="h-[85px] w-[85px] bg-[#f78304] rounded-[4px] flex justify-center items-center -ms-[16px] flex-shrink-0 group-hover:bg-[#004c68] transition-colors duration-500 shadow-md">
                                                     <IconComponent className="w-10 h-10 text-white stroke-[1.75]" />
                                                 </span>
 
-                                                {/* Text Block: Only h6 visible at rest; p and link revealed on hover */}
-                                                <div className="py-[26px] flex-grow">
-                                                    <h6 className="mb-8 text-lg font-bold text-[#05161f] leading-snug">
-                                                        <a 
-                                                            href={item.href} 
-                                                            className="line-clamp-1 hover:text-[#f78304] transition-colors"
-                                                        >
-                                                            {item.step}. {item.title}
-                                                        </a>
-                                                    </h6>
+                                                {/* Text Block: Only title visible at rest (103px); description & link revealed on hover (300px) */}
+                                                <div className="py-[18px] flex-grow">
+                                                    <div className="mb-7">
+                                                        <span className="block text-[11px] font-bold uppercase tracking-wider text-[#f78304]">
+                                                            {item.step}. {item.subtitle}
+                                                        </span>
+                                                        <h6 className="text-lg font-extrabold text-[#05161f] leading-snug">
+                                                            <a 
+                                                                href={item.href} 
+                                                                className="line-clamp-1 hover:text-[#f78304] transition-colors"
+                                                            >
+                                                                {item.title}
+                                                            </a>
+                                                        </h6>
+                                                    </div>
                                                     <p className="text-slate-600 text-sm line-clamp-3 leading-relaxed">
                                                         {item.description}
                                                     </p>
                                                     <a 
                                                         href={item.href} 
-                                                        className="inline-flex items-center gap-3 text-[#004c68] font-semibold text-sm mt-4 hover:text-[#f78304] transition-colors"
+                                                        className="inline-flex items-center gap-3 text-[#004c68] font-semibold text-sm mt-3.5 hover:text-[#f78304] transition-colors"
                                                     >
                                                         <span>Explorer Plus</span>
                                                         <img src="/images/landing/icons/arrow-long.svg" alt="" className="w-5 h-auto" />

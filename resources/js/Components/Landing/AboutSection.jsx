@@ -11,7 +11,7 @@ export default function AboutSection() {
     const reasons = [
         {
             title: "Couverture Nationale",
-            description: "Nous atteignons les zones éloignées et les grandes villes à travers le Maroc.",
+            description: "Nous atteignons les zones éloignées et les grandes villes à travers le Maroc (Rabat, Salé, Témara, Kénitra, Harhoura, Tamesna, Skhirat, Bouknadel et tout le Royaume).",
             iconSvg: "/images/landing/icons/features-icon1.svg",
         },
         {
@@ -21,7 +21,7 @@ export default function AboutSection() {
         },
         {
             title: "Support Dédié",
-            description: "Notre équipe de support est disponible par téléphone et WhatsApp pour vous assister.",
+            description: "Notre équipe de support est disponible par téléphone et WhatsApp au 06 64 62 61 18 / 06 49 39 67 59 pour vous assister.",
             iconSvg: "/images/landing/icons/features-icon2.svg",
         },
     ];
@@ -29,42 +29,25 @@ export default function AboutSection() {
     return (
         <section id="pourquoi-nous" className="py-28 bg-white relative overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-10 items-center">
                     
-                    {/* Left Column: Exact index-3 About Three Visual Composition */}
+                    {/* Left Column: Affiche officielle OUAISS EXPRESS non rognée + éléments index-3 */}
                     <div className="lg:col-span-5">
-                        <div className="pe-9 pb-10 ps-5 relative h-full min-h-[500px]">
-                            {/* Main Image */}
-                            <img 
-                                src="/images/landing/إشهار توصيل مغربي من OUAISS EXPRESS.png" 
-                                alt="OUAISS EXPRESS - Logistique & Livraison au Maroc" 
-                                className="w-full h-[500px] object-cover rounded-xs shadow-md"
-                            />
-
-                            {/* Bottom-Left Floating Secondary Image + Ripple Play Button */}
-                            <div className="absolute start-0 bottom-0 bg-white p-2.5 rounded-lg common-shadow-five z-20 max-w-[230px]">
-                                <div className="relative">
-                                    <img 
-                                        src="/images/landing/thumbs/about-three-img2.png" 
-                                        alt="Centre de tri OUAISS EXPRESS" 
-                                        className="w-full h-full object-cover rounded-lg"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setVideoModalOpen(true)}
-                                        aria-label="Voir la vidéo"
-                                        className="play-button bg-light-animation w-[70px] h-[70px] inline-flex justify-center items-center bg-[#004c68] hover:bg-[#f78304] text-white rounded-full text-xl absolute start-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-300 cursor-pointer"
-                                    >
-                                        <Play className="w-6 h-6 fill-white ml-1" />
-                                    </button>
-                                </div>
+                        <div className="pe-6 pb-8 ps-2 relative">
+                            {/* Main Image (aspect-square pour afficher 100% des villes à gauche/droite et les numéros en bas) */}
+                            <div className="p-2 bg-white common-shadow-five rounded-xl overflow-hidden border border-slate-100">
+                                <img 
+                                    src="/images/landing/إشهار توصيل مغربي من OUAISS EXPRESS.png" 
+                                    alt="OUAISS EXPRESS - Livraison Rabat, Salé, Témara, Kénitra et tout le Maroc" 
+                                    className="w-full h-auto aspect-square object-contain rounded-lg"
+                                />
                             </div>
 
-                            {/* Right-Center Vertical Writing-Mode Dual Box */}
-                            <div className="bg-[#004c68] rounded-xl py-1.5 absolute end-0 top-1/2 -translate-y-1/2 z-20 shadow-xl">
-                                <div className="bg-[#f78304] rounded-xl px-6 py-10">
-                                    <h5 className="writing-mode text-center text-white font-normal text-base tracking-wide">
-                                        Service <span className="font-extrabold">Rapide & Fiable</span> au Maroc
+                            {/* Right-Top Vertical Writing-Mode Dual Box (positionné sans masquer les villes) */}
+                            <div className="bg-[#004c68] rounded-xl py-1.5 absolute -end-2 top-8 z-20 shadow-xl hidden sm:block">
+                                <div className="bg-[#f78304] rounded-xl px-4 py-6">
+                                    <h5 className="writing-mode text-center text-white font-normal text-xs tracking-wider uppercase">
+                                        Livraison <span className="font-extrabold">24h / 48h</span>
                                     </h5>
                                 </div>
                             </div>
@@ -72,7 +55,7 @@ export default function AboutSection() {
                     </div>
 
                     {/* Right Column: Exact index-3 About Three Content + Advisor Box */}
-                    <div className="lg:col-span-7 lg:ps-8">
+                    <div className="lg:col-span-7 lg:ps-6">
                         <div>
                             <span className="text-xl font-bold italic underline text-[#f78304] mb-3.5 inline-block">
                                 POURQUOI NOUS CHOISIR
@@ -81,7 +64,7 @@ export default function AboutSection() {
                                 Pourquoi Choisir Ouaiss Express ?
                             </h2>
                             <p className="text-slate-700 ps-3.5 border-s-2 border-[#f78304] text-base leading-relaxed">
-                                Modern transport system & secure packaging — Une infrastructure logistique moderne et un suivi rigoureux de chaque expédition pour garantir la satisfaction de vos clients et la sécurité de vos encaissements.
+                                Nous vous libérons des contraintes de livraison sur toute la région (Rabat, Salé, Témara, Kénitra, Harhoura, Ain Atiq, Tamesna, Skhirat, Bouknadel, Sidi Yahya, Sidi Taibi) et partout au Maroc avec un service rapide, sécurisé et un retour de fonds garanti.
                             </p>
 
                             <div className="mt-8">
@@ -137,7 +120,7 @@ export default function AboutSection() {
                                         </div>
                                     </div>
 
-                                    {/* Sub-column Right (5 cols): Exact half-gradient-white Advisor Card */}
+                                    {/* Sub-column Right (5 cols): Exact half-gradient-white Advisor Card with Poster Phone Numbers */}
                                     <div className="sm:col-span-5">
                                         <div className="half-gradient-white relative z-10 text-center pt-6">
                                             <div className="relative">
@@ -152,32 +135,40 @@ export default function AboutSection() {
                                                     <img src="/images/landing/icons/star-icon.svg" alt="" />
                                                 </span>
                                             </div>
-                                            <h6 className="mt-5 mb-2 text-lg font-bold text-[#05161f]">
-                                                Support Ouaiss Express
+                                            <h6 className="mt-5 mb-1.5 text-lg font-bold text-[#05161f]">
+                                                Service Client Dédié
                                             </h6>
-                                            <p className="text-[#004c68] text-sm pb-10 px-3">
-                                                Parler à un conseiller ?{' '}
+                                            <p className="text-[#004c68] text-xs pb-6 px-3">
+                                                Pour profiter de nos services :{' '}
                                                 <a 
-                                                    href="https://wa.me/212600000000" 
+                                                    href="https://wa.me/212664626118" 
                                                     target="_blank" 
                                                     rel="noreferrer"
-                                                    className="underline text-[#f78304] font-semibold hover:text-[#004c68] transition-colors"
+                                                    className="underline text-[#f78304] font-semibold hover:text-[#004c68] transition-colors block mt-1"
                                                 >
-                                                    Cliquez Maintenant
+                                                    Contactez-nous sur WhatsApp
                                                 </a>
                                             </p>
-                                            <div className="bg-[#f78304] p-2.5 flex justify-center items-center gap-3 w-full">
-                                                <span className="w-9 h-9 border border-white/40 rounded-full flex justify-center items-center text-white">
-                                                    <PhoneCall className="w-4 h-4" />
-                                                </span>
-                                                <a 
-                                                    href="https://wa.me/212600000000" 
-                                                    target="_blank" 
-                                                    rel="noreferrer"
-                                                    className="font-bold text-white text-sm hover:text-[#05161f] transition-colors text-start"
-                                                >
-                                                    WhatsApp Direct 7j/7
-                                                </a>
+                                            <div className="bg-[#f78304] p-3 flex flex-col justify-center items-center gap-1.5 w-full">
+                                                <div className="flex items-center gap-2.5">
+                                                    <span className="w-8 h-8 border border-white/40 rounded-full flex justify-center items-center text-white flex-shrink-0">
+                                                        <PhoneCall className="w-4 h-4" />
+                                                    </span>
+                                                    <div className="flex flex-col text-start">
+                                                        <a 
+                                                            href="tel:+212664626118" 
+                                                            className="font-extrabold text-white text-sm hover:text-[#05161f] transition-colors leading-tight"
+                                                        >
+                                                            06 64 62 61 18
+                                                        </a>
+                                                        <a 
+                                                            href="tel:+212649396759" 
+                                                            className="font-extrabold text-white text-sm hover:text-[#05161f] transition-colors leading-tight"
+                                                        >
+                                                            06 49 39 67 59
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
