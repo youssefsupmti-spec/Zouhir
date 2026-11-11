@@ -159,10 +159,8 @@ export default function VillesIndex({ villes, zones, stats, filters, canManage =
       cell: ({ row }) => !canManage ? null : (
         <div className="flex justify-end">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" />}>
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 text-xs">
               <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
@@ -244,10 +242,8 @@ export default function VillesIndex({ villes, zones, stats, filters, canManage =
           >
             {/* Filtre par Zone */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 text-xs rounded-md">
-                  {currentZone ? `Zone: ${currentZone.name}` : 'Toutes les zones'}
-                </Button>
+              <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="h-8 text-xs rounded-md" />}>
+                {currentZone ? `Zone: ${currentZone.name}` : 'Toutes les zones'}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-52">
                 <DropdownMenuItem onClick={() => handleZoneFilter(undefined)} className="text-xs cursor-pointer">

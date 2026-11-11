@@ -176,10 +176,8 @@ export default function BusinessesIndex({
       cell: ({ row }) => (
         <div className="flex justify-end">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" />}>
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 text-xs">
               <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">

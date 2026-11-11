@@ -227,10 +227,8 @@ export default function ClientsIndex({
       cell: ({ row }) => (
         <div className="flex justify-end">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md">
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-              </Button>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-7 w-7 rounded-md" />}>
+              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40 text-xs">
               <DropdownMenuItem onClick={() => handleEdit(row.original)} className="gap-2 cursor-pointer">
@@ -312,10 +310,8 @@ export default function ClientsIndex({
           >
             {/* Filtre par Ville */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 text-xs rounded-md">
-                  {filters.ville ? `Ville: ${filters.ville}` : 'Toutes les villes'}
-                </Button>
+              <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="h-8 text-xs rounded-md" />}>
+                {filters.ville ? `Ville: ${filters.ville}` : 'Toutes les villes'}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48 max-h-60 overflow-y-auto">
                 <DropdownMenuItem onClick={() => handleVilleFilter(undefined)} className="text-xs cursor-pointer">

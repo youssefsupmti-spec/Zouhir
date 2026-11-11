@@ -23,14 +23,12 @@ export interface LaravelPaginationMeta {
 
 interface DataTablePaginationProps {
   meta: LaravelPaginationMeta;
-  routeName?: string;
   currentParams?: Record<string, any>;
   pageSizeOptions?: number[];
 }
 
 export function DataTablePagination({
   meta,
-  routeName,
   currentParams = {},
   pageSizeOptions = [10, 25, 50, 100],
 }: DataTablePaginationProps) {
@@ -45,7 +43,7 @@ export function DataTablePagination({
       per_page: newPerPage || per_page,
     };
 
-    const targetUrl = routeName ? route(routeName, queryParams) : window.location.pathname;
+    const targetUrl = window.location.pathname;
 
     router.get(targetUrl, queryParams, {
       preserveState: true,

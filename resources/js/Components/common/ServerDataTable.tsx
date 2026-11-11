@@ -45,7 +45,6 @@ interface ServerDataTableProps<TData extends RowData> {
   columns: ColumnDef<DataTableFeatures, TData>[];
   data: TData[];
   paginationMeta?: LaravelPaginationMeta;
-  routeName?: string;
   currentParams?: Record<string, any>;
   emptyMessage?: string;
   showColumnVisibility?: boolean;
@@ -55,7 +54,6 @@ export function ServerDataTable<TData extends RowData>({
   columns,
   data,
   paginationMeta,
-  routeName,
   currentParams = {},
   emptyMessage = 'Aucune donnée disponible',
   showColumnVisibility = true,
@@ -76,7 +74,7 @@ export function ServerDataTable<TData extends RowData>({
       const sortField = nextSorting[0].id;
       const sortDirection = nextSorting[0].desc ? 'desc' : 'asc';
       const queryParams = { ...currentParams, sort: sortField, direction: sortDirection, page: 1 };
-      const targetUrl = routeName ? route(routeName, queryParams) : window.location.pathname;
+      const targetUrl = window.location.pathname;
 
       router.get(targetUrl, queryParams, {
         preserveState: true,
@@ -85,7 +83,7 @@ export function ServerDataTable<TData extends RowData>({
       });
     } else {
       const queryParams = { ...currentParams, sort: undefined, direction: undefined };
-      const targetUrl = routeName ? route(routeName, queryParams) : window.location.pathname;
+      const targetUrl = window.location.pathname;
 
       router.get(targetUrl, queryParams, {
         preserveState: true,
@@ -192,7 +190,6 @@ export function ServerDataTable<TData extends RowData>({
         {paginationMeta && (
           <DataTablePagination
             meta={paginationMeta}
-            routeName={routeName}
             currentParams={currentParams}
           />
         )}

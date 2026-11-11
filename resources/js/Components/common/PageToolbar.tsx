@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 interface PageToolbarProps {
   searchPlaceholder?: string;
   initialSearch?: string;
-  routeName?: string;
   currentParams?: Record<string, any>;
   children?: React.ReactNode;
   rightActions?: React.ReactNode;
@@ -16,7 +15,6 @@ interface PageToolbarProps {
 export function PageToolbar({
   searchPlaceholder = 'Rechercher...',
   initialSearch = '',
-  routeName,
   currentParams = {},
   children,
   rightActions,
@@ -33,7 +31,7 @@ export function PageToolbar({
           page: 1, // Reset page sur nouvelle recherche
         };
 
-        const targetUrl = routeName ? route(routeName, queryParams) : window.location.pathname;
+        const targetUrl = window.location.pathname;
 
         router.get(targetUrl, queryParams, {
           preserveState: true,
@@ -49,7 +47,7 @@ export function PageToolbar({
   const handleClear = () => {
     setSearchTerm('');
     const queryParams = { ...currentParams, search: undefined, page: 1 };
-    const targetUrl = routeName ? route(routeName, queryParams) : window.location.pathname;
+    const targetUrl = window.location.pathname;
 
     router.get(targetUrl, queryParams, {
       preserveState: true,

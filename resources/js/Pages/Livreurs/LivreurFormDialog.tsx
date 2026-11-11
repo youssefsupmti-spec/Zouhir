@@ -187,10 +187,8 @@ export function LivreurFormDialog({
           </div>
 
           <DialogFooter className="mt-5 flex items-center justify-end gap-2">
-            <DialogClose asChild>
-              <Button type="button" variant="outline" size="sm" className="text-xs h-8">
-                Annuler
-              </Button>
+            <DialogClose render={<Button type="button" variant="outline" size="sm" className="text-xs h-8" />}>
+              Annuler
             </DialogClose>
             <Button
               type="submit"
