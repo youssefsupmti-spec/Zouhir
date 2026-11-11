@@ -1,200 +1,209 @@
-import React from 'react';
-import Badge from '@/components/ui/AppBadge';
+﻿import React, { useState } from 'react';
 import { 
+    PackageOpen, 
     Truck, 
+    Zap, 
     Banknote, 
-    RotateCcw, 
-    Warehouse, 
-    Boxes, 
-    Check, 
-    ArrowRight,
-    ShieldCheck,
-    Clock,
-    Zap
+    ArrowRight, 
+    ChevronLeft, 
+    ChevronRight,
+    Sparkles,
+    CheckCircle2
 } from 'lucide-react';
 
 export default function ServicesSection() {
-    const services = [
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    const steps = [
         {
-            icon: Truck,
+            step: "01",
+            title: "Créer un Envoi",
+            badge: "Étape 1",
+            icon: PackageOpen,
+            description: "Saisissez les détails de la commande dans votre tableau de bord marchand.",
+            details: "Import Excel en 1 clic ou saisie directe avec génération immédiate de bordereaux AWB code-barres.",
             img: "/images/landing/thumbs/service-three-img1.png",
-            badge: "Livraison 24/48h",
-            badgeColor: "bg-[#004c68] text-white",
-            title: "Distribution E-commerce Express",
-            description: "Livraison à domicile et en points relais partout au Maroc sous 24 à 48 heures. Prise de rendez-vous téléphonique et confirmation WhatsApp géolocalisée pour maximiser le taux de remise au premier passage.",
-            perks: [
-                "Ramassage quotidien gratuit à votre stock ou domicile",
-                "3 tentatives de livraison avec reprogrammation flexible",
-                "Confirmation WhatsApp du destinataire avec géolocalisation",
-            ],
-            cta: "Détails de la livraison",
+            cta: "Créer un envoi",
+            href: "/register"
         },
         {
-            icon: Banknote,
+            step: "02",
+            title: "Ramassage",
+            badge: "Étape 2",
+            icon: Truck,
+            description: "Notre livreur collecte les colis depuis votre localisation.",
+            details: "Collecte quotidienne gratuite dès votre 1er colis, directement à votre entrepôt, boutique ou domicile.",
             img: "/images/landing/thumbs/service-three-img2.png",
-            badge: "CRBT J+2 Garanti",
-            badgeColor: "bg-[#ff8806] text-white",
-            title: "Encaissement Cash & Virement Rapide",
-            description: "Encaissement scrupuleux des montants en espèces (Cash On Delivery). Vos fonds sont réconciliés automatiquement et virés directement sur votre compte bancaire à J+2 avec relevé détaillé.",
-            perks: [
-                "Zéro retard : virements bancaires chaque mardi et vendredi",
-                "Relevé financier clair ligne par ligne avec bordereau",
-                "Notification instantanée par SMS / WhatsApp à chaque versement",
-            ],
-            cta: "Processus d'encaissement",
+            cta: "Demander un ramassage",
+            href: "#calculateur"
         },
         {
-            icon: RotateCcw,
-            img: "/images/landing/thumbs/service-three-img3.png",
-            badge: "Anti-Retour Proactif",
-            badgeColor: "bg-[#05161f] text-white",
-            title: "Gestion Active des Retours & Échanges",
-            description: "Réduction prouvée de plus de 30% des taux de retour grâce à notre cellule de relance proactive avant toute mise en échec. Gestion simplifiée des échanges en un seul passage livreur.",
-            perks: [
-                "Contrôle de l’état du produit et de l'emballage au retour",
-                "Échange de colis direct chez le client en une seule visite",
-                "Rapports détaillés et transparents des motifs d’échec",
-            ],
-            cta: "Stratégie anti-retour",
-        },
-        {
-            icon: Warehouse,
-            img: "/images/landing/thumbs/quote-three-img.png",
-            badge: "Fulfillment Hub",
-            badgeColor: "bg-[#004c68] text-white",
-            title: "Entreposage & Préparation de Commandes",
-            description: "Stockez vos produits dans notre hub logistique ultra-sécurisé de Casablanca. Nous prenons en charge la réception, le picking, l'emballage soigné et l'étiquetage thermique en flux tendu.",
-            perks: [
-                "Entrepôt climatisé, sécurisé et télésurveillé 24h/24",
-                "Inventaire en temps réel synchronisé avec votre boutique",
-                "Emballage neutre ou personnalisé avec votre logo et ruban",
-            ],
-            cta: "Découvrir le fulfillment",
-        },
-        {
-            icon: Boxes,
-            img: "/images/landing/thumbs/counter-img.png",
-            badge: "Grands Comptes & B2B",
-            badgeColor: "bg-[#ff8806] text-white",
-            title: "Messagerie & Fret Régional B2B",
-            description: "Acheminement inter-villes de marchandises volumineuses, approvisionnement de succursales et transferts réguliers entre vos dépôts de Casablanca, Rabat, Marrakech, Tanger et Agadir.",
-            perks: [
-                "Tarifs dégressifs au volume et à la palette",
-                "Bordereaux de transport et lettres de voiture électroniques",
-                "Service client dédié et interlocuteur commercial unique",
-            ],
-            cta: "Devis B2B sur-mesure",
-        },
-        {
+            step: "03",
+            title: "Livraison Rapide",
+            badge: "Étape 3",
             icon: Zap,
-            img: "/images/landing/thumbs/banner-three-img.png",
-            badge: "Connexion 100% API",
-            badgeColor: "bg-[#05161f] text-white",
-            title: "Intégration Shopify, WooCommerce & YouCan",
-            description: "Connectez votre boutique e-commerce en quelques minutes. Vos commandes sont automatiquement synchronisées, les étiquettes générées en un clic et les statuts mis à jour en direct.",
-            perks: [
-                "Plugins prêts à l'emploi et API REST documentée",
-                "Impression thermique A6 en lot des bordereaux d'expédition",
-                "Webhooks en temps réel pour notifier vos clients",
-            ],
-            cta: "Documentation technique",
+            description: "Nous livrons à votre client à domicile.",
+            details: "Distribution express 24h/48h partout au Maroc avec géolocalisation et confirmation WhatsApp destinataire.",
+            img: "/images/landing/thumbs/service-three-img3.png",
+            cta: "Suivre la livraison",
+            href: "#calculateur"
         },
+        {
+            step: "04",
+            title: "Recevoir le Paiement",
+            badge: "Étape 4",
+            icon: Banknote,
+            description: "Nous transférons vos fonds PAD régulièrement.",
+            details: "Encaissement scrupuleux du cash à la livraison (CRBT) et versement direct sur votre compte bancaire à J+2.",
+            img: "/images/landing/thumbs/quote-three-img.png",
+            cta: "Consulter les tarifs",
+            href: "#calculateur"
+        }
     ];
 
+    const nextSlide = () => {
+        setCurrentIndex((prev) => (prev + 1) % steps.length);
+    };
+
+    const prevSlide = () => {
+        setCurrentIndex((prev) => (prev - 1 + steps.length) % steps.length);
+    };
+
     return (
-        <section id="services" className="py-24 bg-slate-50 relative overflow-hidden">
-            {/* Subtle background logistics contour shape from Envato template */}
-            <img 
-                src="/images/landing/shapes/thrree-sections-bg.png" 
-                alt="" 
-                className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none" 
+        <section id="services" className="py-24 bg-white relative overflow-hidden">
+            {/* Background Shape Patterns from index-3 */}
+            <div 
+                className="absolute inset-0 opacity-[0.025] pointer-events-none bg-repeat"
+                style={{ backgroundImage: `url('/images/landing/shapes/bg-pattern.png')` }}
             />
+            <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-[#ff8806]/5 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-[#004c68]/5 blur-3xl pointer-events-none" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                {/* Section Header */}
-                <div className="max-w-3xl mx-auto text-center space-y-3.5 mb-16">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#004c68]/10 text-xs font-bold text-[#004c68]">
-                        <Zap className="w-3.5 h-3.5 text-[#ff8806]" />
-                        <span>SOLUTIONS SUR-MESURE</span>
+                
+                {/* Header: Exact Title & Subtitle from index-3 Inspiration */}
+                <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
+                    <div>
+                        <span className="text-sm uppercase tracking-wider font-extrabold text-[#ff8806] underline decoration-[#ff8806]/40 underline-offset-8 inline-block italic">
+                            SOLUTIONS SUR-MESURE
+                        </span>
                     </div>
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#004c68] font-sans tracking-tight">
                         Une Suite Logistique Complète pour Votre Succès
                     </h2>
-                    <p className="text-base text-slate-600 leading-relaxed">
-                        De la collecte de vos colis jusqu’au versement de votre argent, nous avons conçu chaque étape pour vous faire gagner du temps, sécuriser votre marge et ravir vos clients.
+                    <p className="text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
+                        De la création de votre premier bordereau jusqu'au virement sécurisé de vos fonds PAD, découvrez notre processus fluide et rigoureux.
                     </p>
                 </div>
 
-                {/* Services Grid (Inspired by Envato Service Three Layout) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {services.map((service, index) => {
-                        const Icon = service.icon;
-                        return (
-                            <div 
-                                key={index}
-                                className="group bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-md hover:shadow-2xl hover:border-[#ff8806]/40 transition-all duration-300 flex flex-col justify-between"
-                            >
-                                {/* Card Header Image with Floating Icon */}
-                                <div className="relative h-48 w-full overflow-hidden bg-slate-100">
-                                    <img 
-                                        src={service.img} 
-                                        alt={service.title} 
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                                    
-                                    {/* Badge */}
-                                    <span className={`absolute top-4 left-4 text-[11px] font-bold px-3 py-1 rounded-full shadow-md ${service.badgeColor}`}>
-                                        {service.badge}
-                                    </span>
+                {/* Cards Container with Navigation Controls */}
+                <div className="relative">
+                    
+                    {/* Responsive Grid: 4 Columns on Desktop, 2 on Tablet, 1 on Mobile */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
+                        {steps.map((item, index) => {
+                            const IconComponent = item.icon;
+                            return (
+                                <div 
+                                    key={index}
+                                    className="group relative flex flex-col justify-between transition-all duration-300"
+                                >
+                                    {/* Top Image Box with triangle-before Cutout */}
+                                    <div className="triangle-before relative w-full h-56 sm:h-60 overflow-hidden rounded-2xl bg-slate-100 shadow-md">
+                                        <img 
+                                            src={item.img} 
+                                            alt={item.title} 
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#05161f]/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
 
-                                    {/* Icon Floating Badge */}
-                                    <div className="absolute -bottom-5 right-6 w-14 h-14 rounded-2xl bg-[#ff8806] text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-[#004c68] transition-all duration-300">
-                                        <Icon className="w-7 h-7" />
+                                        {/* Step Floating Badge Top-Right */}
+                                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs text-[#004c68] px-3 py-1 rounded-full text-xs font-black shadow-md border border-slate-200/60 flex items-center gap-1.5 z-20">
+                                            <span className="w-2 h-2 rounded-full bg-[#ff8806] animate-pulse" />
+                                            <span>{item.step}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom Floating Content with triangle-two-before & Shadow */}
+                                    <div className="relative -mt-14 mx-3 sm:mx-4 z-10 flex-1 flex flex-col">
+                                        <div className="bg-white triangle-two-before common-shadow-five border-b-4 border-[#ff8806] rounded-xl p-5 pt-6 flex-1 flex flex-col justify-between transition-transform duration-300 group-hover:-translate-y-1">
+                                            
+                                            <div>
+                                                {/* Floating Icon Box (Envato -85px square shape with offset) */}
+                                                <div className="flex items-start gap-4 mb-3">
+                                                    <div className="w-16 h-16 -ml-7 -mt-3 bg-[#ff8806] text-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:bg-[#004c68] group-hover:scale-105 transition-all duration-300">
+                                                        <IconComponent className="w-8 h-8 text-white" />
+                                                    </div>
+                                                    <div className="pt-0.5">
+                                                        <span className="text-[11px] font-bold text-[#ff8806] uppercase tracking-wide">
+                                                            {item.badge}
+                                                        </span>
+                                                        <h3 className="text-base sm:text-lg font-bold text-[#004c68] group-hover:text-[#ff8806] transition-colors leading-snug">
+                                                            {item.title}
+                                                        </h3>
+                                                    </div>
+                                                </div>
+
+                                                {/* Description Required by User */}
+                                                <p className="text-xs text-slate-700 font-medium leading-relaxed mb-2">
+                                                    {item.description}
+                                                </p>
+
+                                                {/* Additional logistics detail */}
+                                                <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
+                                                    {item.details}
+                                                </p>
+                                            </div>
+
+                                            {/* Action Link Footer */}
+                                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                                                <a 
+                                                    href={item.href}
+                                                    className="inline-flex items-center gap-2 text-xs font-bold text-[#004c68] group-hover:text-[#ff8806] transition-colors"
+                                                >
+                                                    <span>{item.cta}</span>
+                                                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                                                </a>
+                                                <span className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#ff8806]/15 group-hover:text-[#ff8806] transition-colors">
+                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                </span>
+                                            </div>
+
+                                        </div>
                                     </div>
                                 </div>
+                            );
+                        })}
+                    </div>
 
-                                {/* Card Body */}
-                                <div className="p-6 pt-8 flex-1 flex flex-col justify-between">
-                                    <div className="space-y-3">
-                                        <h3 className="text-xl font-bold text-[#004c68] group-hover:text-[#ff8806] transition-colors leading-snug">
-                                            {service.title}
-                                        </h3>
-                                        <p className="text-xs text-slate-600 leading-relaxed">
-                                            {service.description}
-                                        </p>
-                                        
-                                        {/* Perks Checklist */}
-                                        <ul className="pt-2 space-y-2 border-t border-slate-100 text-xs text-slate-700">
-                                            {service.perks.map((perk, i) => (
-                                                <li key={i} className="flex items-start gap-2">
-                                                    <span className="w-4 h-4 rounded-full bg-[#ff8806]/15 text-[#ff8806] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                        <Check className="w-2.5 h-2.5 stroke-[3]" />
-                                                    </span>
-                                                    <span>{perk}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    {/* Card Footer Link */}
-                                    <div className="pt-5 mt-4 border-t border-slate-100 flex items-center justify-between">
-                                        <a 
-                                            href="#calculateur" 
-                                            className="text-xs font-bold text-[#004c68] group-hover:text-[#ff8806] flex items-center gap-1.5 transition-colors"
-                                        >
-                                            <span>{service.cta}</span>
-                                            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                                        </a>
-                                        <span className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#ff8806]/10 group-hover:text-[#ff8806] transition-colors">
-                                            <Clock className="w-3.5 h-3.5" />
-                                        </span>
-                                    </div>
-                                </div>
+                    {/* Bottom CTA Banner */}
+                    <div className="mt-14 p-6 sm:p-8 bg-gradient-to-r from-[#004c68] via-[#072432] to-[#05161f] rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
+                        <div className="flex items-center gap-4 text-center md:text-left">
+                            <div className="w-12 h-12 rounded-2xl bg-[#ff8806] flex items-center justify-center font-bold text-white shadow-md flex-shrink-0">
+                                <Sparkles className="w-6 h-6" />
                             </div>
-                        );
-                    })}
+                            <div>
+                                <h4 className="font-extrabold text-base text-white">
+                                    Une logistique rodée pour accélérer votre croissance e-commerce
+                                </h4>
+                                <p className="text-xs text-slate-300 mt-0.5">
+                                    Expédiez vos premiers colis dès aujourd'hui sans frais d'inscription ni engagement.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0 w-full md:w-auto">
+                            <a 
+                                href="/register" 
+                                className="w-full md:w-auto px-6 py-3 rounded-xl bg-[#ff8806] hover:bg-[#e07400] text-white font-extrabold text-xs shadow-lg shadow-[#ff8806]/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <span>Ouvrir un compte marchand</span>
+                                <ArrowRight className="w-4 h-4" />
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
         </section>
     );
