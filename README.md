@@ -1,9 +1,9 @@
 # Zouhir
 # SSH : ssh -p 65002 u405480831@147.79.103.78
-# Password SSH : Scc@m2023
+# Mot de passe SSH : dans le fichier local `.deploy-secrets` (ignoré par Git), jamais dans le dépôt.
 
 ## ========== Database =============##
-# datatabse paswword : Scc@m2023
+# Mot de passe base : dans `.env` sur le serveur et dans `.deploy-secrets` en local, jamais dans le dépôt.
 # DB name : u405480831_dev 
 # DB user : u405480831_dev
 # ouaissexpress.com et dev.ouaissexpress.com
